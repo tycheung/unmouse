@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.update import UpdateStatus
 
 
 def _api_without_onboarding_prompt(settings: Settings | None = None) -> PanelApi:
@@ -33,11 +34,19 @@ def test_panel_api_default_status() -> None:
     assert status["tracking"] is False
 
 
-def test_panel_api_update_check_stub() -> None:
+def test_panel_api_update_check_without_git_repo() -> None:
     api = _api_without_onboarding_prompt()
-    result = api.check_for_updates()
+    with patch(
+        "unmouse.launcher.api.check_updates",
+        return_value=UpdateStatus(
+            available=False,
+            message="Update check unavailable for this install.",
+            channel="none",
+        ),
+    ):
+        result = api.check_for_updates()
     assert result["available"] is False
-    assert "not configured" in str(result["message"]).lower()
+    assert result["channel"] == "none"
 
 
 def test_panel_api_calibrate_and_launch_stubs() -> None:

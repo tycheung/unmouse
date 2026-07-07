@@ -16,6 +16,7 @@ from unmouse.launcher.settings import (
     rename_profile,
     update_panel_settings,
 )
+from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
 
 PanelView = Literal["main", "settings", "onboarding"]
 
@@ -39,6 +40,22 @@ class UpdateCheckResult:
     available: bool
     message: str
     version: str | None = None
+    channel: str = "none"
+    current_version: str | None = None
+    latest_version: str | None = None
+    download_url: str | None = None
+
+    @classmethod
+    def from_status(cls, status: UpdateStatus) -> UpdateCheckResult:
+        return cls(
+            available=status.available,
+            message=status.message,
+            version=status.latest_version,
+            channel=status.channel,
+            current_version=status.current_version,
+            latest_version=status.latest_version,
+            download_url=status.download_url,
+        )
 
 
 class PanelApi:
@@ -53,6 +70,7 @@ class PanelApi:
         self._onboarding = onboarding or OnboardingController.create(self._settings)
         self._view: PanelView = "main"
         self._status = PanelStatus(message="Ready")
+        self._update_status: UpdateStatus | None = None
         if self._onboarding.should_show_on_startup():
             self._view = "onboarding"
 
@@ -103,11 +121,23 @@ class PanelApi:
         return result
 
     def check_for_updates(self) -> dict[str, object]:
-        result = UpdateCheckResult(
-            available=False,
-            message="Update check not configured yet.",
-        )
+        self._update_status = check_updates()
+        result = UpdateCheckResult.from_status(self._update_status)
         return asdict(result)
+
+    def apply_update(self) -> dict[str, object]:
+        if self._update_status is None or not self._update_status.available:
+            result = PanelActionResult(ok=False, message="No update is available.")
+            return asdict(result)
+        self._update_status = apply_update(self._update_status)
+        self._status = PanelStatus(message=self._update_status.message)
+        result = PanelActionResult(
+            ok=not self._update_status.available,
+            message=self._update_status.message,
+        )
+        payload = asdict(result)
+        payload["update"] = asdict(UpdateCheckResult.from_status(self._update_status))
+        return payload
 
     def start_calibrate(self) -> dict[str, object]:
         result = PanelActionResult(
