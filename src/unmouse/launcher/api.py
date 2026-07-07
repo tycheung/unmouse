@@ -140,10 +140,18 @@ class PanelApi:
         return payload
 
     def start_calibrate(self) -> dict[str, object]:
-        result = PanelActionResult(
-            ok=False,
-            message="Calibration wizard will run in a future epic.",
-        )
+        from unmouse.gaze.calibration import calibration_path, load_calibration
+        from unmouse.launcher.calibrate_wizard import run_offset_wizard
+        from unmouse.launcher.polynomial_wizard import run_polynomial_wizard
+
+        if load_calibration(calibration_path(self._settings)) is None:
+            poly = run_polynomial_wizard(self._settings)
+            if not poly.success:
+                result = PanelActionResult(ok=False, message=poly.message)
+                return asdict(result)
+        outcome = run_offset_wizard(self._settings)
+        self._status = PanelStatus(message=outcome.message)
+        result = PanelActionResult(ok=outcome.success, message=outcome.message)
         return asdict(result)
 
     def start_launch(self) -> dict[str, object]:

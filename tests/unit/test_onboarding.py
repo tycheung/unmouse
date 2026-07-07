@@ -33,6 +33,7 @@ def test_onboarding_flow_skip_and_complete(tmp_path, monkeypatch) -> None:
         settings,
         check_camera=lambda _s: CameraCheckResult(ok=True, message="ok"),
         run_polynomial=lambda _s: OnboardingActionResult(True, "saved", step_complete=True),
+        run_offset=lambda _s: OnboardingActionResult(True, "offset saved", step_complete=True),
     )
     assert controller.should_show_on_startup() is True
     controller.advance()
@@ -42,7 +43,7 @@ def test_onboarding_flow_skip_and_complete(tmp_path, monkeypatch) -> None:
     assert controller.skip_current_step(confirmed=False)["ok"] is False
     assert controller.skip_current_step(confirmed=True)["ok"] is True
     controller.step_index = 3
-    assert "coming" in str(controller.run_offset_step()["message"]).lower()
+    assert controller.run_offset_step()["ok"] is True
     controller.step_index = 5
     controller.complete()
     assert load_launcher_settings(settings).first_run_complete is True

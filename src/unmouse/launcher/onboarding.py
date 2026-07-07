@@ -43,7 +43,7 @@ _STEP_DATA: tuple[tuple[OnboardingStepId, str, str, bool], ...] = (
     ("welcome", "Welcome to unmouse", "Quick setup for webcam gaze and gestures.", False),
     ("camera", "Camera check", "Verify your webcam before calibrating.", False),
     ("polynomial", "9-point calibration", "Follow nine targets to map gaze to screen.", True),
-    ("offset", "Offset calibration", "Sixteen-point offset correction (Epic 37 hook).", True),
+    ("offset", "Offset calibration", "Sixteen-point offset correction after polynomial fit.", True),
     ("gestures", "Gesture enrollment", "Train V-sign, pinch, thumbs-up (Epic 38 hook).", True),
     ("ready", "Ready to launch", "Finish setup, then use Launch to track.", False),
 )
@@ -273,7 +273,10 @@ FUTURE_HOOK_MSG = "coming in a future update. Skip to continue."
 def default_offset_step(settings: Settings) -> OnboardingActionResult:
     if load_offset_profile(offset_profile_path(settings)) is not None:
         return OnboardingActionResult(True, "Offset profile already saved.", step_complete=True)
-    return OnboardingActionResult(False, f"16-point offset calibration UI is {FUTURE_HOOK_MSG}")
+    from unmouse.launcher.calibrate_wizard import run_offset_wizard
+
+    outcome = run_offset_wizard(settings)
+    return OnboardingActionResult(outcome.success, outcome.message, step_complete=outcome.success)
 
 
 def default_gestures_step(settings: Settings) -> OnboardingActionResult:

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
+from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.update import UpdateStatus
 
@@ -49,11 +50,24 @@ def test_panel_api_update_check_without_git_repo() -> None:
     assert result["channel"] == "none"
 
 
-def test_panel_api_calibrate_and_launch_stubs() -> None:
+def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
     api = _api_without_onboarding_prompt()
-    calibrate = api.start_calibrate()
+    with patch(
+        "unmouse.gaze.calibration.load_calibration",
+        return_value=object(),
+    ), patch(
+        "unmouse.launcher.calibrate_wizard.run_offset_wizard",
+        return_value=OffsetWizardOutcome(success=True, message="Offset profile saved."),
+    ) as run_offset:
+        calibrate = api.start_calibrate()
+    run_offset.assert_called_once()
+    assert calibrate["ok"] is True
+    assert "Offset" in calibrate["message"]
+
+
+def test_panel_api_launch_stub() -> None:
+    api = _api_without_onboarding_prompt()
     launch = api.start_launch()
-    assert calibrate["ok"] is False
     assert launch["ok"] is False
 
 
