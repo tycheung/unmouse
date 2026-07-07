@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Literal
 
 from unmouse.config import Settings, get_settings
+from unmouse.launcher.onboarding import OnboardingController
 
 PanelView = Literal["main", "settings", "onboarding"]
 
@@ -34,10 +35,17 @@ class UpdateCheckResult:
 class PanelApi:
     """Methods exposed to Alpine.js through pywebview's js_api."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        onboarding: OnboardingController | None = None,
+    ) -> None:
         self._settings = settings or get_settings()
+        self._onboarding = onboarding or OnboardingController.create(self._settings)
         self._view: PanelView = "main"
         self._status = PanelStatus(message="Ready")
+        if self._onboarding.should_show_on_startup():
+            self._view = "onboarding"
 
     @property
     def view(self) -> PanelView:
@@ -48,6 +56,42 @@ class PanelApi:
 
     def get_view(self) -> dict[str, str]:
         return {"view": self._view}
+
+    def get_onboarding_state(self) -> dict[str, object]:
+        return self._onboarding.get_state()
+
+    def onboarding_advance(self) -> dict[str, object]:
+        result = self._onboarding.advance()
+        if result.get("ok") and self._onboarding.current_step.id == "ready":
+            self._status = PanelStatus(message="Setup complete")
+        return result
+
+    def onboarding_skip(self, confirmed: bool = False) -> dict[str, object]:
+        return self._onboarding.skip_current_step(confirmed=confirmed)
+
+    def onboarding_check_camera(self) -> dict[str, object]:
+        result = self._onboarding.check_camera()
+        if result.get("ok"):
+            self._status = PanelStatus(message=str(result.get("message", "Camera OK")))
+        return result
+
+    def onboarding_run_polynomial(self) -> dict[str, object]:
+        result = self._onboarding.run_polynomial_step()
+        if result.get("ok"):
+            self._status = PanelStatus(message=str(result.get("message", "Calibration saved")))
+        return result
+
+    def onboarding_run_offset(self) -> dict[str, object]:
+        return self._onboarding.run_offset_step()
+
+    def onboarding_run_gestures(self) -> dict[str, object]:
+        return self._onboarding.run_gestures_step()
+
+    def onboarding_complete(self) -> dict[str, object]:
+        result = self._onboarding.complete()
+        self._view = "main"
+        self._status = PanelStatus(message="Ready")
+        return result
 
     def check_for_updates(self) -> dict[str, object]:
         result = UpdateCheckResult(

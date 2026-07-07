@@ -9,135 +9,38 @@
   </head>
   <body x-data="panelApp()" x-init="init()">
     <div class="panel">
-      <header class="panel-header">
-        <h1>unmouse</h1>
-      </header>
-
+      <header class="panel-header"><h1>unmouse</h1></header>
       <section class="actions" x-show="view === 'main'" x-cloak>
-        <button type="button" @click="checkUpdates()" :disabled="busy">
-          Update Software
-          <span class="update-badge" x-show="updateAvailable" aria-hidden="true"></span>
-        </button>
+        <button type="button" @click="checkUpdates()" :disabled="busy">Update Software</button>
         <button type="button" @click="calibrate()" :disabled="busy">Calibrate</button>
         <button type="button" class="primary" @click="launch()" :disabled="busy">Launch</button>
       </section>
-
       <section class="placeholder-view" x-show="view === 'settings'" x-cloak>
         <h2>Settings</h2>
-        <p>
-          Sensitivity, snap radius, scroll speed, camera, gaze mode, and profile management
-          will appear here in a future release.
-        </p>
+        <p>Profile and sensitivity controls arrive in a future release.</p>
         <button type="button" class="back-link" @click="goMain()">← Back</button>
       </section>
-
       <section class="placeholder-view" x-show="view === 'onboarding'" x-cloak>
-        <h2>Welcome</h2>
-        <p>
-          First-run onboarding — camera check, calibration, and gesture enrollment — will
-          guide new users through setup here.
-        </p>
-        <button type="button" class="back-link" @click="goMain()">← Back</button>
+        <div class="onboarding-progress" x-text="'Step ' + (onboarding.step_index + 1) + '/' + onboarding.step_count"></div>
+        <h2 x-text="onboarding.title"></h2>
+        <p x-text="onboarding.description"></p>
+        <p class="onboarding-note" x-show="onboarding.notice" x-text="onboarding.notice"></p>
+        <div class="actions">
+          <template x-for="action in onboarding.actions" :key="action.id">
+            <button type="button" :class="action.primary ? 'primary' : ''" :disabled="busy || !action.enabled" @click="runOnboardingAction(action.id)" x-text="action.label"></button>
+          </template>
+          <button type="button" class="back-link" x-show="onboarding.skippable" @click="showSkipConfirm = true">Skip this step</button>
+        </div>
+        <div class="skip-dialog" x-show="showSkipConfirm">
+          <p x-text="onboarding.skip_warning"></p>
+          <button type="button" @click="showSkipConfirm = false">Cancel</button>
+          <button type="button" class="danger" @click="confirmSkip()">Skip anyway</button>
+        </div>
       </section>
-
-      <footer class="status-bar">
-        <span class="message" x-text="statusMessage">Ready</span>
-        <span class="sep" x-show="fps !== null"><span x-text="'FPS ' + fps"></span></span>
-        <span class="sep" x-show="confidence !== null">
-          <span x-text="'Conf ' + confidence + '%'"></span>
-        </span>
-        <span class="sep" x-show="tracking"><span>Tracking</span></span>
-        <span class="error" x-show="errorMessage" x-text="errorMessage"></span>
-      </footer>
+      <footer class="status-bar"><span class="message" x-text="statusMessage"></span><span class="error" x-show="errorMessage" x-text="errorMessage"></span></footer>
     </div>
-
     <script>
-      function panelApp() {
-        return {
-          view: "main",
-          busy: false,
-          updateAvailable: false,
-          statusMessage: "Ready",
-          errorMessage: "",
-          fps: null,
-          confidence: null,
-          tracking: false,
-
-          async init() {
-            await this.refreshStatus();
-          },
-
-          async refreshStatus() {
-            if (!window.pywebview?.api) {
-              return;
-            }
-            try {
-              const status = await window.pywebview.api.get_status();
-              this.statusMessage = status.message ?? "Ready";
-              this.fps = status.fps ?? null;
-              this.confidence =
-                status.confidence == null ? null : Math.round(status.confidence * 100);
-              this.tracking = Boolean(status.tracking);
-            } catch (error) {
-              this.errorMessage = String(error);
-            }
-          },
-
-          async checkUpdates() {
-            await this.runAction(async () => {
-              const result = await window.pywebview.api.check_for_updates();
-              this.updateAvailable = Boolean(result.available);
-              this.statusMessage = result.message ?? "Update check complete";
-            });
-          },
-
-          async calibrate() {
-            await this.runAction(async () => {
-              const result = await window.pywebview.api.start_calibrate();
-              this.statusMessage = result.message ?? "Calibrate";
-              if (!result.ok) {
-                this.errorMessage = result.message ?? "";
-              }
-            });
-          },
-
-          async launch() {
-            await this.runAction(async () => {
-              const result = await window.pywebview.api.start_launch();
-              this.statusMessage = result.message ?? "Launch";
-              if (!result.ok) {
-                this.errorMessage = result.message ?? "";
-              }
-            });
-          },
-
-          async goMain() {
-            if (window.pywebview?.api) {
-              const result = await window.pywebview.api.show_main();
-              this.view = result.view ?? "main";
-            } else {
-              this.view = "main";
-            }
-            this.errorMessage = "";
-          },
-
-          async runAction(action) {
-            if (!window.pywebview?.api) {
-              this.errorMessage = "Python bridge unavailable";
-              return;
-            }
-            this.busy = true;
-            this.errorMessage = "";
-            try {
-              await action();
-            } catch (error) {
-              this.errorMessage = String(error);
-            } finally {
-              this.busy = false;
-            }
-          },
-        };
-      }
+      function panelApp(){return{view:"main",busy:false,statusMessage:"Ready",errorMessage:"",showSkipConfirm:false,onboarding:{step_index:0,step_count:6,title:"",description:"",actions:[],skippable:false,skip_warning:"",notice:""},async init(){await this.refreshStatus();if(window.pywebview?.api){const s=await window.pywebview.api.get_onboarding_state();this.applyOnboarding(s);if(s.should_show)this.view="onboarding";}},applyOnboarding(s){if(!s)return;this.onboarding={step_index:s.step_index??0,step_count:s.step_count??6,title:s.title??"",description:s.description??"",actions:s.actions??[],skippable:!!s.skippable,skip_warning:s.skip_warning??"",notice:s.notice??""};},async refreshStatus(){if(!window.pywebview?.api)return;const s=await window.pywebview.api.get_status();this.statusMessage=s.message??"Ready";const v=await window.pywebview.api.get_view();if(v.view)this.view=v.view;},async checkUpdates(){await this.run(async()=>{const r=await window.pywebview.api.check_for_updates();this.statusMessage=r.message??"";});},async calibrate(){await this.run(async()=>{const r=await window.pywebview.api.start_calibrate();this.statusMessage=r.message??"";});},async launch(){await this.run(async()=>{const r=await window.pywebview.api.start_launch();this.statusMessage=r.message??"";});},async runOnboardingAction(id){const map={next:()=>window.pywebview.api.onboarding_advance(),finish:()=>window.pywebview.api.onboarding_complete(),check_camera:()=>window.pywebview.api.onboarding_check_camera(),run_polynomial:()=>window.pywebview.api.onboarding_run_polynomial(),run_offset:()=>window.pywebview.api.onboarding_run_offset(),run_gestures:()=>window.pywebview.api.onboarding_run_gestures()};if(!map[id])return;await this.run(async()=>{const r=await map[id]();if(r.state)this.applyOnboarding(r.state);if(r.message)this.statusMessage=r.message;if(!r.ok&&r.message)this.errorMessage=r.message;if(id==="finish")this.view="main";});},async confirmSkip(){this.showSkipConfirm=false;await this.run(async()=>{const r=await window.pywebview.api.onboarding_skip(true);if(r.state)this.applyOnboarding(r.state);});},async goMain(){if(window.pywebview?.api){const r=await window.pywebview.api.show_main();this.view=r.view??"main";}else this.view="main";this.errorMessage="";},async run(fn){if(!window.pywebview?.api){this.errorMessage="Python bridge unavailable";return;}this.busy=true;this.errorMessage="";try{await fn();}catch(e){this.errorMessage=String(e);}finally{this.busy=false;}};};}
     </script>
   </body>
 </html>
