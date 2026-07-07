@@ -163,6 +163,19 @@ files = [
 ]
 
 [[package]]
+name = "comtypes"
+version = "1.4.16"
+description = "Pure Python COM package"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "sys_platform == \"win32\""
+files = [
+    {file = "comtypes-1.4.16-py3-none-any.whl", hash = "sha256:e18d85179ff12955524c5a8c3bc09cb3c0d890f1da4d7123d14244c7b78f84c8"},
+    {file = "comtypes-1.4.16.tar.gz", hash = "sha256:cd66d1add01265cface4df51ba1e31cd1657e04463c281c802e737e79e1ba93c"},
+]
+
+[[package]]
 name = "contourpy"
 version = "1.3.2"
 description = "Python library for calculating contours of 2D quadrilateral grids"
@@ -2147,7 +2160,23 @@ files = [
 [package.dependencies]
 typing-extensions = ">=4.12.0"
 
+[[package]]
+name = "uiautomation"
+version = "2.0.29"
+description = "Python UIAutomation for Windows"
+optional = false
+python-versions = "*"
+groups = ["main"]
+markers = "sys_platform == \"win32\""
+files = [
+    {file = "uiautomation-2.0.29-py3-none-any.whl", hash = "sha256:5dd51c9e77e70470142a13d903be67f256c445e7cf20b47ada0ece2bdaff9f32"},
+    {file = "uiautomation-2.0.29.tar.gz", hash = "sha256:3c169112043ce21065aead1d79c3baebdafc9cf03bd24ded02b2db11d423d88d"},
+]
+
+[package.dependencies]
+comtypes = ">=1.2.1"
+
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "bfaf86b90cefbf29970d23e2c8d266443324daa1d455dea54347bf035e61242b"
+content-hash = "351fe69c0da0676469f2796d2367ff23e0cb597c5616a3d8e1b7a4ed1eafc4b8"
