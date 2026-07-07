@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from unmouse.config import Settings
@@ -29,6 +30,28 @@ def create_panel_api(settings: Settings | None = None) -> PanelApi:
     return PanelApi(settings=app_settings, onboarding=onboarding)
 
 
+def _panel_window_callbacks(
+    api: PanelApi,
+) -> tuple[Callable[[], None], Callable[[], None], Callable[[], None]]:
+    import webview
+
+    def show_panel() -> None:
+        if webview.windows:
+            webview.windows[0].show()
+            webview.windows[0].restore()
+
+    def minimize_panel() -> None:
+        if webview.windows:
+            webview.windows[0].minimize()
+
+    def quit_app() -> None:
+        api.shutdown()
+        if webview.windows:
+            webview.windows[0].destroy()
+
+    return show_panel, minimize_panel, quit_app
+
+
 def run(*, debug: bool = False) -> None:
     """Open the control panel window."""
     import webview
@@ -39,7 +62,14 @@ def run(*, debug: bool = False) -> None:
         raise FileNotFoundError(msg)
 
     api = create_panel_api()
-    webview.create_window(
+    show_panel, minimize_panel, quit_app = _panel_window_callbacks(api)
+    api.configure_launcher_shell(
+        on_show_panel=show_panel,
+        on_minimize_panel=minimize_panel,
+        on_quit_app=quit_app,
+    )
+
+    window = webview.create_window(
         PANEL_TITLE,
         url=index.as_uri(),
         js_api=api,
@@ -47,4 +77,10 @@ def run(*, debug: bool = False) -> None:
         height=PANEL_HEIGHT,
         resizable=False,
     )
+
+    def on_closing() -> bool:
+        api.shutdown()
+        return True
+
+    window.events.closing += on_closing
     webview.start(debug=debug)

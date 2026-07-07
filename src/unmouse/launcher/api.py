@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from typing import Literal
 
 from unmouse.config import Settings
+from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.settings import (
@@ -17,6 +19,7 @@ from unmouse.launcher.settings import (
     rename_profile,
     update_panel_settings,
 )
+from unmouse.launcher.tray import TrayBackend, create_tray_backend
 from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
 
 PanelView = Literal["main", "settings", "onboarding", "enrollment"]
@@ -66,9 +69,17 @@ class PanelApi:
         self,
         settings: Settings | None = None,
         onboarding: OnboardingController | None = None,
+        *,
+        engine_runner: EngineRunner | None = None,
+        tray: TrayBackend | None = None,
     ) -> None:
         self._settings = settings or load_persisted_settings()
         self._onboarding = onboarding or OnboardingController.create(self._settings)
+        self._engine_runner = engine_runner or EngineRunner()
+        self._tray = tray
+        self._on_show_panel: Callable[[], None] | None = None
+        self._on_minimize_panel: Callable[[], None] | None = None
+        self._on_quit_app: Callable[[], None] | None = None
         self._view: PanelView = "main"
         self._status = PanelStatus(message="Ready")
         self._update_status: UpdateStatus | None = None
@@ -170,12 +181,60 @@ class PanelApi:
         result = PanelActionResult(ok=outcome.success, message=outcome.message)
         return asdict(result)
 
+    def configure_launcher_shell(
+        self,
+        *,
+        on_show_panel: Callable[[], None] | None = None,
+        on_minimize_panel: Callable[[], None] | None = None,
+        on_quit_app: Callable[[], None] | None = None,
+    ) -> None:
+        self._on_show_panel = on_show_panel
+        self._on_minimize_panel = on_minimize_panel
+        self._on_quit_app = on_quit_app
+        if self._tray is None:
+            self._tray = create_tray_backend(
+                on_show=self._handle_tray_show,
+                on_stop=self._handle_tray_stop,
+                on_quit=self._handle_tray_quit,
+                prefer_pystray=True,
+            )
+
     def start_launch(self) -> dict[str, object]:
-        result = PanelActionResult(
-            ok=False,
-            message="Engine launch will spawn the tracking process in a future epic.",
+        if self._engine_runner.is_running():
+            self._ensure_tray()
+            result = PanelActionResult(True, "Engine already running.")
+            payload = asdict(result)
+            payload["tracking"] = True
+            return payload
+        status = self._engine_runner.start()
+        if not status.ok or not status.running:
+            result = PanelActionResult(False, status.message)
+            return asdict(result)
+        self._ensure_tray()
+        if self._on_minimize_panel is not None:
+            self._on_minimize_panel()
+        self._status = PanelStatus(message=status.message, tracking=True)
+        payload = asdict(PanelActionResult(True, status.message))
+        payload["tracking"] = True
+        payload["minimize"] = True
+        payload["pid"] = status.pid
+        return payload
+
+    def stop_engine(self) -> dict[str, object]:
+        status = self._engine_runner.stop()
+        self._status = PanelStatus(
+            message=status.message,
+            fps=self._status.fps,
+            confidence=self._status.confidence,
+            tracking=self._engine_runner.is_running(),
         )
-        return asdict(result)
+        return asdict(PanelActionResult(status.ok, status.message))
+
+    def shutdown(self) -> None:
+        self._engine_runner.stop()
+        if self._tray is not None:
+            self._tray.stop()
+        self._close_enrollment()
 
     def show_settings(self) -> dict[str, str]:
         self._close_enrollment()
@@ -298,3 +357,31 @@ class PanelApi:
         if self._enrollment is not None:
             self._enrollment.close()
             self._enrollment = None
+
+    def _ensure_tray(self) -> None:
+        if self._tray is None:
+            self._tray = create_tray_backend(
+                on_show=self._handle_tray_show,
+                on_stop=self._handle_tray_stop,
+                on_quit=self._handle_tray_quit,
+                prefer_pystray=False,
+            )
+        self._tray.ensure_running()
+
+    def _handle_tray_show(self) -> None:
+        if self._on_show_panel is not None:
+            self._on_show_panel()
+        self._status = PanelStatus(
+            message="Panel restored.",
+            fps=self._status.fps,
+            confidence=self._status.confidence,
+            tracking=self._engine_runner.is_running(),
+        )
+
+    def _handle_tray_stop(self) -> None:
+        self.stop_engine()
+
+    def _handle_tray_quit(self) -> None:
+        self.shutdown()
+        if self._on_quit_app is not None:
+            self._on_quit_app()

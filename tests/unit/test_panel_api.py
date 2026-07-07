@@ -7,8 +7,10 @@ from unittest.mock import MagicMock, patch
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
+from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.tray import FakeTrayBackend
 from unmouse.launcher.update import UpdateStatus
 
 
@@ -66,10 +68,72 @@ def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
     assert "Offset" in calibrate["message"]
 
 
-def test_panel_api_launch_stub() -> None:
+def test_panel_api_launch_starts_engine_and_minimizes() -> None:
     api = _api_without_onboarding_prompt()
-    launch = api.start_launch()
-    assert launch["ok"] is False
+    runner = EngineRunner()
+    tray = FakeTrayBackend()
+    minimized = {"called": False}
+    api = PanelApi(
+        settings=Settings(screen_width=800, screen_height=600),
+        onboarding=MagicMock(spec=OnboardingController),
+        engine_runner=runner,
+        tray=tray,
+    )
+    api._onboarding.should_show_on_startup.return_value = False
+    api.configure_launcher_shell(on_minimize_panel=lambda: minimized.__setitem__("called", True))
+
+    class FakeProcess:
+        pid = 1234
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    with patch.object(runner, "_popen", return_value=FakeProcess()):
+        result = api.start_launch()
+
+    assert result["ok"] is True
+    assert result["tracking"] is True
+    assert result["minimize"] is True
+    assert minimized["called"] is True
+    assert tray.running is True
+    assert api.get_status()["tracking"] is True
+
+
+def test_panel_api_stop_engine_updates_status() -> None:
+    api = _api_without_onboarding_prompt()
+    runner = EngineRunner()
+    api = PanelApi(
+        settings=Settings(screen_width=800, screen_height=600),
+        onboarding=MagicMock(spec=OnboardingController),
+        engine_runner=runner,
+        tray=FakeTrayBackend(),
+    )
+    api._onboarding.should_show_on_startup.return_value = False
+
+    class FakeProcess:
+        pid = 77
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    with patch.object(runner, "_popen", return_value=FakeProcess()):
+        api.start_launch()
+    result = api.stop_engine()
+    assert result["ok"] is True
+    assert api.get_status()["tracking"] is False
+
 
 
 def test_panel_api_view_navigation() -> None:
