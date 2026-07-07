@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     head_pose_drift_dwell_s: float = Field(default=2.0, gt=0)
     kalman_measurement_noise: float = Field(default=10.0, gt=0)
     kalman_process_noise: float = Field(default=0.1, gt=0)
+    calibration_max_residual_px: float = Field(default=75.0, gt=0)
+    calibration_point_duration_s: float = Field(default=1.5, gt=0)
+    calibration_discard_s: float = Field(default=0.5, ge=0)
 
     @property
     def app_data_dir(self) -> Path:

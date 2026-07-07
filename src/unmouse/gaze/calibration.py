@@ -9,6 +9,8 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 
+from unmouse.config import Settings
+
 PointPair = tuple[float, float, float, float]
 
 
@@ -83,3 +85,7 @@ def load_calibration(path: Path) -> CalibrationModel | None:
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
     return CalibrationModel.from_dict(data)
+
+
+def calibration_path(settings: Settings) -> Path:
+    return settings.profile_dir / "calibration.json"

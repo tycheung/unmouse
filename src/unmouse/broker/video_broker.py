@@ -102,6 +102,10 @@ def drain_latest(
     return frame_id, np.asarray(frame, dtype=np.uint8)
 
 
+def create_frame_source(settings: Settings) -> FrameSource:
+    return _OpenCVFrameSource(settings)
+
+
 class _OpenCVFrameSource:
     def __init__(self, settings: Settings) -> None:
         import cv2
