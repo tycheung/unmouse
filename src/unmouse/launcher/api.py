@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Literal
 
 from unmouse.config import Settings
+from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.settings import (
     activate_profile,
@@ -18,7 +19,7 @@ from unmouse.launcher.settings import (
 )
 from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
 
-PanelView = Literal["main", "settings", "onboarding"]
+PanelView = Literal["main", "settings", "onboarding", "enrollment"]
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,8 @@ class PanelApi:
         self._view: PanelView = "main"
         self._status = PanelStatus(message="Ready")
         self._update_status: UpdateStatus | None = None
+        self._enrollment: GestureEnrollmentSession | None = None
+        self._enrollment_return_view: PanelView = "main"
         if self._onboarding.should_show_on_startup():
             self._view = "onboarding"
 
@@ -112,7 +115,20 @@ class PanelApi:
         return self._onboarding.run_offset_step()
 
     def onboarding_run_gestures(self) -> dict[str, object]:
-        return self._onboarding.run_gestures_step()
+        if profile_has_gesture_templates(self._settings):
+            self._onboarding.gestures_complete = True
+            result = PanelActionResult(True, "Gesture templates already saved.")
+            return {**asdict(result), "state": self._onboarding.get_state()}
+        opened = self.show_enrollment(return_view="onboarding")
+        if not opened.get("ok", True):
+            return {**opened, "state": self._onboarding.get_state()}
+        return {
+            "ok": True,
+            "message": "Hold each pose for 1 second while capturing.",
+            "view": opened["view"],
+            "enrollment": opened.get("enrollment"),
+            "state": self._onboarding.get_state(),
+        }
 
     def onboarding_complete(self) -> dict[str, object]:
         result = self._onboarding.complete()
@@ -162,6 +178,7 @@ class PanelApi:
         return asdict(result)
 
     def show_settings(self) -> dict[str, str]:
+        self._close_enrollment()
         self._view = "settings"
         return {"view": self._view}
 
@@ -205,10 +222,66 @@ class PanelApi:
             return {"ok": False, "message": str(exc)}
 
     def show_onboarding(self) -> dict[str, str]:
+        self._close_enrollment()
         self._view = "onboarding"
         return {"view": self._view}
 
+    def show_enrollment(self, return_view: PanelView = "main") -> dict[str, object]:
+        self._close_enrollment()
+        session = GestureEnrollmentSession(self._settings)
+        try:
+            session.open()
+        except RuntimeError as exc:
+            result = PanelActionResult(ok=False, message=str(exc))
+            return asdict(result)
+        self._enrollment = session
+        self._enrollment_return_view = return_view
+        self._view = "enrollment"
+        return {
+            "ok": True,
+            "view": self._view,
+            "enrollment": session.get_state(),
+        }
+
+    def get_enrollment_state(self) -> dict[str, object]:
+        if self._enrollment is None:
+            return {"active": False, "done": False, "message": "Enrollment is not active."}
+        return self._enrollment.get_state()
+
+    def get_enrollment_preview(self) -> dict[str, object]:
+        if self._enrollment is None:
+            return {
+                "preview_jpeg": None,
+                "hand_detected": False,
+                "message": "Enrollment is not active.",
+            }
+        preview = self._enrollment.grab_preview()
+        return {
+            "preview_jpeg": preview.preview_jpeg,
+            "hand_detected": preview.hand_detected,
+            "message": preview.message,
+        }
+
+    def enrollment_capture(self) -> dict[str, object]:
+        if self._enrollment is None:
+            result = PanelActionResult(ok=False, message="Enrollment is not active.")
+            return asdict(result)
+        capture = self._enrollment.capture_current_gesture()
+        if capture.ok and capture.done:
+            self._onboarding.gestures_complete = True
+        self._status = PanelStatus(message=capture.message)
+        payload = asdict(capture)
+        payload["enrollment"] = self._enrollment.get_state()
+        return payload
+
+    def leave_enrollment(self) -> dict[str, str]:
+        return_view = self._enrollment_return_view
+        self._close_enrollment()
+        self._view = return_view
+        return {"view": self._view}
+
     def show_main(self) -> dict[str, str]:
+        self._close_enrollment()
         self._view = "main"
         return {"view": self._view}
 
@@ -220,3 +293,8 @@ class PanelApi:
             tracking=self._status.tracking,
         )
         return asdict(self._status)
+
+    def _close_enrollment(self) -> None:
+        if self._enrollment is not None:
+            self._enrollment.close()
+            self._enrollment = None

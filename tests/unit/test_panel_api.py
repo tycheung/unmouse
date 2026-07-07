@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
+from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.update import UpdateStatus
 
@@ -85,3 +86,33 @@ def test_panel_api_set_status_message() -> None:
     updated = api.set_status_message("Calibrating")
     assert updated["message"] == "Calibrating"
     assert api.get_status()["message"] == "Calibrating"
+
+
+def test_panel_api_show_enrollment_opens_session() -> None:
+    api = _api_without_onboarding_prompt()
+    with patch("unmouse.launcher.api.GestureEnrollmentSession") as session_cls:
+        session_cls.return_value.get_state.return_value = {
+            "active": True,
+            "done": False,
+            "gesture_index": 0,
+        }
+        result = api.show_enrollment()
+    session_cls.return_value.open.assert_called_once()
+    assert result["ok"] is True
+    assert result["view"] == "enrollment"
+    assert api.view == "enrollment"
+
+
+def test_panel_api_enrollment_capture_marks_onboarding_complete() -> None:
+    api = _api_without_onboarding_prompt()
+    with patch("unmouse.launcher.api.GestureEnrollmentSession") as session_cls:
+        session_cls.return_value.get_state.return_value = {"active": True, "done": True}
+        session_cls.return_value.capture_current_gesture.return_value = EnrollmentCaptureResult(
+            ok=True,
+            message="All gesture templates enrolled.",
+            done=True,
+        )
+        api.show_enrollment()
+        result = api.enrollment_capture()
+    assert result["ok"] is True
+    assert api._onboarding.gestures_complete is True

@@ -9,7 +9,7 @@ from typing import Literal
 
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
-from unmouse.gestures.enrollment import DEFAULT_GESTURE_NAMES, profile_gestures_dir
+from unmouse.launcher.enroll_ui import profile_has_gesture_templates
 from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 OnboardingStepId = Literal["welcome", "camera", "polynomial", "offset", "gestures", "ready"]
@@ -44,7 +44,12 @@ _STEP_DATA: tuple[tuple[OnboardingStepId, str, str, bool], ...] = (
     ("camera", "Camera check", "Verify your webcam before calibrating.", False),
     ("polynomial", "9-point calibration", "Follow nine targets to map gaze to screen.", True),
     ("offset", "Offset calibration", "Sixteen-point offset correction after polynomial fit.", True),
-    ("gestures", "Gesture enrollment", "Train V-sign, pinch, thumbs-up (Epic 38 hook).", True),
+    (
+        "gestures",
+        "Gesture enrollment",
+        "Train V-sign, pinch, and thumbs-up from the camera preview.",
+        True,
+    ),
     ("ready", "Ready to launch", "Finish setup, then use Launch to track.", False),
 )
 ONBOARDING_STEPS = tuple(
@@ -267,9 +272,6 @@ def default_polynomial_step(settings: Settings) -> OnboardingActionResult:
     return OnboardingActionResult(outcome.success, outcome.message, step_complete=outcome.success)
 
 
-FUTURE_HOOK_MSG = "coming in a future update. Skip to continue."
-
-
 def default_offset_step(settings: Settings) -> OnboardingActionResult:
     if load_offset_profile(offset_profile_path(settings)) is not None:
         return OnboardingActionResult(True, "Offset profile already saved.", step_complete=True)
@@ -280,9 +282,9 @@ def default_offset_step(settings: Settings) -> OnboardingActionResult:
 
 
 def default_gestures_step(settings: Settings) -> OnboardingActionResult:
-    gestures_dir = profile_gestures_dir(settings.profile_dir)
-    if gestures_dir.is_dir() and all(
-        (gestures_dir / f"{name}.json").is_file() for name in DEFAULT_GESTURE_NAMES
-    ):
+    if profile_has_gesture_templates(settings):
         return OnboardingActionResult(True, "Gesture templates already saved.", step_complete=True)
-    return OnboardingActionResult(False, f"Gesture enrollment UI is {FUTURE_HOOK_MSG}")
+    return OnboardingActionResult(
+        False,
+        "Use Train Gestures in the control panel to capture your poses.",
+    )

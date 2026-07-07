@@ -28,6 +28,7 @@ def test_ui_index_references_local_assets() -> None:
     assert "Calibrate" in html
     assert "Launch" in html
     assert "Settings" in html
+    assert "Train Gestures" in html
     assert "update-badge" in html
 
 
