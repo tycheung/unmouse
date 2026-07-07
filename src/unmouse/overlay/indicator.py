@@ -8,7 +8,9 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol
+
+from unmouse.state import SystemState
 
 if TYPE_CHECKING:
     import tkinter as tk
@@ -17,6 +19,15 @@ MIN_INDICATOR_FPS = 30.0
 DEFAULT_INDICATOR_DIAMETER = 20
 DEFAULT_INDICATOR_COLOR = "#FFFFFF"
 TRANSPARENT_CHROMA = "#FF00FF"
+LUMINANCE_THRESHOLD = 0.55
+DEFAULT_FALLBACK_LUMINANCE = 0.3
+LIGHT_FILL = "#000000"
+DARK_FILL = "#FFFFFF"
+RIGHT_CLICK_FILL = "#FF0000"
+THIN_STROKE = 2
+BOLD_STROKE = 4
+CLICK_MODE_SCALE = 1.2
+LUMINANCE_PATCH_SIZE = 5
 
 GWL_EXSTYLE = -20
 WS_EX_LAYERED = 0x00080000
@@ -27,14 +38,64 @@ CLICK_THROUGH_STYLES = WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX
 
 
 @dataclass(frozen=True)
+class IndicatorAppearance:
+    click_mode: bool = False
+    right_click: bool = False
+    scroll_active: bool = False
+    scroll_up: bool = True
+
+
+@dataclass(frozen=True)
 class IndicatorState:
     x: float
     y: float
     visible: bool = True
     fill_color: str = DEFAULT_INDICATOR_COLOR
     stroke_color: str = DEFAULT_INDICATOR_COLOR
-    stroke_width: int = 2
+    stroke_width: int = THIN_STROKE
     diameter: int = DEFAULT_INDICATOR_DIAMETER
+    scroll_chevron: Literal["up", "down"] | None = None
+
+
+class LuminanceSampler(Protocol):
+    def sample(self, x: float, y: float) -> float: ...
+
+
+@dataclass
+class FakeLuminanceSampler:
+    """Returns a fixed luminance for tests."""
+
+    value: float = DEFAULT_FALLBACK_LUMINANCE
+
+    def sample(self, x: float, y: float) -> float:
+        return self.value
+
+
+@dataclass
+class MssLuminanceSampler:
+    """Sample screen luminance under the gaze point via mss."""
+
+    patch_size: int = LUMINANCE_PATCH_SIZE
+    _sct: Any = field(default=None, init=False, repr=False)
+
+    def sample(self, x: float, y: float) -> float:
+        try:
+            import mss
+        except ImportError:
+            return DEFAULT_FALLBACK_LUMINANCE
+
+        if self._sct is None:
+            self._sct = mss.mss()
+
+        half = self.patch_size // 2
+        left = int(round(x)) - half
+        top = int(round(y)) - half
+        region = {"left": left, "top": top, "width": self.patch_size, "height": self.patch_size}
+        try:
+            shot = self._sct.grab(region)
+        except Exception:
+            return DEFAULT_FALLBACK_LUMINANCE
+        return average_luminance_from_bgra(shot.raw, shot.width, shot.height)
 
 
 class IndicatorBackend(Protocol):
@@ -195,6 +256,98 @@ class TkWin32IndicatorBackend:
             fill=state.fill_color,
             width=state.stroke_width,
         )
+        if state.scroll_chevron is not None:
+            _draw_scroll_chevron(canvas, diameter, state.scroll_chevron, state.fill_color)
+
+
+def relative_luminance(r: int, g: int, b: int) -> float:
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
+
+
+def average_luminance_from_bgra(raw: bytes, width: int, height: int) -> float:
+    if not raw or width <= 0 or height <= 0:
+        return DEFAULT_FALLBACK_LUMINANCE
+    pixel_count = width * height
+    total = 0.0
+    for index in range(0, len(raw), 4):
+        total += relative_luminance(raw[index + 2], raw[index + 1], raw[index])
+    return total / pixel_count
+
+
+def adaptive_fill_color(luminance: float, *, click_mode: bool, right_click: bool) -> str:
+    if click_mode and right_click:
+        return RIGHT_CLICK_FILL
+    return LIGHT_FILL if luminance > LUMINANCE_THRESHOLD else DARK_FILL
+
+
+def resolve_stroke_width(*, click_mode: bool, scroll_active: bool) -> int:
+    if scroll_active:
+        return THIN_STROKE
+    return BOLD_STROKE if click_mode else THIN_STROKE
+
+
+def resolve_diameter(base: int, *, click_mode: bool, scroll_active: bool) -> int:
+    if click_mode and not scroll_active:
+        return int(round(base * CLICK_MODE_SCALE))
+    return base
+
+
+def compose_indicator_state(
+    x: float,
+    y: float,
+    *,
+    appearance: IndicatorAppearance | None = None,
+    sampler: LuminanceSampler | None = None,
+    visible: bool = True,
+    base_diameter: int = DEFAULT_INDICATOR_DIAMETER,
+) -> IndicatorState:
+    app = appearance or IndicatorAppearance()
+    luminance = sampler.sample(x, y) if sampler is not None else DEFAULT_FALLBACK_LUMINANCE
+    fill = adaptive_fill_color(luminance, click_mode=app.click_mode, right_click=app.right_click)
+    stroke_width = resolve_stroke_width(
+        click_mode=app.click_mode,
+        scroll_active=app.scroll_active,
+    )
+    diameter = resolve_diameter(
+        base_diameter,
+        click_mode=app.click_mode,
+        scroll_active=app.scroll_active,
+    )
+    chevron: Literal["up", "down"] | None = None
+    if app.scroll_active:
+        chevron = "up" if app.scroll_up else "down"
+    return IndicatorState(
+        x=x,
+        y=y,
+        visible=visible,
+        fill_color=fill,
+        stroke_color=fill,
+        stroke_width=stroke_width,
+        diameter=diameter,
+        scroll_chevron=chevron,
+    )
+
+
+def indicator_state_from_system(
+    system: SystemState,
+    *,
+    sampler: LuminanceSampler | None = None,
+    scroll_up: bool = True,
+    visible: bool = True,
+) -> IndicatorState:
+    gaze = system.get_gaze()
+    return compose_indicator_state(
+        gaze.x,
+        gaze.y,
+        appearance=IndicatorAppearance(
+            click_mode=system.click_mode,
+            right_click=system.right_click_intent,
+            scroll_active=system.scroll_active,
+            scroll_up=scroll_up,
+        ),
+        sampler=sampler,
+        visible=visible,
+    )
 
 
 def apply_click_through_styles(hwnd: int) -> None:
@@ -219,3 +372,32 @@ def _window_origin(x: float, y: float, diameter: int) -> str:
     left = int(round(x - diameter / 2))
     top = int(round(y - diameter / 2))
     return f"+{left}+{top}"
+
+
+def _draw_scroll_chevron(
+    canvas: tk.Canvas,
+    diameter: int,
+    direction: Literal["up", "down"],
+    color: str,
+) -> None:
+    center = diameter / 2
+    span = diameter * 0.22
+    if direction == "up":
+        points = (
+            center,
+            center - span,
+            center - span,
+            center + span * 0.45,
+            center + span,
+            center + span * 0.45,
+        )
+    else:
+        points = (
+            center,
+            center + span,
+            center - span,
+            center - span * 0.45,
+            center + span,
+            center - span * 0.45,
+        )
+    canvas.create_polygon(*points, fill=color, outline=color)

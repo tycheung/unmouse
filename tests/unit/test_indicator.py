@@ -7,14 +7,27 @@ from unittest.mock import MagicMock
 import pytest
 
 from unmouse.overlay.indicator import (
+    BOLD_STROKE,
     CLICK_THROUGH_STYLES,
+    DARK_FILL,
+    LIGHT_FILL,
+    RIGHT_CLICK_FILL,
+    THIN_STROKE,
     FakeIndicatorBackend,
+    FakeLuminanceSampler,
     GazeIndicatorOverlay,
+    IndicatorAppearance,
     IndicatorState,
     _window_origin,
+    adaptive_fill_color,
     apply_click_through_styles,
+    average_luminance_from_bgra,
+    compose_indicator_state,
     create_indicator_backend,
+    indicator_state_from_system,
+    relative_luminance,
 )
+from unmouse.state import SystemState
 
 
 def test_fake_backend_records_updates() -> None:
@@ -72,3 +85,52 @@ def test_create_indicator_backend_uses_fake_off_windows(monkeypatch: pytest.Monk
 
 def test_window_origin_centers_indicator() -> None:
     assert _window_origin(100.0, 50.0, 20) == "+90+40"
+
+
+def test_relative_luminance_white_is_one() -> None:
+    assert relative_luminance(255, 255, 255) == pytest.approx(1.0)
+
+
+def test_adaptive_fill_flips_on_luminance() -> None:
+    assert adaptive_fill_color(0.2, click_mode=False, right_click=False) == DARK_FILL
+    assert adaptive_fill_color(0.8, click_mode=False, right_click=False) == LIGHT_FILL
+
+
+def test_right_click_overrides_adaptive_fill() -> None:
+    color = adaptive_fill_color(0.2, click_mode=True, right_click=True)
+    assert color == RIGHT_CLICK_FILL
+
+
+def test_compose_click_mode_boldens_indicator() -> None:
+    state = compose_indicator_state(
+        10.0,
+        20.0,
+        appearance=IndicatorAppearance(click_mode=True),
+        sampler=FakeLuminanceSampler(0.2),
+    )
+    assert state.stroke_width == BOLD_STROKE
+    assert state.diameter > 20
+    assert state.fill_color == DARK_FILL
+
+
+def test_compose_scroll_mode_adds_chevron() -> None:
+    state = compose_indicator_state(
+        0.0,
+        0.0,
+        appearance=IndicatorAppearance(scroll_active=True, scroll_up=False),
+        sampler=FakeLuminanceSampler(0.8),
+    )
+    assert state.stroke_width == THIN_STROKE
+    assert state.scroll_chevron == "down"
+
+
+def test_average_luminance_from_bgra() -> None:
+    raw = bytes([255, 255, 255, 255]) * 4
+    assert average_luminance_from_bgra(raw, 2, 2) == pytest.approx(1.0)
+
+
+def test_indicator_state_from_system() -> None:
+    system = SystemState(gaze_x=50.0, gaze_y=60.0, click_mode=True, right_click_intent=True)
+    state = indicator_state_from_system(system, sampler=FakeLuminanceSampler(0.2))
+    assert state.x == 50.0
+    assert state.fill_color == RIGHT_CLICK_FILL
