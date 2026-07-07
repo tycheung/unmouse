@@ -1,8 +1,7 @@
-"""First-run onboarding orchestration and launcher settings persistence."""
+"""First-run onboarding orchestration."""
 
 from __future__ import annotations
 
-import json
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -11,9 +10,9 @@ from typing import Literal
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
 from unmouse.gestures.enrollment import DEFAULT_GESTURE_NAMES, profile_gestures_dir
+from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 OnboardingStepId = Literal["welcome", "camera", "polynomial", "offset", "gestures", "ready"]
-SETTINGS_FILENAME = "settings.json"
 SKIP_WARNING = (
     "Skipping this step may reduce tracking accuracy. "
     "You can rerun setup later from Calibrate or Settings."
@@ -22,11 +21,14 @@ SKIP_WARNING = (
 
 @dataclass
 class LauncherSettings:
+    """Backward-compatible alias for onboarding launcher flags."""
+
     first_run_complete: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> LauncherSettings:
-        return cls(first_run_complete=bool(data.get("first_run_complete", False)))
+        flags = LauncherFlags.from_dict(data)
+        return cls(first_run_complete=flags.first_run_complete)
 
 
 @dataclass(frozen=True)
@@ -66,29 +68,16 @@ class OnboardingActionResult:
     step_complete: bool = False
 
 
-def launcher_settings_path(settings: Settings) -> Path:
-    return settings.app_data_dir / SETTINGS_FILENAME
-
-
 def load_launcher_settings(settings: Settings) -> LauncherSettings:
-    path = launcher_settings_path(settings)
-    if not path.is_file():
-        return LauncherSettings()
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = "launcher settings JSON must be an object"
-        raise ValueError(msg)
-    return LauncherSettings.from_dict(data)
+    flags = load_launcher_flags(settings)
+    return LauncherSettings(first_run_complete=flags.first_run_complete)
 
 
 def save_launcher_settings(settings: Settings, launcher_settings: LauncherSettings) -> Path:
-    path = launcher_settings_path(settings)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps({"first_run_complete": launcher_settings.first_run_complete}, indent=2),
-        encoding="utf-8",
+    return save_launcher_flags(
+        settings,
+        LauncherFlags(first_run_complete=launcher_settings.first_run_complete),
     )
-    return path
 
 
 @dataclass

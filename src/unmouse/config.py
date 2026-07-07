@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     calibration_max_residual_px: float = Field(default=75.0, gt=0)
     calibration_point_duration_s: float = Field(default=1.5, gt=0)
     calibration_discard_s: float = Field(default=0.5, ge=0)
+    scroll_speed_multiplier: float = Field(default=1.0, gt=0)
 
     @property
     def app_data_dir(self) -> Path:

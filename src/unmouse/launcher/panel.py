@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from unmouse.config import Settings, get_settings
+from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.settings import load_persisted_settings
 from unmouse.utils.paths import resource_path
 
 PANEL_TITLE = "unmouse"
 PANEL_WIDTH = 420
-PANEL_HEIGHT = 440
+PANEL_HEIGHT = 520
 
 
 def ui_assets_dir() -> Path:
@@ -23,7 +24,7 @@ def ui_index_path() -> Path:
 
 
 def create_panel_api(settings: Settings | None = None) -> PanelApi:
-    app_settings = settings or get_settings()
+    app_settings = settings or load_persisted_settings()
     onboarding = OnboardingController.create(app_settings)
     return PanelApi(settings=app_settings, onboarding=onboarding)
 

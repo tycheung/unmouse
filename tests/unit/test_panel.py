@@ -27,7 +27,7 @@ def test_ui_index_references_local_assets() -> None:
     assert "Update Software" in html
     assert "Calibrate" in html
     assert "Launch" in html
-    assert "Skip this step" in html
+    assert "Settings" in html
 
 
 def test_create_panel_api_uses_settings() -> None:
@@ -53,5 +53,5 @@ def test_run_starts_webview_window() -> None:
     fake_webview.start.assert_called_once()
     kwargs = fake_webview.create_window.call_args.kwargs
     assert kwargs["width"] == 420
-    assert kwargs["height"] == 440
+    assert kwargs["height"] == 520
     assert kwargs["resizable"] is False

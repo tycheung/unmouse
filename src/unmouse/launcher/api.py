@@ -5,8 +5,17 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-from unmouse.config import Settings, get_settings
+from unmouse.config import Settings
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.settings import (
+    activate_profile,
+    create_profile,
+    delete_profile,
+    get_panel_settings,
+    load_persisted_settings,
+    rename_profile,
+    update_panel_settings,
+)
 
 PanelView = Literal["main", "settings", "onboarding"]
 
@@ -40,7 +49,7 @@ class PanelApi:
         settings: Settings | None = None,
         onboarding: OnboardingController | None = None,
     ) -> None:
-        self._settings = settings or get_settings()
+        self._settings = settings or load_persisted_settings()
         self._onboarding = onboarding or OnboardingController.create(self._settings)
         self._view: PanelView = "main"
         self._status = PanelStatus(message="Ready")
@@ -117,6 +126,45 @@ class PanelApi:
     def show_settings(self) -> dict[str, str]:
         self._view = "settings"
         return {"view": self._view}
+
+    def get_settings_panel(self) -> dict[str, object]:
+        return get_panel_settings(self._settings)
+
+    def save_settings_panel(self, updates: dict[str, object]) -> dict[str, object]:
+        snapshot = update_panel_settings(self._settings, updates)
+        self._settings = load_persisted_settings()
+        self._status = PanelStatus(message="Settings saved")
+        return {"ok": True, "message": "Settings saved.", "settings": snapshot}
+
+    def create_profile(self, name: str) -> dict[str, object]:
+        try:
+            return create_profile(self._settings, name)
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+
+    def rename_profile(self, old_name: str, new_name: str) -> dict[str, object]:
+        try:
+            result = rename_profile(self._settings, old_name, new_name)
+            if result.get("ok"):
+                self._settings = load_persisted_settings()
+            return result
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+
+    def delete_profile(self, name: str) -> dict[str, object]:
+        try:
+            return delete_profile(self._settings, name)
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
+
+    def activate_profile(self, name: str) -> dict[str, object]:
+        try:
+            result = activate_profile(self._settings, name)
+            if result.get("ok"):
+                self._settings = load_persisted_settings()
+            return result
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
 
     def show_onboarding(self) -> dict[str, str]:
         self._view = "onboarding"

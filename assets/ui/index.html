@@ -12,13 +12,54 @@
       <header class="panel-header"><h1>unmouse</h1></header>
       <section class="actions" x-show="view === 'main'" x-cloak>
         <button type="button" @click="checkUpdates()" :disabled="busy">Update Software</button>
+        <button type="button" @click="openSettings()" :disabled="busy">Settings</button>
         <button type="button" @click="calibrate()" :disabled="busy">Calibrate</button>
         <button type="button" class="primary" @click="launch()" :disabled="busy">Launch</button>
       </section>
-      <section class="placeholder-view" x-show="view === 'settings'" x-cloak>
+      <section class="settings-view" x-show="view === 'settings'" x-cloak>
         <h2>Settings</h2>
-        <p>Profile and sensitivity controls arrive in a future release.</p>
-        <button type="button" class="back-link" @click="goMain()">← Back</button>
+        <label class="field">Profile
+          <select x-model="settingsForm.profile_name" @change="activateProfile()">
+            <template x-for="name in settingsForm.profiles" :key="name">
+              <option :value="name" x-text="name"></option>
+            </template>
+          </select>
+        </label>
+        <div class="profile-actions">
+          <input type="text" x-model="newProfileName" placeholder="New profile" />
+          <button type="button" @click="createProfile()" :disabled="busy">Create</button>
+          <button type="button" @click="renameProfile()" :disabled="busy">Rename</button>
+          <button type="button" class="danger" @click="deleteProfile()" :disabled="busy">Delete</button>
+        </div>
+        <label class="field">Sensitivity (Kalman R)
+          <input type="range" min="1" max="50" step="0.5" x-model.number="settingsForm.kalman_measurement_noise" />
+          <span x-text="settingsForm.kalman_measurement_noise"></span>
+        </label>
+        <label class="field">Saccade threshold (px)
+          <input type="range" min="20" max="200" step="5" x-model.number="settingsForm.saccade_threshold_px" />
+          <span x-text="settingsForm.saccade_threshold_px"></span>
+        </label>
+        <label class="field">Snap radius (px)
+          <input type="range" min="10" max="150" step="5" x-model.number="settingsForm.snap_radius_px" />
+          <span x-text="settingsForm.snap_radius_px"></span>
+        </label>
+        <label class="field">Scroll speed
+          <input type="range" min="0.25" max="2" step="0.05" x-model.number="settingsForm.scroll_speed_multiplier" />
+          <span x-text="settingsForm.scroll_speed_multiplier"></span>
+        </label>
+        <label class="field">Camera index
+          <input type="number" min="0" max="9" x-model.number="settingsForm.camera_index" />
+        </label>
+        <label class="field">Gaze mode
+          <select x-model="settingsForm.gaze_mode">
+            <option value="cursor_follow">Cursor follow</option>
+            <option value="gaze_only">Gaze only</option>
+          </select>
+        </label>
+        <div class="settings-actions">
+          <button type="button" class="primary" @click="saveSettings()" :disabled="busy">Save</button>
+          <button type="button" class="back-link" @click="goMain()">← Back</button>
+        </div>
       </section>
       <section class="placeholder-view" x-show="view === 'onboarding'" x-cloak>
         <div class="onboarding-progress" x-text="'Step ' + (onboarding.step_index + 1) + '/' + onboarding.step_count"></div>
@@ -40,7 +81,7 @@
       <footer class="status-bar"><span class="message" x-text="statusMessage"></span><span class="error" x-show="errorMessage" x-text="errorMessage"></span></footer>
     </div>
     <script>
-      function panelApp(){return{view:"main",busy:false,statusMessage:"Ready",errorMessage:"",showSkipConfirm:false,onboarding:{step_index:0,step_count:6,title:"",description:"",actions:[],skippable:false,skip_warning:"",notice:""},async init(){await this.refreshStatus();if(window.pywebview?.api){const s=await window.pywebview.api.get_onboarding_state();this.applyOnboarding(s);if(s.should_show)this.view="onboarding";}},applyOnboarding(s){if(!s)return;this.onboarding={step_index:s.step_index??0,step_count:s.step_count??6,title:s.title??"",description:s.description??"",actions:s.actions??[],skippable:!!s.skippable,skip_warning:s.skip_warning??"",notice:s.notice??""};},async refreshStatus(){if(!window.pywebview?.api)return;const s=await window.pywebview.api.get_status();this.statusMessage=s.message??"Ready";const v=await window.pywebview.api.get_view();if(v.view)this.view=v.view;},async checkUpdates(){await this.run(async()=>{const r=await window.pywebview.api.check_for_updates();this.statusMessage=r.message??"";});},async calibrate(){await this.run(async()=>{const r=await window.pywebview.api.start_calibrate();this.statusMessage=r.message??"";});},async launch(){await this.run(async()=>{const r=await window.pywebview.api.start_launch();this.statusMessage=r.message??"";});},async runOnboardingAction(id){const map={next:()=>window.pywebview.api.onboarding_advance(),finish:()=>window.pywebview.api.onboarding_complete(),check_camera:()=>window.pywebview.api.onboarding_check_camera(),run_polynomial:()=>window.pywebview.api.onboarding_run_polynomial(),run_offset:()=>window.pywebview.api.onboarding_run_offset(),run_gestures:()=>window.pywebview.api.onboarding_run_gestures()};if(!map[id])return;await this.run(async()=>{const r=await map[id]();if(r.state)this.applyOnboarding(r.state);if(r.message)this.statusMessage=r.message;if(!r.ok&&r.message)this.errorMessage=r.message;if(id==="finish")this.view="main";});},async confirmSkip(){this.showSkipConfirm=false;await this.run(async()=>{const r=await window.pywebview.api.onboarding_skip(true);if(r.state)this.applyOnboarding(r.state);});},async goMain(){if(window.pywebview?.api){const r=await window.pywebview.api.show_main();this.view=r.view??"main";}else this.view="main";this.errorMessage="";},async run(fn){if(!window.pywebview?.api){this.errorMessage="Python bridge unavailable";return;}this.busy=true;this.errorMessage="";try{await fn();}catch(e){this.errorMessage=String(e);}finally{this.busy=false;}};};}
+      function panelApp(){return{view:"main",busy:false,statusMessage:"Ready",errorMessage:"",showSkipConfirm:false,newProfileName:"",settingsForm:{profile_name:"default",profiles:["default"],kalman_measurement_noise:10,saccade_threshold_px:80,snap_radius_px:50,scroll_speed_multiplier:1,camera_index:0,gaze_mode:"cursor_follow"},onboarding:{step_index:0,step_count:6,title:"",description:"",actions:[],skippable:false,skip_warning:"",notice:""},async init(){await this.refreshStatus();if(window.pywebview?.api){const s=await window.pywebview.api.get_onboarding_state();this.applyOnboarding(s);if(s.should_show)this.view="onboarding";}},applyOnboarding(s){if(!s)return;this.onboarding={step_index:s.step_index??0,step_count:s.step_count??6,title:s.title??"",description:s.description??"",actions:s.actions??[],skippable:!!s.skippable,skip_warning:s.skip_warning??"",notice:s.notice??""};},applySettings(s){if(!s)return;this.settingsForm={profile_name:s.profile_name??"default",profiles:s.profiles??["default"],kalman_measurement_noise:s.kalman_measurement_noise??10,saccade_threshold_px:s.saccade_threshold_px??80,snap_radius_px:s.snap_radius_px??50,scroll_speed_multiplier:s.scroll_speed_multiplier??1,camera_index:s.camera_index??0,gaze_mode:s.gaze_mode??"cursor_follow"};},async refreshStatus(){if(!window.pywebview?.api)return;const s=await window.pywebview.api.get_status();this.statusMessage=s.message??"Ready";const v=await window.pywebview.api.get_view();if(v.view)this.view=v.view;},async openSettings(){await this.run(async()=>{await window.pywebview.api.show_settings();this.view="settings";const s=await window.pywebview.api.get_settings_panel();this.applySettings(s);});},async saveSettings(){await this.run(async()=>{const r=await window.pywebview.api.save_settings_panel({...this.settingsForm});if(r.settings)this.applySettings(r.settings);this.statusMessage=r.message??"Settings saved";});},async createProfile(){await this.run(async()=>{const r=await window.pywebview.api.create_profile(this.newProfileName);if(r.profiles)this.settingsForm.profiles=r.profiles;if(!r.ok)this.errorMessage=r.message??"";else{this.newProfileName="";this.statusMessage=r.message??"";}});},async renameProfile(){const next=prompt("Rename profile to:",this.settingsForm.profile_name);if(!next)return;await this.run(async()=>{const r=await window.pywebview.api.rename_profile(this.settingsForm.profile_name,next);if(r.profiles)this.settingsForm.profiles=r.profiles;if(r.profile_name)this.settingsForm.profile_name=r.profile_name;if(!r.ok)this.errorMessage=r.message??"";else this.statusMessage=r.message??"";});},async deleteProfile(){if(!confirm("Delete profile "+this.settingsForm.profile_name+"?"))return;await this.run(async()=>{const r=await window.pywebview.api.delete_profile(this.settingsForm.profile_name);if(r.profiles)this.settingsForm.profiles=r.profiles;if(!r.ok)this.errorMessage=r.message??"";else this.statusMessage=r.message??"";});},async activateProfile(){await this.run(async()=>{const r=await window.pywebview.api.activate_profile(this.settingsForm.profile_name);if(r.profiles)this.settingsForm.profiles=r.profiles;if(r.profile_name)this.settingsForm.profile_name=r.profile_name;if(!r.ok)this.errorMessage=r.message??"";});},async checkUpdates(){await this.run(async()=>{const r=await window.pywebview.api.check_for_updates();this.statusMessage=r.message??"";});},async calibrate(){await this.run(async()=>{const r=await window.pywebview.api.start_calibrate();this.statusMessage=r.message??"";});},async launch(){await this.run(async()=>{const r=await window.pywebview.api.start_launch();this.statusMessage=r.message??"";});},async runOnboardingAction(id){const map={next:()=>window.pywebview.api.onboarding_advance(),finish:()=>window.pywebview.api.onboarding_complete(),check_camera:()=>window.pywebview.api.onboarding_check_camera(),run_polynomial:()=>window.pywebview.api.onboarding_run_polynomial(),run_offset:()=>window.pywebview.api.onboarding_run_offset(),run_gestures:()=>window.pywebview.api.onboarding_run_gestures()};if(!map[id])return;await this.run(async()=>{const r=await map[id]();if(r.state)this.applyOnboarding(r.state);if(r.message)this.statusMessage=r.message;if(!r.ok&&r.message)this.errorMessage=r.message;if(id==="finish")this.view="main";});},async confirmSkip(){this.showSkipConfirm=false;await this.run(async()=>{const r=await window.pywebview.api.onboarding_skip(true);if(r.state)this.applyOnboarding(r.state);});},async goMain(){if(window.pywebview?.api){const r=await window.pywebview.api.show_main();this.view=r.view??"main";}else this.view="main";this.errorMessage="";},async run(fn){if(!window.pywebview?.api){this.errorMessage="Python bridge unavailable";return;}this.busy=true;this.errorMessage="";try{await fn();}catch(e){this.errorMessage=String(e);}finally{this.busy=false;}};};}
     </script>
   </body>
 </html>
