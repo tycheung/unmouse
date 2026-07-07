@@ -19,7 +19,11 @@ poetry install
 poetry run pytest
 poetry run ruff check src tests
 poetry run mypy src
+poetry run python scripts/check_epic_size.py
 ```
+
+Before committing feature work, run `check_epic_size.py` to ensure the diff against `main`
+stays within the **600-line epic budget** (additions + modifications; `poetry.lock` excluded).
 
 ## Run
 
