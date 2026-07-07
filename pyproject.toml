@@ -9,6 +9,8 @@ packages = [{ include = "unmouse", from = "src" }]
 [tool.poetry.dependencies]
 python = "^3.10"
 pydantic-settings = "^2.2"
+numpy = "^1.26"
+opencv-python = "^4.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -19,6 +21,7 @@ ruff = "^0.4"
 
 [tool.poetry.scripts]
 unmouse = "unmouse.main:run"
+unmouse-engine = "unmouse.engine:run"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
