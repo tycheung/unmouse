@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     mle_margin_min: float = Field(default=5.0, ge=0)
     mle_absolute_min: float = -800.0
     scroll_activation_delay_ms: int = Field(default=500, ge=0)
+    scroll_release_debounce_ms: int = Field(default=200, ge=0)
     snap_radius_px: float = Field(default=50.0, gt=0)
 
     camera_index: int = Field(default=0, ge=0)
