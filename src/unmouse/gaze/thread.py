@@ -9,6 +9,7 @@ from unmouse.broker.video_broker import drain_latest
 from unmouse.config import Settings
 from unmouse.gaze.calibration import load_calibration
 from unmouse.gaze.display import DisplayMapper, probe_virtual_desktop
+from unmouse.gaze.offset_profile import load_offset_profile_for_settings
 from unmouse.gaze.pipeline import GazePipeline
 from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker
 from unmouse.state import SystemState
@@ -32,6 +33,7 @@ class GazeWorker:
                 settings,
                 calibration=calibration,
                 display=DisplayMapper(desktop),
+                offset_profile=load_offset_profile_for_settings(settings),
             )
         self._pipeline = pipeline
         self._thread: threading.Thread | None = None
