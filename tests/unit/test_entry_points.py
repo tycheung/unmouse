@@ -1,0 +1,30 @@
+"""Unit tests for module entry points."""
+
+from __future__ import annotations
+
+from unittest.mock import patch
+
+import unmouse.__main__ as main_module
+from unmouse.engine import run as run_engine_entry
+
+
+def test_main_runs_launcher_by_default() -> None:
+    with patch.object(main_module, "run_launcher") as launcher:
+        with patch.object(main_module.sys, "argv", ["unmouse"]):
+            main_module.main()
+    launcher.assert_called_once()
+
+
+def test_main_engine_flag_runs_engine() -> None:
+    with patch.object(main_module, "run_engine") as engine:
+        with patch.object(main_module.sys, "argv", ["unmouse", "--engine"]):
+            main_module.main()
+    engine.assert_called_once()
+
+
+def test_engine_entry_delegates_to_run_engine() -> None:
+    with patch("unmouse.engine.run_engine") as run_engine:
+        with patch("unmouse.engine.get_settings") as get_settings:
+            settings = get_settings.return_value
+            run_engine_entry()
+    run_engine.assert_called_once_with(settings)

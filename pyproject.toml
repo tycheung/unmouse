@@ -30,7 +30,7 @@ unmouse-engine = "unmouse.engine:run"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra --cov=unmouse --cov-fail-under=85 --cov-report=term-missing"
 
 [tool.ruff]
 line-length = 100

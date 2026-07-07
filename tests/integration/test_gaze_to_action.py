@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import time
-from pathlib import Path
 
 import numpy as np
 
+from tests.conftest import load_landmark_fixture
 from unmouse.arbitrator.actions import FakeActionDriver
 from unmouse.arbitrator.controller import ActionController
 from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
@@ -22,14 +21,6 @@ from unmouse.gestures.landmarks import HandLandmarks, LandmarkDetectionResult
 from unmouse.gestures.scroll_fsm import ScrollFsm
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state
-
-FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "gestures"
-
-
-def _load_fixture(name: str) -> HandLandmarks:
-    data = json.loads((FIXTURES_DIR / f"{name}.json").read_text(encoding="utf-8"))
-    points = tuple(tuple(float(value) for value in point) for point in data["points"])
-    return HandLandmarks(points=points, handedness=str(data.get("handedness", "Right")))
 
 
 class _SequenceDetector:
@@ -187,10 +178,12 @@ def test_gaze_to_action_executes_gesture_click_at_gaze_point() -> None:
     from unmouse.gestures.enrollment import default_gestures_dir
     from unmouse.gestures.mle import load_gesture_library
 
+    v_sign = load_landmark_fixture("v_sign")
+    pinch_close = load_landmark_fixture("pinch_close")
     gesture_worker = GestureWorker(
         state,
         settings,
-        detector=_SequenceDetector([_load_fixture("v_sign"), _load_fixture("pinch_close")]),
+        detector=_SequenceDetector([v_sign, pinch_close]),
         library=load_gesture_library(default_gestures_dir()),
         click_fsm=ClickFsm(),
         scroll_fsm=ScrollFsm(activation_delay_s=0.0),

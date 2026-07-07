@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
-from pathlib import Path
 
 import numpy as np
 import pytest
 
+from tests.conftest import load_landmark_fixture
 from unmouse.config import Settings
 from unmouse.gestures.angles import compute_joint_angle_vector
 from unmouse.gestures.enrollment import default_gestures_dir, synthetic_landmarks
@@ -22,16 +21,6 @@ from unmouse.gestures.mle import classify, load_gesture_library
 from unmouse.gestures.scroll_fsm import ScrollFsm
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state
-
-FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "gestures"
-
-
-def load_landmark_fixture(name: str) -> HandLandmarks:
-    path = FIXTURES_DIR / f"{name}.json"
-    data = json.loads(path.read_text(encoding="utf-8"))
-    points = tuple(tuple(float(value) for value in point) for point in data["points"])
-    handedness = str(data.get("handedness", "Right"))
-    return HandLandmarks(points=points, handedness=handedness)
 
 
 class SequenceHandDetector:

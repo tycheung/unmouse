@@ -1,12 +1,21 @@
-"""Shared pytest fixtures for synthetic hand landmarks."""
+"""Shared pytest fixtures for unmouse tests."""
 
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 import pytest
 
+from unmouse.config import Settings
+from unmouse.gestures.enrollment import default_gestures_dir
 from unmouse.gestures.landmarks import NUM_HAND_LANDMARKS, HandLandmarks
+from unmouse.gestures.mle import GestureLibrary, load_gesture_library
+from unmouse.state import SystemState, create_system_state
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "gestures"
 
 
 def _as_landmark_points(points: npt.NDArray[np.float64]) -> tuple[tuple[float, float, float], ...]:
@@ -15,6 +24,34 @@ def _as_landmark_points(points: npt.NDArray[np.float64]) -> tuple[tuple[float, f
 
 def _blank_hand() -> npt.NDArray[np.float64]:
     return np.zeros((NUM_HAND_LANDMARKS, 3), dtype=np.float64)
+
+
+def load_landmark_fixture(name: str) -> HandLandmarks:
+    path = FIXTURES_DIR / f"{name}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    points = tuple(tuple(float(value) for value in point) for point in data["points"])
+    handedness = str(data.get("handedness", "Right"))
+    return HandLandmarks(points=points, handedness=handedness)
+
+
+@pytest.fixture
+def settings() -> Settings:
+    return Settings(screen_width=800, screen_height=600, broker_queue_size=2)
+
+
+@pytest.fixture
+def system_state(settings: Settings) -> SystemState:
+    return create_system_state(settings)
+
+
+@pytest.fixture
+def test_frame() -> npt.NDArray[np.uint8]:
+    return np.zeros((24, 32, 3), dtype=np.uint8)
+
+
+@pytest.fixture
+def gesture_library() -> GestureLibrary:
+    return load_gesture_library(default_gestures_dir())
 
 
 @pytest.fixture
