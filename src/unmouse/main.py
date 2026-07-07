@@ -14,13 +14,19 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     runtime_state = state or create_system_state(settings)
     _install_signal_handlers(runtime_state)
 
+    from unmouse.arbitrator.controller import ActionController
     from unmouse.broker.video_broker import VideoBroker
     from unmouse.gaze.thread import GazeWorker
+    from unmouse.gestures.thread import GestureWorker
 
     broker = VideoBroker(runtime_state, settings)
     gaze_worker = GazeWorker(runtime_state, settings)
+    gesture_worker = GestureWorker(runtime_state, settings)
+    controller = ActionController(runtime_state, settings, enable_overlay=False)
     broker.start()
     gaze_worker.start()
+    gesture_worker.start()
+    controller.start()
 
     print(f"unmouse engine — screen {settings.screen_width}x{settings.screen_height}")
     try:
@@ -29,6 +35,9 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     except KeyboardInterrupt:
         runtime_state.stop()
     finally:
+        controller.stop()
+        controller.join(timeout=1.0)
+        gesture_worker.join(timeout=1.0)
         gaze_worker.join(timeout=1.0)
         broker.join(timeout=1.0)
         print("unmouse engine stopped.")

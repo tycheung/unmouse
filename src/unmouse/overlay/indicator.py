@@ -332,10 +332,11 @@ def indicator_state_from_system(
     system: SystemState,
     *,
     sampler: LuminanceSampler | None = None,
-    scroll_up: bool = True,
+    scroll_up: bool | None = None,
     visible: bool = True,
 ) -> IndicatorState:
     gaze = system.get_gaze()
+    direction_up = system.scroll_up if scroll_up is None else scroll_up
     return compose_indicator_state(
         gaze.x,
         gaze.y,
@@ -343,7 +344,7 @@ def indicator_state_from_system(
             click_mode=system.click_mode,
             right_click=system.right_click_intent,
             scroll_active=system.scroll_active,
-            scroll_up=scroll_up,
+            scroll_up=direction_up,
         ),
         sampler=sampler,
         visible=visible,

@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from queue import Queue
+from queue import Empty, Full, Queue
+from typing import TypeVar
 
 from unmouse.config import Settings
+from unmouse.gestures.fsm import ClickEvent
+from unmouse.gestures.scroll_fsm import ScrollTick
+
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True)
@@ -24,10 +29,13 @@ class SystemState:
     click_mode: bool = False
     right_click_intent: bool = False
     scroll_active: bool = False
+    scroll_up: bool = True
     head_pose_ok: bool = True
     running: bool = True
     gaze_frame_queue: Queue[tuple[int, object]] | None = None
     gesture_frame_queue: Queue[tuple[int, object]] | None = None
+    click_event_queue: Queue[ClickEvent] | None = None
+    scroll_tick_queue: Queue[ScrollTick] | None = None
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
 
     def get_gaze(self) -> GazeSnapshot:
@@ -46,9 +54,20 @@ class SystemState:
             if active:
                 self.right_click_intent = right_click
 
-    def set_scroll_active(self, active: bool) -> None:
+    def set_scroll_active(self, active: bool, *, scroll_up: bool = True) -> None:
         with self._lock:
             self.scroll_active = active
+            if active:
+                self.scroll_up = scroll_up
+
+    def enqueue_click_event(self, event: ClickEvent) -> None:
+        with self._lock:
+            _offer(self.click_event_queue, event)
+
+    def enqueue_scroll_tick(self, tick: ScrollTick) -> None:
+        with self._lock:
+            _offer(self.scroll_tick_queue, tick)
+            self.scroll_up = tick.delta > 0
 
     def set_head_pose_ok(self, ok: bool) -> None:
         with self._lock:
@@ -64,9 +83,28 @@ class SystemState:
 
 
 def create_system_state(settings: Settings) -> SystemState:
+    queue_size = settings.broker_queue_size
     return SystemState(
         gaze_x=settings.screen_width / 2,
         gaze_y=settings.screen_height / 2,
-        gaze_frame_queue=Queue(maxsize=settings.broker_queue_size),
-        gesture_frame_queue=Queue(maxsize=settings.broker_queue_size),
+        gaze_frame_queue=Queue(maxsize=queue_size),
+        gesture_frame_queue=Queue(maxsize=queue_size),
+        click_event_queue=Queue(maxsize=queue_size),
+        scroll_tick_queue=Queue(maxsize=queue_size),
     )
+
+
+def _offer(queue: Queue[_T] | None, item: _T) -> None:
+    if queue is None:
+        return
+    try:
+        queue.put_nowait(item)
+    except Full:
+        try:
+            queue.get_nowait()
+        except Empty:
+            pass
+        try:
+            queue.put_nowait(item)
+        except Full:
+            pass
