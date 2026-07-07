@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     saccade_threshold_px: float = Field(default=80.0, gt=0)
     pinch_threshold: float = Field(default=0.03, gt=0)
     v_sign_log_likelihood_min: float = -800.0
+    v_sign_loss_debounce_ms: int = Field(default=300, ge=0)
     mle_margin_min: float = Field(default=5.0, ge=0)
     mle_absolute_min: float = -800.0
     scroll_activation_delay_ms: int = Field(default=500, ge=0)
