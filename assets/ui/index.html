@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>unmouse</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="alpine.min.js"></script>
+  </head>
+  <body x-data="panelApp()" x-init="init()">
+    <div class="panel">
+      <header class="panel-header">
+        <h1>unmouse</h1>
+      </header>
+
+      <section class="actions" x-show="view === 'main'" x-cloak>
+        <button type="button" @click="checkUpdates()" :disabled="busy">
+          Update Software
+          <span class="update-badge" x-show="updateAvailable" aria-hidden="true"></span>
+        </button>
+        <button type="button" @click="calibrate()" :disabled="busy">Calibrate</button>
+        <button type="button" class="primary" @click="launch()" :disabled="busy">Launch</button>
+      </section>
+
+      <section class="placeholder-view" x-show="view === 'settings'" x-cloak>
+        <h2>Settings</h2>
+        <p>
+          Sensitivity, snap radius, scroll speed, camera, gaze mode, and profile management
+          will appear here in a future release.
+        </p>
+        <button type="button" class="back-link" @click="goMain()">← Back</button>
+      </section>
+
+      <section class="placeholder-view" x-show="view === 'onboarding'" x-cloak>
+        <h2>Welcome</h2>
+        <p>
+          First-run onboarding — camera check, calibration, and gesture enrollment — will
+          guide new users through setup here.
+        </p>
+        <button type="button" class="back-link" @click="goMain()">← Back</button>
+      </section>
+
+      <footer class="status-bar">
+        <span class="message" x-text="statusMessage">Ready</span>
+        <span class="sep" x-show="fps !== null"><span x-text="'FPS ' + fps"></span></span>
+        <span class="sep" x-show="confidence !== null">
+          <span x-text="'Conf ' + confidence + '%'"></span>
+        </span>
+        <span class="sep" x-show="tracking"><span>Tracking</span></span>
+        <span class="error" x-show="errorMessage" x-text="errorMessage"></span>
+      </footer>
+    </div>
+
+    <script>
+      function panelApp() {
+        return {
+          view: "main",
+          busy: false,
+          updateAvailable: false,
+          statusMessage: "Ready",
+          errorMessage: "",
+          fps: null,
+          confidence: null,
+          tracking: false,
+
+          async init() {
+            await this.refreshStatus();
+          },
+
+          async refreshStatus() {
+            if (!window.pywebview?.api) {
+              return;
+            }
+            try {
+              const status = await window.pywebview.api.get_status();
+              this.statusMessage = status.message ?? "Ready";
+              this.fps = status.fps ?? null;
+              this.confidence =
+                status.confidence == null ? null : Math.round(status.confidence * 100);
+              this.tracking = Boolean(status.tracking);
+            } catch (error) {
+              this.errorMessage = String(error);
+            }
+          },
+
+          async checkUpdates() {
+            await this.runAction(async () => {
+              const result = await window.pywebview.api.check_for_updates();
+              this.updateAvailable = Boolean(result.available);
+              this.statusMessage = result.message ?? "Update check complete";
+            });
+          },
+
+          async calibrate() {
+            await this.runAction(async () => {
+              const result = await window.pywebview.api.start_calibrate();
+              this.statusMessage = result.message ?? "Calibrate";
+              if (!result.ok) {
+                this.errorMessage = result.message ?? "";
+              }
+            });
+          },
+
+          async launch() {
+            await this.runAction(async () => {
+              const result = await window.pywebview.api.start_launch();
+              this.statusMessage = result.message ?? "Launch";
+              if (!result.ok) {
+                this.errorMessage = result.message ?? "";
+              }
+            });
+          },
+
+          async goMain() {
+            if (window.pywebview?.api) {
+              const result = await window.pywebview.api.show_main();
+              this.view = result.view ?? "main";
+            } else {
+              this.view = "main";
+            }
+            this.errorMessage = "";
+          },
+
+          async runAction(action) {
+            if (!window.pywebview?.api) {
+              this.errorMessage = "Python bridge unavailable";
+              return;
+            }
+            this.busy = true;
+            this.errorMessage = "";
+            try {
+              await action();
+            } catch (error) {
+              this.errorMessage = String(error);
+            } finally {
+              this.busy = false;
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

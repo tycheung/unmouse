@@ -15,6 +15,7 @@ filterpy = "^1.4"
 mss = "^9.0"
 mediapipe = "^0.10"
 pyautogui = "^0.9"
+pywebview = "^5.0"
 uiautomation = { version = "^2.0", markers = "sys_platform == 'win32'" }
 
 [tool.poetry.group.dev.dependencies]
@@ -27,6 +28,7 @@ ruff = "^0.4"
 [tool.poetry.scripts]
 unmouse = "unmouse.main:run"
 unmouse-engine = "unmouse.engine:run"
+unmouse-panel = "unmouse.launcher.panel:run"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
