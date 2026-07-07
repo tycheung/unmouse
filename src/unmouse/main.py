@@ -15,9 +15,12 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     _install_signal_handlers(runtime_state)
 
     from unmouse.broker.video_broker import VideoBroker
+    from unmouse.gaze.thread import GazeWorker
 
     broker = VideoBroker(runtime_state, settings)
+    gaze_worker = GazeWorker(runtime_state, settings)
     broker.start()
+    gaze_worker.start()
 
     print(f"unmouse engine — screen {settings.screen_width}x{settings.screen_height}")
     try:
@@ -26,6 +29,7 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     except KeyboardInterrupt:
         runtime_state.stop()
     finally:
+        gaze_worker.join(timeout=1.0)
         broker.join(timeout=1.0)
         print("unmouse engine stopped.")
 
