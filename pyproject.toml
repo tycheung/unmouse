@@ -12,6 +12,7 @@ pydantic-settings = "^2.2"
 numpy = "^1.26"
 opencv-python = "^4.9"
 filterpy = "^1.4"
+mss = "^9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

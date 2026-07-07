@@ -818,6 +818,22 @@ pyparsing = ">=3"
 python-dateutil = ">=2.7"
 
 [[package]]
+name = "mss"
+version = "9.0.2"
+description = "An ultra fast cross-platform multiple screenshots module in pure python using ctypes."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "mss-9.0.2-py3-none-any.whl", hash = "sha256:685fa442cc96d8d88b4eb7aadbcccca7b858e789c9259b603e1ef0e435b60425"},
+    {file = "mss-9.0.2.tar.gz", hash = "sha256:c96a4ec73224da7db22bc07ef3cfaa18f8b86900d1872e29113bbcef0093a21e"},
+]
+
+[package.extras]
+dev = ["build (==1.2.1)", "mypy (==1.11.2)", "ruff (==0.6.3)", "twine (==5.1.1)", "wheel (==0.44.0)"]
+test = ["numpy (==2.1.0) ; sys_platform == \"windows\" and python_version >= \"3.13\"", "pillow (==10.4.0)", "pytest (==8.3.2)", "pytest-cov (==5.0.0)", "pytest-rerunfailures (==14.0.0)", "pyvirtualdisplay (==3.0) ; sys_platform == \"linux\"", "sphinx (==8.0.2)"]
+
+[[package]]
 name = "mypy"
 version = "1.20.2"
 description = "Optional static typing for Python"
@@ -1694,4 +1710,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "16071b6ef34671a96474f2742bcbfc7a670c6d4f5db2742ee58d587e0961046e"
+content-hash = "e009802548fe20ca69c11658804f080ca2bb04030bb72fc7befd75f3472391b1"
