@@ -1,0 +1,196 @@
+"""Window chrome snap targets for title-bar controls."""
+
+from __future__ import annotations
+
+import sys
+import time
+from dataclasses import dataclass
+from typing import Protocol
+
+from unmouse.arbitrator.snap import CompositeSnapOrchestrator, SnapProvider, SnapRect, SnapTarget
+
+DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
+DEFAULT_CHROME_BUTTON_WIDTH = 46.0
+DEFAULT_TITLE_BAR_HEIGHT = 32.0
+CHROME_SNAP_PRIORITY = 10
+
+
+@dataclass(frozen=True)
+class WindowRect:
+    left: float
+    top: float
+    right: float
+    bottom: float
+
+
+@dataclass(frozen=True)
+class ChromeButton:
+    role: str
+    bounds: SnapRect
+
+
+class WindowChromeReader(Protocol):
+    def read_buttons(self) -> tuple[ChromeButton, ...]: ...
+
+
+@dataclass
+class MockWindowChromeReader:
+    buttons: tuple[ChromeButton, ...]
+    calls: int = 0
+
+    def read_buttons(self) -> tuple[ChromeButton, ...]:
+        self.calls += 1
+        return self.buttons
+
+
+class Win32WindowChromeReader:
+    """Resolve foreground window bounds and derive title-bar button geometry."""
+
+    def __init__(
+        self,
+        *,
+        button_width: float = DEFAULT_CHROME_BUTTON_WIDTH,
+        title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
+    ) -> None:
+        self._button_width = button_width
+        self._title_bar_height = title_bar_height
+
+    def read_buttons(self) -> tuple[ChromeButton, ...]:
+        window = read_foreground_window_rect()
+        if window is None:
+            return ()
+        return build_heuristic_chrome_buttons(
+            window,
+            button_width=self._button_width,
+            title_bar_height=self._title_bar_height,
+        )
+
+
+class WindowChromeSnapProvider:
+    """SnapProvider for minimize, maximize, and close controls."""
+
+    def __init__(
+        self,
+        reader: WindowChromeReader | None = None,
+        *,
+        cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
+        priority: int = CHROME_SNAP_PRIORITY,
+    ) -> None:
+        self._reader = reader or _create_default_reader()
+        self._cache_interval_s = cache_interval_s
+        self._priority = priority
+        self._cached_targets: tuple[SnapTarget, ...] = ()
+        self._cached_at = -float("inf")
+
+    def list_targets(self) -> tuple[SnapTarget, ...]:
+        now = time.monotonic()
+        if now - self._cached_at >= self._cache_interval_s:
+            self._refresh(now)
+        return self._cached_targets
+
+    def refresh(self) -> tuple[SnapTarget, ...]:
+        self._refresh(time.monotonic())
+        return self._cached_targets
+
+    def _refresh(self, now: float) -> None:
+        try:
+            buttons = self._reader.read_buttons()
+            self._cached_targets = chrome_buttons_to_snap_targets(buttons, priority=self._priority)
+        except OSError:
+            self._cached_targets = ()
+        self._cached_at = now
+
+
+def build_heuristic_chrome_buttons(
+    window: WindowRect,
+    *,
+    button_width: float = DEFAULT_CHROME_BUTTON_WIDTH,
+    title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
+) -> tuple[ChromeButton, ...]:
+    """Build right-aligned minimize/maximize/close boxes for a window rect."""
+    buttons: list[ChromeButton] = []
+    for index, role in enumerate(("close", "maximize", "minimize")):
+        x = window.right - (index + 1) * button_width
+        bounds = SnapRect(x=x, y=window.top, width=button_width, height=title_bar_height)
+        buttons.append(ChromeButton(role=role, bounds=bounds))
+    return tuple(buttons)
+
+
+def chrome_buttons_to_snap_targets(
+    buttons: tuple[ChromeButton, ...],
+    *,
+    priority: int = CHROME_SNAP_PRIORITY,
+) -> tuple[SnapTarget, ...]:
+    return tuple(
+        SnapTarget(
+            target_id=f"chrome:{button.role}",
+            bounds=button.bounds,
+            priority=priority,
+        )
+        for button in buttons
+    )
+
+
+def gaze_in_title_bar_band(
+    gaze_y: float,
+    window: WindowRect,
+    *,
+    title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
+) -> bool:
+    return window.top <= gaze_y <= window.top + title_bar_height
+
+
+def read_foreground_window_rect() -> WindowRect | None:
+    if sys.platform != "win32":
+        return None
+
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    hwnd = user32.GetForegroundWindow()
+    if not hwnd:
+        return None
+
+    rect = wintypes.RECT()
+    if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+        return None
+
+    return WindowRect(
+        left=float(rect.left),
+        top=float(rect.top),
+        right=float(rect.right),
+        bottom=float(rect.bottom),
+    )
+
+
+def create_window_chrome_provider(
+    *,
+    cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
+    prefer_win32: bool = True,
+) -> SnapProvider:
+    if prefer_win32 and sys.platform == "win32":
+        return WindowChromeSnapProvider(cache_interval_s=cache_interval_s)
+    return WindowChromeSnapProvider(
+        reader=MockWindowChromeReader(buttons=()),
+        cache_interval_s=cache_interval_s,
+    )
+
+
+def create_snap_orchestrator(
+    *,
+    chrome_provider: SnapProvider | None = None,
+    extra_providers: tuple[SnapProvider, ...] = (),
+) -> CompositeSnapOrchestrator:
+    """Compose chrome-first snap providers for the action arbitrator."""
+    providers: list[SnapProvider] = []
+    if chrome_provider is not None:
+        providers.append(chrome_provider)
+    providers.extend(extra_providers)
+    return CompositeSnapOrchestrator(providers)
+
+
+def _create_default_reader() -> WindowChromeReader:
+    if sys.platform == "win32":
+        return Win32WindowChromeReader()
+    return MockWindowChromeReader(buttons=())
