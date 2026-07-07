@@ -48,6 +48,12 @@ class Settings(BaseSettings):
 
     broker_queue_size: int = Field(default=2, ge=1, le=8)
 
+    gaze_confidence_min: float = Field(default=0.4, ge=0.0, le=1.0)
+    head_pose_drift_deg: float = Field(default=15.0, gt=0)
+    head_pose_drift_dwell_s: float = Field(default=2.0, gt=0)
+    kalman_measurement_noise: float = Field(default=10.0, gt=0)
+    kalman_process_noise: float = Field(default=0.1, gt=0)
+
     @property
     def app_data_dir(self) -> Path:
         appdata = os.environ.get("APPDATA")
