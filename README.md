@@ -5,13 +5,14 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 ## Features
 
 - Gaze-to-cursor tracking powered by [eyeGestures](https://pypi.org/project/eyeGestures/)
+- Primary monitor auto-detection for gaze coordinate mapping
 - Guided gaze calibration wizard with per-profile model persistence
 - Hand-gesture recognition (V-sign click mode, pinch click, thumbs-up scroll)
 - UI snapping via accessibility tree and window chrome targets
 - Control panel (Alpine.js + pywebview): onboarding, settings, enrollment, launch
 - System tray integration with pause/resume and gaze-only mode
 - Live FPS and fixation metrics in the panel while tracking
-- Optional git/release update checker
+- Release update checker in the frozen executable
 
 ## Requirements
 
@@ -38,7 +39,7 @@ poetry run unmouse
 | `python -m unmouse --engine` | Engine subprocess entry (used by Launch) |
 | `python -m unmouse --smoke` | Import and asset smoke check (no UI) |
 
-User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, settings, `diagnostics.json`).
+User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, `settings.json`, `runtime.json`, logs, `diagnostics.json`).
 
 ## Quality gates
 
@@ -85,6 +86,8 @@ Backends
   └─ Test doubles live in tests/fakes and are injected explicitly
 ```
 
+Calibration, gesture enrollment, and onboarding camera checks **stop the tracking engine** while the launcher uses the webcam, then restart tracking if it was active.
+
 ## Project layout
 
 ```
@@ -92,7 +95,7 @@ assets/ui/              Control panel HTML/CSS/Alpine.js (+ panel.js)
 assets/gestures/        Default gesture templates
 src/unmouse/            Application package
   main.py               Engine orchestrator and --engine CLI entry
-  persistence.py        Shared settings persistence
+  persistence.py        Settings, launcher flags, and runtime pause state
   platform.py           Platform detection helpers
   launcher/             Panel shell, PanelApi, calibration wizards, onboarding, tray
   overlay/              Gaze indicator + shared Tk overlay helpers

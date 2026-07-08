@@ -5,8 +5,7 @@ import numpy as np
 from tests.fakes.gaze import FakeGazeTracker
 from unmouse.config import Settings
 from unmouse.gaze.tracker import gaze_model_path, load_gaze_model
-from unmouse.launcher.calibration_wizards import run_calibration_wizard
-from unmouse.launcher.calibration_wizards import NoopWizardOverlayBackend
+from unmouse.launcher.calibration_wizards import NoopWizardOverlayBackend, run_calibration_wizard
 
 _TARGETS = ((0.0, 0.0), (0.5, 0.5), (1.0, 1.0), (0.25, 0.75))
 

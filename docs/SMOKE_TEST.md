@@ -50,18 +50,19 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 ## Calibration (post-onboarding)
 
-- [ ] **Calibrate** runs the gaze calibration wizard and saves a model
+- [ ] **Calibrate** pauses tracking, runs the gaze calibration wizard, saves a model, then resumes tracking if it was active
 - [ ] Footer shows updated calibration date after save
 
 ## Gestures
 
-- [ ] **Train Gestures** opens enrollment with camera preview
+- [ ] **Train Gestures** pauses tracking, opens enrollment with camera preview, then resumes tracking when done
 - [ ] Capture flow saves templates to active profile
 - [ ] V-sign enters Click Mode; pinch click fires; thumbs-up scroll zone works in engine session
 
 ## Updates & diagnostics
 
-- [ ] **Update Software** check returns a message (git dev install or release channel)
+- [ ] **Update Software** in dev install reports that updates apply to the release build
+- [ ] **Update Software** in `unmouse.exe` checks GitHub releases when a newer version exists
 - [ ] `%APPDATA%/unmouse/logs/unmouse.log` receives entries after launch
 - [ ] `%APPDATA%/unmouse/diagnostics.json` updates while the engine runs
 - [ ] With `UNMOUSE_DEBUG=true`, verbose diagnostics lines appear in the log

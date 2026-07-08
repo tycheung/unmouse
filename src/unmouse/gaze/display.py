@@ -32,7 +32,7 @@ class VirtualDesktop:
 
 def detect_primary_monitor_size() -> tuple[int, int] | None:
     try:
-        import pyautogui
+        import pyautogui  # type: ignore[import-untyped]
 
         size = pyautogui.size()
         return int(size.width), int(size.height)

@@ -29,7 +29,7 @@ class CalibrationTarget:
 
 
 class EyeGesturesEngine(Protocol):
-    def uploadCalibrationMap(  # noqa: N802 - matches eyeGestures API
+    def uploadCalibrationMap(  # noqa: N802
         self, points: Any, context: str
     ) -> None: ...
 

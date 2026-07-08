@@ -201,7 +201,10 @@ def test_panel_api_calibrate_stops_engine_for_camera_access() -> None:
         camera_free["during"] = not runner.is_running()
         return ActionResult(True, "Calibration saved (9 points).")
 
-    with patch("unmouse.launcher.calibration_wizards.run_calibration_wizard", side_effect=run_wizard):
+    with patch(
+        "unmouse.launcher.calibration_wizards.run_calibration_wizard",
+        side_effect=run_wizard,
+    ):
         api.start_calibrate()
 
     assert camera_free["during"] is True

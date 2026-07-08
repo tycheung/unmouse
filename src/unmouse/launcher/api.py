@@ -8,6 +8,7 @@ from typing import Literal
 
 from unmouse.config import GazeMode, Settings
 from unmouse.diagnostics import load_diagnostics_snapshot
+from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
@@ -22,7 +23,6 @@ from unmouse.launcher.settings import (
 )
 from unmouse.launcher.tray import TrayBackend, TrayHandlers, create_tray_backend
 from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
-from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.persistence import (
     RuntimeState,
     load_persisted_settings,
@@ -448,12 +448,21 @@ class PanelApi:
             if self._on_quit_app is not None:
                 self._on_quit_app()
 
+        def stop_tracking() -> None:
+            self.stop_engine()
+
+        def toggle_pause_menu() -> None:
+            self.toggle_pause()
+
+        def toggle_gaze_menu() -> None:
+            self.toggle_gaze_mode()
+
         return TrayHandlers(
             on_show=show_panel,
-            on_stop=self.stop_engine,
+            on_stop=stop_tracking,
             on_quit=quit_app,
-            on_pause_toggle=self.toggle_pause,
-            on_gaze_toggle=self.toggle_gaze_mode,
+            on_pause_toggle=toggle_pause_menu,
+            on_gaze_toggle=toggle_gaze_menu,
             pause_label=lambda: (
                 "Resume Tracking" if load_runtime(settings).paused else "Pause Tracking"
             ),
