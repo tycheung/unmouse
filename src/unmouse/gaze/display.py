@@ -14,7 +14,12 @@ class VirtualDesktop:
 
     @classmethod
     def from_settings(cls, settings: Settings) -> VirtualDesktop:
-        return cls(left=0, top=0, width=settings.screen_width, height=settings.screen_height)
+        detected = detect_primary_monitor_size()
+        if detected is not None:
+            width, height = detected
+        else:
+            width, height = settings.screen_width, settings.screen_height
+        return cls(left=0, top=0, width=width, height=height)
 
     def clip(self, x: float, y: float) -> tuple[float, float]:
         max_x = float(self.left + self.width - 1)
@@ -23,3 +28,13 @@ class VirtualDesktop:
             max(float(self.left), min(x, max_x)),
             max(float(self.top), min(y, max_y)),
         )
+
+
+def detect_primary_monitor_size() -> tuple[int, int] | None:
+    try:
+        import pyautogui
+
+        size = pyautogui.size()
+        return int(size.width), int(size.height)
+    except Exception:
+        return None
