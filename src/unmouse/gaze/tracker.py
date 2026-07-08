@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import importlib
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import numpy as np
 import numpy.typing as npt
+
+from unmouse.utils.backend_selection import prefer_or_fallback
 
 
 @dataclass(frozen=True)
@@ -57,9 +59,9 @@ class EyeGesturesTracker:
 
 
 def create_gaze_tracker(prefer_eyegestures: bool = True) -> GazeTracker:
-    if prefer_eyegestures:
-        try:
-            return EyeGesturesTracker()
-        except RuntimeError:
-            pass
-    return NullGazeTracker(x=960.0, y=540.0)
+    return prefer_or_fallback(
+        prefer=prefer_eyegestures,
+        make_preferred=lambda: cast(GazeTracker, EyeGesturesTracker()),
+        make_fallback=lambda: cast(GazeTracker, NullGazeTracker(x=960.0, y=540.0)),
+        exceptions=RuntimeError,
+    )

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import cv2
 import numpy as np
 import numpy.typing as npt
+
+from unmouse.utils.backend_selection import prefer_or_fallback
 
 NUM_HAND_LANDMARKS = 21
 LandmarkPoint = tuple[float, float, float]
@@ -107,12 +109,12 @@ def draw_hand_skeleton(
 
 
 def create_hand_detector(prefer_mediapipe: bool = True) -> HandLandmarkDetector:
-    if prefer_mediapipe:
-        try:
-            return MediaPipeHandDetector()
-        except ImportError:
-            pass
-    return NullHandLandmarkDetector()
+    return prefer_or_fallback(
+        prefer=prefer_mediapipe,
+        make_preferred=lambda: cast(HandLandmarkDetector, MediaPipeHandDetector()),
+        make_fallback=lambda: cast(HandLandmarkDetector, NullHandLandmarkDetector()),
+        exceptions=ImportError,
+    )
 
 
 def _handedness_labels(results: Any) -> list[str]:
