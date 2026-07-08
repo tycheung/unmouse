@@ -86,7 +86,7 @@ def test_calibrate_runs_polynomial_when_missing(
 
     def fake_poly(_settings: object) -> object:
         calls["polynomial"] += 1
-        from unmouse.launcher.polynomial_wizard import PolynomialWizardOutcome
+        from unmouse.launcher.calibration_wizards import PolynomialWizardOutcome
 
         return PolynomialWizardOutcome(
             success=True,
@@ -98,12 +98,12 @@ def test_calibrate_runs_polynomial_when_missing(
 
     def fake_offset(_settings: object) -> object:
         calls["offset"] += 1
-        from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
+        from unmouse.launcher.calibration_wizards import OffsetWizardOutcome
 
         return OffsetWizardOutcome(success=True, message="Offset profile saved (mock).")
 
-    monkeypatch.setattr("unmouse.launcher.polynomial_wizard.run_polynomial_wizard", fake_poly)
-    monkeypatch.setattr("unmouse.launcher.calibrate_wizard.run_offset_wizard", fake_offset)
+    monkeypatch.setattr("unmouse.launcher.calibration_wizards.run_polynomial_wizard", fake_poly)
+    monkeypatch.setattr("unmouse.launcher.calibration_wizards.run_offset_wizard", fake_offset)
 
     api = build_panel_api(tmp_path, monkeypatch, first_run=False)
     harness = E2EHarness(api)

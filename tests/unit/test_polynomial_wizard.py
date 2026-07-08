@@ -5,14 +5,17 @@ from __future__ import annotations
 from unmouse.config import Settings
 from unmouse.gaze.calibration import calibration_path, load_calibration, save_calibration
 from unmouse.launcher.calibration_overlay import create_calibration_overlay
-from unmouse.launcher.polynomial_wizard import (
+from unmouse.launcher.calibration_wizards import (
     NUM_POLY_TARGETS,
-    GazeSample,
     PolynomialWizardRunner,
     build_polynomial_targets,
+)
+from unmouse.launcher.wizard_common import (
+    FakeWizardOverlayBackend,
+    GazeSample,
+    filter_samples_for_point,
     geometric_mean_gaze,
 )
-from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, filter_samples_for_point
 
 
 def test_build_polynomial_targets_returns_nine_grid_points() -> None:

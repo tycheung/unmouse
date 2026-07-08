@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi, last_calibration_label
-from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
+from unmouse.launcher.calibration_wizards import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.results import ActionResult
@@ -60,7 +60,7 @@ def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
         "unmouse.gaze.calibration.load_calibration",
         return_value=object(),
     ), patch(
-        "unmouse.launcher.calibrate_wizard.run_offset_wizard",
+        "unmouse.launcher.calibration_wizards.run_offset_wizard",
         return_value=OffsetWizardOutcome(success=True, message="Offset profile saved."),
     ) as run_offset:
         calibrate = api.start_calibrate()

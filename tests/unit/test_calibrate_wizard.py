@@ -12,19 +12,16 @@ from unmouse.gaze.offset_profile import (
     load_offset_profile,
     offset_profile_path,
 )
-from unmouse.launcher.calibrate_wizard import (
+from unmouse.launcher.calibration_wizards import (
     NUM_OFFSET_TARGETS,
     OffsetWizardOutcome,
     OffsetWizardRunner,
     build_offset_targets,
+    build_polynomial_targets,
     polynomial_prerequisite_message,
     run_offset_wizard,
 )
-from unmouse.launcher.polynomial_wizard import (
-    FakeWizardOverlayBackend,
-    GazeSample,
-    build_polynomial_targets,
-)
+from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, GazeSample
 
 
 def _save_identity_polynomial(settings: Settings) -> None:

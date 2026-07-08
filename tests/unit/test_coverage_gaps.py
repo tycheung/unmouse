@@ -20,13 +20,11 @@ from unmouse.gestures.mle import (
     load_template,
 )
 from unmouse.gestures.scroll_fsm import ScrollTick
-from unmouse.launcher.polynomial_wizard import (
-    FakeWizardOverlayBackend,
-    GazeSample,
+from unmouse.launcher.calibration_wizards import (
     PolynomialWizardRunner,
-    geometric_mean_gaze,
     run_polynomial_wizard,
 )
+from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, GazeSample, geometric_mean_gaze
 from unmouse.main import run, run_engine
 from unmouse.overlay.indicator import FakeIndicatorBackend, GazeIndicatorOverlay, IndicatorState
 from unmouse.state import create_system_state

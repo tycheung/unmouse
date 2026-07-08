@@ -135,8 +135,7 @@ class PanelApi:
 
     def start_calibrate(self) -> dict[str, object]:
         from unmouse.gaze.calibration import calibration_path, load_calibration
-        from unmouse.launcher.calibrate_wizard import run_offset_wizard
-        from unmouse.launcher.polynomial_wizard import run_polynomial_wizard
+        from unmouse.launcher.calibration_wizards import run_offset_wizard, run_polynomial_wizard
 
         if load_calibration(calibration_path(self._state.settings)) is None:
             poly = run_polynomial_wizard(self._state.settings)

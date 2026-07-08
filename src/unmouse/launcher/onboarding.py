@@ -230,7 +230,7 @@ def default_camera_check(settings: Settings) -> CameraCheckResult:
 
 
 def default_polynomial_step(settings: Settings) -> ActionResult:
-    from unmouse.launcher.polynomial_wizard import run_polynomial_wizard
+    from unmouse.launcher.calibration_wizards import run_polynomial_wizard
 
     outcome = run_polynomial_wizard(settings)
     return ActionResult(
@@ -243,7 +243,7 @@ def default_polynomial_step(settings: Settings) -> ActionResult:
 def default_offset_step(settings: Settings) -> ActionResult:
     if load_offset_profile(offset_profile_path(settings)) is not None:
         return ActionResult(True, "Offset profile already saved.", step_complete=True)
-    from unmouse.launcher.calibrate_wizard import run_offset_wizard
+    from unmouse.launcher.calibration_wizards import run_offset_wizard
 
     outcome = run_offset_wizard(settings)
     return ActionResult(outcome.success, outcome.message, step_complete=outcome.success)

@@ -13,10 +13,7 @@ from tests.e2e.harness import E2EHarness
 from tests.fakes.enrollment import FakeEnrollmentSession
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
-from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
-from unmouse.launcher.engine_runner import EngineRunner
-from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
-from unmouse.launcher.polynomial_wizard import PolynomialWizardOutcome
+from unmouse.launcher.calibration_wizards import OffsetWizardOutcome, PolynomialWizardOutcome
 from unmouse.launcher.results import ActionResult
 from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
 from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
@@ -169,7 +166,7 @@ def onboarding_page(page, onboarding_harness: E2EHarness):
 
 def patch_calibration_wizards(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "unmouse.launcher.polynomial_wizard.run_polynomial_wizard",
+        "unmouse.launcher.calibration_wizards.run_polynomial_wizard",
         lambda _s: PolynomialWizardOutcome(
             success=True,
             model=None,
@@ -179,7 +176,7 @@ def patch_calibration_wizards(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
     monkeypatch.setattr(
-        "unmouse.launcher.calibrate_wizard.run_offset_wizard",
+        "unmouse.launcher.calibration_wizards.run_offset_wizard",
         lambda _s: OffsetWizardOutcome(success=True, message="Offset profile saved (mock)."),
     )
     monkeypatch.setattr(
