@@ -71,7 +71,7 @@ def _mock_onboarding(
         else None
     )
     run_calibration = (
-        (lambda _s: ActionResult(True, "Gaze calibration saved (mock).", step_complete=True))
+        (lambda _s: ActionResult(True, "Gaze calibration saved (mock)."))
         if mock_calibration
         else None
     )

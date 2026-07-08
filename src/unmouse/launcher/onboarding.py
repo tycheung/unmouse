@@ -208,4 +208,4 @@ def default_calibration_step(settings: Settings) -> ActionResult:
     from unmouse.launcher.calibration_wizards import run_calibration_wizard
 
     outcome = run_calibration_wizard(settings)
-    return ActionResult(outcome.success, outcome.message, step_complete=outcome.success)
+    return ActionResult(outcome.success, outcome.message)

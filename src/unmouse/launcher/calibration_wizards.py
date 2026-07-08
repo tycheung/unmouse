@@ -8,12 +8,7 @@ import numpy as np
 
 from unmouse.broker.video_broker import FrameSource, create_frame_source
 from unmouse.config import Settings
-from unmouse.gaze.tracker import (
-    GazeTracker,
-    create_gaze_tracker,
-    gaze_model_path,
-    save_gaze_model,
-)
+from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker, save_gaze_model
 from unmouse.launcher.wizard_common import WizardOverlayBackend, create_calibration_overlay
 
 MAX_FRAMES_PER_POINT = 240
@@ -23,10 +18,6 @@ MAX_FRAMES_PER_POINT = 240
 class CalibrationOutcome:
     success: bool
     message: str
-
-
-def calibration_exists(settings: Settings) -> bool:
-    return gaze_model_path(settings).is_file()
 
 
 def run_calibration_wizard(

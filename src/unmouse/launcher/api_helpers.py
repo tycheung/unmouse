@@ -11,7 +11,6 @@ from unmouse.launcher.update import UpdateStatus
 class ActionResult:
     ok: bool
     message: str
-    step_complete: bool = False
     gesture: str | None = None
     sample_count: int = 0
     done: bool = False

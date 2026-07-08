@@ -5,7 +5,7 @@ import numpy as np
 from tests.fakes.gaze import FakeGazeTracker
 from unmouse.config import Settings
 from unmouse.gaze.tracker import gaze_model_path, load_gaze_model
-from unmouse.launcher.calibration_wizards import calibration_exists, run_calibration_wizard
+from unmouse.launcher.calibration_wizards import run_calibration_wizard
 from unmouse.launcher.wizard_common import NoopWizardOverlayBackend
 
 _TARGETS = ((0.0, 0.0), (0.5, 0.5), (1.0, 1.0), (0.25, 0.75))
@@ -81,16 +81,3 @@ def test_run_calibration_wizard_reports_incomplete(tmp_path, monkeypatch) -> Non
     assert outcome.success is False
     assert "before all points" in outcome.message
     assert not gaze_model_path(settings).is_file()
-
-
-def test_calibration_exists(tmp_path, monkeypatch) -> None:
-    settings = _settings(tmp_path, monkeypatch)
-    assert calibration_exists(settings) is False
-    run_calibration_wizard(
-        settings,
-        tracker=FakeGazeTracker(targets=_TARGETS),
-        frame_source=_FrameSource(),
-        overlay=NoopWizardOverlayBackend(),
-        sleep=lambda _s: None,
-    )
-    assert calibration_exists(settings) is True

@@ -25,7 +25,7 @@ def test_onboarding_flow_skip_and_complete(tmp_path, monkeypatch) -> None:
     controller = OnboardingController.create(
         settings,
         check_camera=lambda _s: CameraCheckResult(ok=True, message="ok"),
-        run_calibration=lambda _s: ActionResult(True, "saved", step_complete=True),
+        run_calibration=lambda _s: ActionResult(True, "saved"),
     )
     assert controller.should_show_on_startup() is True
     controller.advance()

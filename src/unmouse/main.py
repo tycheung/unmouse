@@ -29,7 +29,7 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     )
     gaze_worker = GazeWorker(runtime_state, settings)
     gesture_worker = GestureWorker(runtime_state, settings)
-    controller = ActionController(runtime_state, settings, enable_overlay=False)
+    controller = ActionController(runtime_state, settings)
     runtime_controller = EngineRuntimeController(settings)
     broker.start()
     gaze_worker.start()
