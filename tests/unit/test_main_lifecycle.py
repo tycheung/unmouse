@@ -70,9 +70,9 @@ def test_diagnostics_snapshot_round_trip(tmp_path, monkeypatch) -> None:
     assert load_diagnostics_snapshot(settings) == snapshot
 
 
-def test_diagnostics_service_publishes_when_debug_enabled(tmp_path, monkeypatch) -> None:
+def test_diagnostics_service_publishes_snapshot(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("APPDATA", str(tmp_path))
-    settings = Settings(screen_width=800, screen_height=600, debug=True)
+    settings = Settings(screen_width=800, screen_height=600)
     state = create_system_state(settings)
     service = DiagnosticsService(
         state,

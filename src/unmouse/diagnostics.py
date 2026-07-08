@@ -83,7 +83,7 @@ class DiagnosticsService:
         self._broker_frames += 1
 
     def start(self) -> None:
-        if not self._settings.debug or (self._thread and self._thread.is_alive()):
+        if self._thread and self._thread.is_alive():
             return
         self._running = True
         self._thread = threading.Thread(target=self._run, name="diagnostics", daemon=True)
@@ -107,7 +107,8 @@ class DiagnosticsService:
             broker_fps = frames / max(elapsed, 1e-6)
             snapshot = collect_snapshot(self._state, broker_fps=broker_fps)
             save_diagnostics_snapshot(self._settings, snapshot)
-            self._logger.debug(format_snapshot(snapshot).replace("\n", " | "))
+            if self._settings.debug:
+                self._logger.debug(format_snapshot(snapshot).replace("\n", " | "))
 
 
 def format_snapshot(snapshot: DiagnosticsSnapshot) -> str:
