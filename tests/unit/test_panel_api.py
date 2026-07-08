@@ -42,7 +42,7 @@ def test_panel_api_update_check_without_git_repo() -> None:
         "unmouse.launcher.api.check_updates",
         return_value=UpdateStatus(
             available=False,
-            message="Update check unavailable for this install.",
+            message="Updates are available from the release build only.",
             channel="none",
         ),
     ):

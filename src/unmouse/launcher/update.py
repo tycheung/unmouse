@@ -2,21 +2,17 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 import webbrowser
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import Literal
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from unmouse import __version__
-from unmouse.utils.paths import project_root
 
-UpdateChannel = Literal["git", "release", "none"]
-RunCommand = Callable[[Sequence[str], Path], subprocess.CompletedProcess[str]]
+UpdateChannel = Literal["release", "none"]
 DEFAULT_RELEASE_REPO = "tycheung/unmouse"
 VERSION_PATTERN = re.compile(r"(\d+(?:\.\d+)*)")
 
@@ -36,11 +32,9 @@ class UpdateStatus:
 
 def check_updates(
     *,
-    root: Path | None = None,
     frozen: bool | None = None,
     current_version: str | None = None,
     release_repo: str = DEFAULT_RELEASE_REPO,
-    run_command: RunCommand | None = None,
     fetch_release: Callable[[str], dict[str, object]] | None = None,
 ) -> UpdateStatus:
     version = current_version or __version__
@@ -51,18 +45,15 @@ def check_updates(
             release_repo=release_repo,
             fetch_release=fetch_release or _fetch_github_release,
         )
-    repo_root = root or project_root()
-    if _is_git_repo(repo_root):
-        return _check_git_update(repo_root, run_command=run_command or _run_git)
     return UpdateStatus(
         available=False,
-        message="Update check unavailable for this install.",
+        message="Updates are available from the release build only.",
         channel="none",
         current_version=version,
     )
 
 
-def apply_update(status: UpdateStatus, *, run_command: RunCommand | None = None) -> UpdateStatus:
+def apply_update(status: UpdateStatus) -> UpdateStatus:
     if not status.available:
         return UpdateStatus(
             available=False,
@@ -72,8 +63,6 @@ def apply_update(status: UpdateStatus, *, run_command: RunCommand | None = None)
             latest_version=status.latest_version,
             download_url=status.download_url,
         )
-    if status.channel == "git":
-        return _apply_git_update(project_root(), run_command=run_command or _run_git)
     if status.channel == "release" and status.download_url:
         webbrowser.open(status.download_url)
         return UpdateStatus(
@@ -101,60 +90,6 @@ def parse_version(version: str) -> tuple[int, ...]:
 
 def version_is_newer(latest: str, current: str) -> bool:
     return parse_version(latest) > parse_version(current)
-
-
-def _is_git_repo(root: Path) -> bool:
-    return (root / ".git").is_dir()
-
-
-def _check_git_update(root: Path, *, run_command: RunCommand) -> UpdateStatus:
-    try:
-        run_command(["git", "-C", str(root), "fetch", "--quiet"], root)
-        local = run_command(["git", "-C", str(root), "rev-parse", "HEAD"], root)
-        remote = run_command(["git", "-C", str(root), "rev-parse", "@{u}"], root)
-    except RuntimeError as exc:
-        return UpdateStatus(
-            available=False,
-            message=str(exc),
-            channel="git",
-            current_version=__version__,
-        )
-    local_sha = local.stdout.strip()
-    remote_sha = remote.stdout.strip()
-    if local_sha == remote_sha:
-        return UpdateStatus(
-            available=False,
-            message="Git install is up to date.",
-            channel="git",
-            current_version=__version__,
-            latest_version=remote_sha[:7],
-        )
-    return UpdateStatus(
-        available=True,
-        message="Git updates are available. Click Update Software to pull.",
-        channel="git",
-        current_version=local_sha[:7],
-        latest_version=remote_sha[:7],
-    )
-
-
-def _apply_git_update(root: Path, *, run_command: RunCommand) -> UpdateStatus:
-    try:
-        result = run_command(["git", "-C", str(root), "pull", "--ff-only"], root)
-    except RuntimeError as exc:
-        return UpdateStatus(
-            available=True,
-            message=str(exc),
-            channel="git",
-            current_version=__version__,
-        )
-    message = result.stdout.strip() or "Git pull completed."
-    return UpdateStatus(
-        available=False,
-        message=message,
-        channel="git",
-        current_version=__version__,
-    )
 
 
 def _check_release_update(
@@ -225,18 +160,3 @@ def _fetch_github_release(release_repo: str) -> dict[str, object]:
         msg = "release payload must be an object"
         raise ValueError(msg)
     return payload
-
-
-def _run_git(args: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(
-        list(args),
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip() or "git command failed"
-        msg = f"{args[-1]} failed: {detail}"
-        raise RuntimeError(msg)
-    return result

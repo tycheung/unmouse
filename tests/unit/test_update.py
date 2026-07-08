@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import subprocess
-from pathlib import Path
 from unittest.mock import patch
 
 from unmouse.launcher.update import (
@@ -19,33 +17,11 @@ def test_version_comparison() -> None:
     assert parse_version("v2.10.3") == (2, 10, 3)
 
 
-def test_check_git_update_when_behind(tmp_path: Path) -> None:
-    (tmp_path / ".git").mkdir()
-    calls: list[list[str]] = []
-
-    def fake_run(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-        calls.append(list(args))
-        if args[-1] == "fetch":
-            return subprocess.CompletedProcess(args, 0, "", "")
-        if args[-1] == "HEAD":
-            return subprocess.CompletedProcess(args, 0, "aaa", "")
-        return subprocess.CompletedProcess(args, 0, "bbb", "")
-
-    status = check_updates(root=tmp_path, frozen=False, run_command=fake_run)
-    assert status.available is True
-    assert status.channel == "git"
-    assert str(tmp_path) in calls[0]
-
-
-def test_check_git_update_when_current(tmp_path: Path) -> None:
-    (tmp_path / ".git").mkdir()
-
-    def fake_run(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(args, 0, "same", "")
-
-    status = check_updates(root=tmp_path, frozen=False, run_command=fake_run)
+def test_check_updates_unavailable_in_dev_install() -> None:
+    status = check_updates(frozen=False)
     assert status.available is False
-    assert "up to date" in status.message.lower()
+    assert status.channel == "none"
+    assert "release build" in status.message.lower()
 
 
 def test_check_release_update_when_newer() -> None:
@@ -62,25 +38,6 @@ def test_check_release_update_when_newer() -> None:
     assert status.available is True
     assert status.channel == "release"
     assert status.download_url == payload["html_url"]
-
-
-def test_apply_git_update_runs_pull(tmp_path: Path) -> None:
-    (tmp_path / ".git").mkdir()
-    calls: list[list[str]] = []
-
-    def fake_run(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-        calls.append(list(args))
-        return subprocess.CompletedProcess(args, 0, "Already up to date.", "")
-
-    pending = UpdateStatus(
-        available=True,
-        message="pending",
-        channel="git",
-    )
-    with patch("unmouse.launcher.update.project_root", return_value=tmp_path):
-        result = apply_update(pending, run_command=fake_run)
-    assert result.available is False
-    assert calls[-1][-2:] == ["pull", "--ff-only"]
 
 
 def test_apply_release_update_opens_browser() -> None:
