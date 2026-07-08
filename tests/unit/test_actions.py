@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from unmouse.arbitrator.actions import NoopActionDriver, PyAutoGUIActionDriver, create_action_driver
 
 
@@ -45,10 +47,16 @@ def test_pyautogui_driver_delegates_to_pyautogui() -> None:
     fake_pg.scroll.assert_called_once_with(4, x=50, y=60)
 
 
-def test_create_action_driver_falls_back_to_fake_when_pyautogui_missing() -> None:
+def test_create_action_driver_builds_pyautogui_driver() -> None:
+    fake_pg = MagicMock()
+    with patch.dict("sys.modules", {"pyautogui": fake_pg}):
+        driver = create_action_driver()
+    assert isinstance(driver, PyAutoGUIActionDriver)
+
+
+def test_create_action_driver_raises_when_pyautogui_missing() -> None:
     with patch(
         "unmouse.arbitrator.actions.PyAutoGUIActionDriver",
         side_effect=ImportError("missing"),
-    ):
-        driver = create_action_driver()
-    assert isinstance(driver, NoopActionDriver)
+    ), pytest.raises(ImportError):
+        create_action_driver()

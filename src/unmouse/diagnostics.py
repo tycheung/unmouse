@@ -19,7 +19,7 @@ LOGGER = logging.getLogger("unmouse.diagnostics")
 @dataclass(frozen=True)
 class DiagnosticsSnapshot:
     broker_fps: float
-    gaze_confidence: float
+    gaze_fixation: float
     gaze_queue_depth: int
     gesture_queue_depth: int
 
@@ -40,7 +40,7 @@ def load_diagnostics_snapshot(settings: Settings) -> DiagnosticsSnapshot | None:
         return None
     return DiagnosticsSnapshot(
         broker_fps=as_float(data.get("broker_fps", 0.0)),
-        gaze_confidence=as_float(data.get("gaze_confidence", 0.0)),
+        gaze_fixation=as_float(data.get("gaze_fixation", 0.0)),
         gaze_queue_depth=as_int(data.get("gaze_queue_depth", 0)),
         gesture_queue_depth=as_int(data.get("gesture_queue_depth", 0)),
     )
@@ -50,7 +50,7 @@ def collect_snapshot(state: SystemState, *, broker_fps: float) -> DiagnosticsSna
     gaze = state.get_gaze()
     return DiagnosticsSnapshot(
         broker_fps=broker_fps,
-        gaze_confidence=gaze.confidence,
+        gaze_fixation=gaze.fixation,
         gaze_queue_depth=_queue_depth(state.gaze_frame_queue),
         gesture_queue_depth=_queue_depth(state.gesture_frame_queue),
     )
@@ -113,7 +113,7 @@ class DiagnosticsService:
 def format_snapshot(snapshot: DiagnosticsSnapshot) -> str:
     return (
         f"FPS {snapshot.broker_fps:.1f}\n"
-        f"Conf {snapshot.gaze_confidence:.2f}\n"
+        f"Fix {snapshot.gaze_fixation:.2f}\n"
         f"Q gaze {snapshot.gaze_queue_depth} gesture {snapshot.gesture_queue_depth}"
     )
 

@@ -33,16 +33,9 @@ def update_payload(status: UpdateStatus) -> dict[str, object]:
 
 
 def last_calibration_label(settings: Settings) -> str | None:
-    from unmouse.gaze.calibration import calibration_path, load_calibration
-    from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
+    from unmouse.gaze.tracker import gaze_model_path
 
-    candidates: list[float] = []
-    cal_path = calibration_path(settings)
-    if load_calibration(cal_path) is not None and cal_path.is_file():
-        candidates.append(cal_path.stat().st_mtime)
-    off_path = offset_profile_path(settings)
-    if load_offset_profile(off_path) is not None and off_path.is_file():
-        candidates.append(off_path.stat().st_mtime)
-    if not candidates:
+    path = gaze_model_path(settings)
+    if not path.is_file():
         return None
-    return datetime.fromtimestamp(max(candidates)).strftime("%Y-%m-%d")
+    return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")

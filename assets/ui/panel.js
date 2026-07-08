@@ -4,7 +4,7 @@ function panelApp() {
       tracking: false,
       paused: false,
       fps: null,
-      confidence: null,
+      fixation: null,
       last_calibrated: null,
       gaze_mode: "cursor_follow",
     },
@@ -19,7 +19,7 @@ function panelApp() {
     },
     onboarding: {
       step_index: 0,
-      step_count: 6,
+      step_count: 5,
       title: "",
       description: "",
       actions: [],
@@ -30,8 +30,8 @@ function panelApp() {
     settings: {
       profile_name: "default",
       profiles: ["default"],
-      kalman_measurement_noise: 10,
-      saccade_threshold_px: 80,
+      gaze_calibration_points: 25,
+      fixation_threshold: 1,
       snap_radius_px: 50,
       scroll_speed_multiplier: 1,
       camera_index: 0,
@@ -244,8 +244,7 @@ function panelApp() {
         next: () => window.pywebview.api.onboarding_advance(),
         finish: () => window.pywebview.api.onboarding_complete(),
         check_camera: () => window.pywebview.api.onboarding_check_camera(),
-        run_polynomial: () => window.pywebview.api.onboarding_run_polynomial(),
-        run_offset: () => window.pywebview.api.onboarding_run_offset(),
+        run_calibration: () => window.pywebview.api.onboarding_run_calibration(),
         run_gestures: () => window.pywebview.api.onboarding_run_gestures(),
       };
       if (!map[id]) return;

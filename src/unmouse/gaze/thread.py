@@ -5,11 +5,8 @@ import time
 
 from unmouse.broker.video_broker import drain_latest
 from unmouse.config import Settings
-from unmouse.gaze.calibration import load_calibration
-from unmouse.gaze.display import DisplayMapper, probe_virtual_desktop
-from unmouse.gaze.offset_profile import load_offset_profile_for_settings
-from unmouse.gaze.pipeline import GazePipeline
-from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker
+from unmouse.gaze.display import VirtualDesktop
+from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker, load_gaze_model
 from unmouse.state import SystemState
 
 
@@ -19,21 +16,14 @@ class GazeWorker:
         state: SystemState,
         settings: Settings,
         tracker: GazeTracker | None = None,
-        pipeline: GazePipeline | None = None,
+        desktop: VirtualDesktop | None = None,
     ) -> None:
         self._state = state
         self._settings = settings
-        self._tracker = tracker or create_gaze_tracker()
-        if pipeline is None:
-            calibration = load_calibration(settings.profile_dir / "calibration.json")
-            desktop = probe_virtual_desktop(settings)
-            pipeline = GazePipeline(
-                settings,
-                calibration=calibration,
-                display=DisplayMapper(desktop),
-                offset_profile=load_offset_profile_for_settings(settings),
-            )
-        self._pipeline = pipeline
+        self._tracker = tracker or create_gaze_tracker(
+            settings, model=load_gaze_model(settings)
+        )
+        self._desktop = desktop or VirtualDesktop.from_settings(settings)
         self._thread: threading.Thread | None = None
 
     def start(self) -> None:
@@ -53,8 +43,8 @@ class GazeWorker:
                 time.sleep(0.005)
                 continue
             _frame_id, frame = latest
-            result = self._tracker.predict(frame)
-            output = self._pipeline.process(result)
-            self._state.set_gaze(output.x, output.y, output.confidence)
-            self._state.set_head_pose_ok(output.head_pose_ok)
+            sample, _target = self._tracker.step(frame, calibrate=False)
+            if sample is not None:
+                x, y = self._desktop.clip(sample.x, sample.y)
+                self._state.set_gaze(x, y, sample.fixation)
             time.sleep(0.001)

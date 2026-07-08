@@ -14,7 +14,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 ## Dev install (`poetry run unmouse`)
 
-- [ ] `poetry install --extras gaze` (required for gaze tracking validation)
+- [ ] `poetry install` (installs required eyeGestures/MediaPipe/PyAutoGUI backends)
 - [ ] `poetry run pytest` passes locally
 - [ ] Control panel opens (`poetry run unmouse`)
 
@@ -22,14 +22,13 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 - [ ] Fresh `%APPDATA%/unmouse` (or new profile) shows onboarding wizard
 - [ ] Camera check step succeeds
-- [ ] 9-point polynomial calibration completes and saves
-- [ ] 16-point offset calibration completes and saves
+- [ ] Gaze calibration completes (follow the dot) and saves a model
 - [ ] Gesture enrollment captures all three templates (`v_sign`, `pinch_close`, `thumbs_up`)
 - [ ] Onboarding finish returns to main panel
 
 ## Settings & profiles
 
-- [ ] Open Settings, adjust sensitivity / saccade / snap radius, Save
+- [ ] Open Settings, adjust calibration points / fixation threshold / snap radius, Save
 - [ ] Create, rename, activate, and delete a test profile
 - [ ] Gaze mode toggle persists (`cursor_follow` vs `gaze_only`)
 
@@ -50,8 +49,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 ## Calibration (post-onboarding)
 
-- [ ] **Calibrate** runs offset wizard when polynomial exists
-- [ ] **Calibrate** runs polynomial first when profile has no polynomial file
+- [ ] **Calibrate** runs the gaze calibration wizard and saves a model
 - [ ] Footer shows updated calibration date after save
 
 ## Gestures

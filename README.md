@@ -4,8 +4,8 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 
 ## Features
 
-- Gaze-to-cursor with saccade detection, Kalman smoothing, and 9-point polynomial calibration
-- 16-point offset correction wizard for per-user fine tuning
+- Gaze-to-cursor tracking powered by [eyeGestures](https://pypi.org/project/eyeGestures/) (calibration, fixation, saccade, and blink detection built in)
+- Guided gaze calibration wizard with per-profile model persistence
 - Hand-gesture recognition (V-sign click mode, pinch click, thumbs-up scroll)
 - UI snapping via accessibility tree and window chrome targets
 - Control panel (Alpine.js + pywebview): onboarding, settings, enrollment, launch
@@ -18,14 +18,16 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 - **Python 3.10–3.13** for development ([Poetry](https://python-poetry.org/))
 - Webcam
 - Poetry lockfile committed for reproducible installs
-- **Gaze tracking:** optional [`eyegestures`](https://pypi.org/project/eyegestures/) package (`poetry install --extras gaze`). Without it, the engine falls back to a static center-point tracker.
+- Core tracking dependencies are **required**: [`eyeGestures`](https://pypi.org/project/eyeGestures/) (gaze), `mediapipe` (hand landmarks), and `pyautogui` (pointer). The engine has no silent fallbacks — a missing dependency fails loudly at startup.
+
+> **License note:** `eyeGestures` is GPL-3.0. Review the implications before distributing a proprietary build.
 
 ## Quick start (development)
 
 ```powershell
 git clone git@github.com:tycheung/unmouse.git
 cd unmouse
-poetry install --with dev --extras gaze
+poetry install --with dev
 poetry run unmouse
 ```
 
@@ -57,7 +59,7 @@ Coverage floor is **85%** (`pyproject.toml`). Unit tests use `--ignore=tests/e2e
 .\scripts\build_exe.ps1
 ```
 
-Output: `dist/unmouse.exe` (single-file, windowed). The launcher spawns the engine as `unmouse.exe --engine` when frozen. The build script installs the `gaze` extra so the frozen executable includes eye tracking.
+Output: `dist/unmouse.exe` (single-file, windowed). The launcher spawns the engine as `unmouse.exe --engine` when frozen.
 
 To regenerate the app icon only:
 
@@ -73,13 +75,13 @@ Control panel (pywebview + Alpine.js)
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
-  └─ Video broker → gaze worker (tracker + pipeline) + gesture worker (MediaPipe + MLE)
+  └─ Video broker → gaze worker (eyeGestures tracker) + gesture worker (MediaPipe + MLE)
   └─ Action controller (snap, PyAutoGUI, gaze indicator)
 
 Backends
-  └─ Factories prefer real implementations (MediaPipe, PyAutoGUI, uiautomation, pystray, Tk/Win32 overlays)
-  └─ Fall back to no-op/null doubles when a dependency is missing
-  └─ Gaze requires the optional eyegestures extra; unit tests inject fakes explicitly
+  └─ Core backends are required: eyeGestures (gaze), MediaPipe (hands), PyAutoGUI (pointer)
+  └─ Windows-only enhancements degrade gracefully: uiautomation, pystray, Tk/Win32 overlays
+  └─ Unit tests inject fakes explicitly; no-op/null doubles live in the test suite
 ```
 
 ## Project layout
@@ -96,7 +98,7 @@ src/unmouse/            Application package
     services/           Engine lifecycle and panel state
   overlay/              Gaze indicator + shared Tk overlay helpers
   broker/               Video fan-out and camera helpers
-  gaze/                 Tracking pipeline
+  gaze/                 eyeGestures tracker + display mapping
   gestures/             MediaPipe + MLE classifier
   arbitrator/           Snap, actions, controller
 tests/                  Unit, integration, and E2E (Playwright) tests

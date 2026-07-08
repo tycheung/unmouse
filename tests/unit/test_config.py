@@ -14,19 +14,20 @@ def _reset_settings_cache() -> None:
 
 def test_default_settings() -> None:
     settings = Settings()
-    assert settings.saccade_threshold_px == 80.0
+    assert settings.gaze_calibration_points == 25
+    assert settings.fixation_threshold == 1.0
     assert settings.gaze_mode is GazeMode.CURSOR_FOLLOW
     assert settings.pyautogui_failsafe is False
     assert settings.broker_queue_size == 2
 
 
 def test_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("UNMOUSE_SACCADE_THRESHOLD_PX", "120")
+    monkeypatch.setenv("UNMOUSE_GAZE_CALIBRATION_POINTS", "16")
     monkeypatch.setenv("UNMOUSE_GAZE_MODE", "gaze_only")
     monkeypatch.setenv("UNMOUSE_DEBUG", "true")
     clear_settings_cache()
     settings = Settings()
-    assert settings.saccade_threshold_px == 120.0
+    assert settings.gaze_calibration_points == 16
     assert settings.gaze_mode is GazeMode.GAZE_ONLY
     assert settings.debug is True
 

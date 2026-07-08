@@ -10,8 +10,8 @@ SETTINGS_FILENAME = "settings.json"
 
 PERSISTED_SETTING_FIELDS = (
     "profile_name",
-    "kalman_measurement_noise",
-    "saccade_threshold_px",
+    "gaze_calibration_points",
+    "fixation_threshold",
     "snap_radius_px",
     "scroll_speed_multiplier",
     "camera_index",

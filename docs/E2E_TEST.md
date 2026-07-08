@@ -7,10 +7,10 @@ Playwright and subprocess smoke tests complement the manual checklist in [`SMOKE
 | Suite | File | Coverage |
 |-------|------|----------|
 | Panel UI | `tests/e2e/test_panel_playwright.py` | Launch/Stop, Pause, Settings save, profile create, Update check, Calibrate, Train Gestures |
-| Onboarding & calibration | `tests/e2e/test_onboarding_calibration.py` | Full onboarding wizard, skip step, gesture enrollment hook, polynomial→offset calibrate chain |
+| Onboarding & calibration | `tests/e2e/test_onboarding_calibration.py` | Full onboarding wizard, skip step, gesture enrollment hook, gaze calibration from main panel |
 | Launch smoke | `tests/e2e/test_launch_smoke.py` | `--smoke` entry point (Python + `unmouse.exe`), harness HTTP bridge, build script presence |
 
-Camera-heavy wizards (9-point overlay, 16-point overlay) are **mocked** in automated tests so CI does not require a webcam. Manual validation remains in `SMOKE_TEST.md`.
+The camera-heavy gaze calibration wizard is **mocked** in automated tests so CI does not require a webcam. Manual validation remains in `SMOKE_TEST.md`.
 
 ## Architecture
 

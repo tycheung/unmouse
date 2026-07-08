@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Protocol, cast
-
-from unmouse.utils.backend_selection import prefer_or_fallback
+from typing import Literal, Protocol
 
 ClickButton = Literal["left", "right", "middle"]
 
@@ -63,13 +61,8 @@ class PyAutoGUIActionDriver:
         self._pyautogui.scroll(clicks, x=px, y=py)
 
 
-def create_action_driver(*, failsafe: bool = False, prefer_pyautogui: bool = True) -> ActionDriver:
-    return prefer_or_fallback(
-        prefer=prefer_pyautogui,
-        make_preferred=lambda: cast(ActionDriver, PyAutoGUIActionDriver(failsafe=failsafe)),
-        make_fallback=lambda: cast(ActionDriver, NoopActionDriver()),
-        exceptions=ImportError,
-    )
+def create_action_driver(*, failsafe: bool = False) -> ActionDriver:
+    return PyAutoGUIActionDriver(failsafe=failsafe)
 
 
 def _to_point(x: float, y: float) -> tuple[int, int]:

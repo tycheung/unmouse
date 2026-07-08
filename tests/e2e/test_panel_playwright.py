@@ -65,7 +65,7 @@ def test_calibrate_from_main_panel(panel_page: Page, monkeypatch: pytest.MonkeyP
 
     patch_calibration_wizards(monkeypatch)
     panel_page.get_by_role("button", name="Calibrate").click()
-    expect(panel_page.locator(".message")).to_contain_text("Offset profile saved")
+    expect(panel_page.locator(".message")).to_contain_text("Gaze calibration saved")
 
 
 def test_train_gestures_flow(panel_page: Page, monkeypatch: pytest.MonkeyPatch) -> None:

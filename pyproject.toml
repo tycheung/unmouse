@@ -11,7 +11,6 @@ python = ">=3.10,<3.14"
 pydantic-settings = "^2.2"
 numpy = "^1.26"
 opencv-python = "^4.9"
-filterpy = "^1.4"
 mss = "^9.0"
 mediapipe = "^0.10"
 pyautogui = "^0.9"
@@ -19,10 +18,7 @@ pywebview = "^5.0"
 uiautomation = { version = "^2.0", markers = "sys_platform == 'win32'" }
 pystray = "^0.19"
 keyboard = "^0.13"
-eyegestures = { version = "^1.4", optional = true }
-
-[tool.poetry.extras]
-gaze = ["eyegestures"]
+eyeGestures = "^3.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -57,6 +53,10 @@ select = ["E", "F", "I", "UP", "B"]
 python_version = "3.10"
 strict = true
 packages = ["unmouse"]
+
+[[tool.mypy.overrides]]
+module = ["eyeGestures.*"]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]

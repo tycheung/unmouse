@@ -21,7 +21,7 @@ PanelView = Literal["main", "settings", "onboarding", "enrollment"]
 class PanelStatus:
     message: str
     fps: float | None = None
-    confidence: float | None = None
+    fixation: float | None = None
     tracking: bool = False
     paused: bool = False
     gaze_mode: str = "cursor_follow"
@@ -82,9 +82,9 @@ class EngineService:
             PanelStatus(
                 message=self._state.status.message,
                 fps=diagnostics.broker_fps if diagnostics else self._state.status.fps,
-                confidence=diagnostics.gaze_confidence
+                fixation=diagnostics.gaze_fixation
                 if diagnostics
-                else self._state.status.confidence,
+                else self._state.status.fixation,
                 tracking=tracking,
                 paused=paused,
                 gaze_mode=self._state.settings.gaze_mode.value,

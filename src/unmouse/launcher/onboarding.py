@@ -6,11 +6,10 @@ from typing import Literal
 
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
-from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
 from unmouse.launcher.api_helpers import ActionResult
 from unmouse.persistence import LauncherFlags, load_launcher_flags, save_launcher_flags
 
-OnboardingStepId = Literal["welcome", "camera", "polynomial", "offset", "gestures", "ready"]
+OnboardingStepId = Literal["welcome", "camera", "calibration", "gestures", "ready"]
 SKIP_WARNING = (
     "Skipping this step may reduce tracking accuracy. "
     "You can rerun setup later from Calibrate or Settings."
@@ -28,8 +27,7 @@ class OnboardingStep:
 _STEP_DATA: tuple[tuple[OnboardingStepId, str, str, bool], ...] = (
     ("welcome", "Welcome to unmouse", "Quick setup for webcam gaze and gestures.", False),
     ("camera", "Camera check", "Verify your webcam before calibrating.", False),
-    ("polynomial", "9-point calibration", "Follow nine targets to map gaze to screen.", True),
-    ("offset", "Offset calibration", "Sixteen-point offset correction after polynomial fit.", True),
+    ("calibration", "Gaze calibration", "Follow the dot to map eye tracking to your screen.", True),
     (
         "gestures",
         "Gesture enrollment",
@@ -58,12 +56,10 @@ class OnboardingController:
     step_index: int = 0
     skipped_steps: list[OnboardingStepId] = field(default_factory=list)
     camera_checked: bool = False
-    polynomial_complete: bool = False
-    offset_complete: bool = False
+    calibration_complete: bool = False
     gestures_complete: bool = False
     _check_camera: Callable[[Settings], CameraCheckResult] | None = None
-    _run_polynomial: Callable[[Settings], ActionResult] | None = None
-    _run_offset: Callable[[Settings], ActionResult] | None = None
+    _run_calibration: Callable[[Settings], ActionResult] | None = None
 
     @classmethod
     def create(
@@ -71,14 +67,12 @@ class OnboardingController:
         settings: Settings | None = None,
         *,
         check_camera: Callable[[Settings], CameraCheckResult] | None = None,
-        run_polynomial: Callable[[Settings], ActionResult] | None = None,
-        run_offset: Callable[[Settings], ActionResult] | None = None,
+        run_calibration: Callable[[Settings], ActionResult] | None = None,
     ) -> OnboardingController:
         return cls(
             settings=settings or Settings(),
             _check_camera=check_camera,
-            _run_polynomial=run_polynomial,
-            _run_offset=run_offset,
+            _run_calibration=run_calibration,
         )
 
     @property
@@ -131,11 +125,11 @@ class OnboardingController:
         self.camera_checked = result.ok
         return {**asdict(result), "state": self.get_state()}
 
-    def run_polynomial_step(self) -> dict[str, object]:
-        return self._run_hook(self._run_polynomial, default_polynomial_step, "polynomial_complete")
-
-    def run_offset_step(self) -> dict[str, object]:
-        return self._run_hook(self._run_offset, default_offset_step, "offset_complete")
+    def run_calibration_step(self) -> dict[str, object]:
+        result = (self._run_calibration or default_calibration_step)(self.settings)
+        if result.ok:
+            self.calibration_complete = True
+        return {**result.to_dict(), "state": self.get_state()}
 
     def complete(self) -> dict[str, object]:
         save_launcher_flags(
@@ -144,24 +138,11 @@ class OnboardingController:
         )
         return {"ok": True, "message": "First-run setup complete.", "state": self.get_state()}
 
-    def _run_hook(
-        self,
-        override: Callable[[Settings], ActionResult] | None,
-        default: Callable[[Settings], ActionResult],
-        flag: str,
-    ) -> dict[str, object]:
-        result = (override or default)(self.settings)
-        if result.ok:
-            setattr(self, flag, True)
-        return {**result.to_dict(), "state": self.get_state()}
-
     def _step_notice(self, step_id: OnboardingStepId) -> str:
         if step_id == "camera" and self.camera_checked:
             return "Camera check passed."
-        if step_id == "polynomial" and self.polynomial_complete:
-            return "Polynomial calibration saved."
-        if step_id == "offset" and self.offset_complete:
-            return "Offset profile saved."
+        if step_id == "calibration" and self.calibration_complete:
+            return "Gaze calibration saved."
         if step_id == "gestures" and self.gestures_complete:
             return "Gesture templates saved."
         return ""
@@ -173,12 +154,8 @@ class OnboardingController:
                 ("check_camera", "Test camera", False, True),
                 ("next", "Continue", True, self.camera_checked),
             ],
-            "polynomial": [
-                ("run_polynomial", "Start 9-point calibration", False, True),
-                ("next", "Continue", True, True),
-            ],
-            "offset": [
-                ("run_offset", "Start offset calibration", False, True),
+            "calibration": [
+                ("run_calibration", "Start calibration", False, True),
                 ("next", "Continue", True, True),
             ],
             "gestures": [
@@ -227,21 +204,8 @@ def default_camera_check(settings: Settings) -> CameraCheckResult:
     )
 
 
-def default_polynomial_step(settings: Settings) -> ActionResult:
-    from unmouse.launcher.calibration_wizards import run_polynomial_wizard
+def default_calibration_step(settings: Settings) -> ActionResult:
+    from unmouse.launcher.calibration_wizards import run_calibration_wizard
 
-    outcome = run_polynomial_wizard(settings)
-    return ActionResult(
-        outcome.success,
-        outcome.message,
-        step_complete=outcome.success,
-    )
-
-
-def default_offset_step(settings: Settings) -> ActionResult:
-    if load_offset_profile(offset_profile_path(settings)) is not None:
-        return ActionResult(True, "Offset profile already saved.", step_complete=True)
-    from unmouse.launcher.calibration_wizards import run_offset_wizard
-
-    outcome = run_offset_wizard(settings)
+    outcome = run_calibration_wizard(settings)
     return ActionResult(outcome.success, outcome.message, step_complete=outcome.success)

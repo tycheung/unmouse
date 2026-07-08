@@ -12,7 +12,7 @@ from tests.fakes.enrollment import FakeEnrollmentSession
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.calibration_wizards import OffsetWizardOutcome, PolynomialWizardOutcome
+from unmouse.launcher.calibration_wizards import CalibrationOutcome
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
@@ -70,28 +70,15 @@ def _mock_onboarding(
         if mock_camera
         else None
     )
-    if mock_calibration:
-        def run_polynomial(_s: Settings) -> ActionResult:
-            return ActionResult(
-                True,
-                "Polynomial calibration saved (mock).",
-                step_complete=True,
-            )
-
-        def run_offset(_s: Settings) -> ActionResult:
-            return ActionResult(
-                True,
-                "Offset profile saved (mock).",
-                step_complete=True,
-            )
-    else:
-        run_polynomial = None
-        run_offset = None
+    run_calibration = (
+        (lambda _s: ActionResult(True, "Gaze calibration saved (mock).", step_complete=True))
+        if mock_calibration
+        else None
+    )
     controller = OnboardingController.create(
         settings,
         check_camera=check_camera,
-        run_polynomial=run_polynomial,
-        run_offset=run_offset,
+        run_calibration=run_calibration,
     )
     if not first_run:
         save_launcher_flags(settings, LauncherFlags(first_run_complete=True))
@@ -166,22 +153,8 @@ def onboarding_page(page, onboarding_harness: E2EHarness):
 
 def patch_calibration_wizards(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "unmouse.launcher.calibration_wizards.run_polynomial_wizard",
-        lambda _s: PolynomialWizardOutcome(
-            success=True,
-            model=None,
-            residual_px=1.0,
-            message="Polynomial calibration saved (mock).",
-            retry_recommended=False,
-        ),
-    )
-    monkeypatch.setattr(
-        "unmouse.launcher.calibration_wizards.run_offset_wizard",
-        lambda _s: OffsetWizardOutcome(success=True, message="Offset profile saved (mock)."),
-    )
-    monkeypatch.setattr(
-        "unmouse.gaze.calibration.load_calibration",
-        lambda _path: object(),
+        "unmouse.launcher.calibration_wizards.run_calibration_wizard",
+        lambda _s: CalibrationOutcome(success=True, message="Gaze calibration saved (mock)."),
     )
 
 

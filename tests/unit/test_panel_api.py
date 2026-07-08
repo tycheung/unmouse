@@ -6,7 +6,7 @@ from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi, last_calibration_label
 from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.calibration_wizards import OffsetWizardOutcome
+from unmouse.launcher.calibration_wizards import CalibrationOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
@@ -52,19 +52,16 @@ def test_panel_api_update_check_without_git_repo() -> None:
     assert result["channel"] == "none"
 
 
-def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
+def test_panel_api_calibrate_runs_calibration_wizard() -> None:
     api = _api_without_onboarding_prompt()
     with patch(
-        "unmouse.launcher.calibration_wizards.load_calibration",
-        return_value=object(),
-    ), patch(
-        "unmouse.launcher.calibration_wizards.run_offset_wizard",
-        return_value=OffsetWizardOutcome(success=True, message="Offset profile saved."),
-    ) as run_offset:
+        "unmouse.launcher.calibration_wizards.run_calibration_wizard",
+        return_value=CalibrationOutcome(success=True, message="Calibration saved (9 points)."),
+    ) as run_wizard:
         calibrate = api.start_calibrate()
-    run_offset.assert_called_once()
+    run_wizard.assert_called_once()
     assert calibrate["ok"] is True
-    assert "Offset" in calibrate["message"]
+    assert "Calibration saved" in calibrate["message"]
 
 
 def test_panel_api_launch_starts_engine_and_minimizes() -> None:
@@ -252,29 +249,26 @@ def test_panel_api_watchdog_diagnostics_and_crash(tmp_path, monkeypatch) -> None
         settings,
         DiagnosticsSnapshot(
             broker_fps=28.5,
-            gaze_confidence=0.77,
+            gaze_fixation=0.77,
             gaze_queue_depth=0,
             gesture_queue_depth=0,
         ),
     )
     status = api.get_status()
     assert status["fps"] == 28.5
-    assert status["confidence"] == 0.77
+    assert status["fixation"] == 0.77
     api._engine._handle_engine_crash(
         WatchdogEvent(exit_code=1, message="Engine exited unexpectedly (code 1).", restarted=True),
     )
     assert tray.notifications == ["Engine exited unexpectedly (code 1)."]
 
 
-def test_last_calibration_label_uses_profile_calibration_file(tmp_path, monkeypatch) -> None:
+def test_last_calibration_label_uses_gaze_model_file(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600)
-    cal_path = settings.profile_dir / "calibration.json"
-    cal_path.parent.mkdir(parents=True, exist_ok=True)
-    cal_path.write_text(
-        '{"x_coeffs": [0, 1, 0, 0, 0, 0], "y_coeffs": [0, 0, 1, 0, 0, 0]}',
-        encoding="utf-8",
-    )
+    from unmouse.gaze.tracker import save_gaze_model
+
+    save_gaze_model(settings, b"model-bytes")
     assert last_calibration_label(settings) is not None
     empty = Settings(screen_width=800, screen_height=600, profile_name="other")
     assert last_calibration_label(empty) is None

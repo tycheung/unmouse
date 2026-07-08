@@ -14,19 +14,18 @@ from unmouse.utils.queues import offer_latest
 class GazeSnapshot:
     x: float
     y: float
-    confidence: float
+    fixation: float
 
 
 @dataclass
 class SystemState:
     gaze_x: float
     gaze_y: float
-    gaze_confidence: float = 1.0
+    gaze_fixation: float = 0.0
     click_mode: bool = False
     right_click_intent: bool = False
     scroll_active: bool = False
     scroll_up: bool = True
-    head_pose_ok: bool = True
     running: bool = True
     gaze_frame_queue: Queue[tuple[int, object]] | None = None
     gesture_frame_queue: Queue[tuple[int, object]] | None = None
@@ -36,13 +35,13 @@ class SystemState:
 
     def get_gaze(self) -> GazeSnapshot:
         with self._lock:
-            return GazeSnapshot(self.gaze_x, self.gaze_y, self.gaze_confidence)
+            return GazeSnapshot(self.gaze_x, self.gaze_y, self.gaze_fixation)
 
-    def set_gaze(self, x: float, y: float, confidence: float) -> None:
+    def set_gaze(self, x: float, y: float, fixation: float) -> None:
         with self._lock:
             self.gaze_x = x
             self.gaze_y = y
-            self.gaze_confidence = confidence
+            self.gaze_fixation = fixation
 
     def set_click_mode(self, active: bool, right_click: bool = False) -> None:
         with self._lock:
@@ -64,10 +63,6 @@ class SystemState:
         with self._lock:
             offer_latest(self.scroll_tick_queue, tick)
             self.scroll_up = tick.delta > 0
-
-    def set_head_pose_ok(self, ok: bool) -> None:
-        with self._lock:
-            self.head_pose_ok = ok
 
     def stop(self) -> None:
         with self._lock:

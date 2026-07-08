@@ -102,12 +102,22 @@ def test_draw_hand_skeleton_returns_copy(test_frame, open_palm_landmarks) -> Non
     assert output is not test_frame
 
 
-def test_create_hand_detector_falls_back_without_mediapipe(monkeypatch) -> None:
+def test_create_hand_detector_builds_mediapipe_detector() -> None:
+    fake_mp = MagicMock()
+    fake_mp.solutions.hands.Hands.return_value = MagicMock()
+    from unmouse.gestures.landmarks import create_hand_detector
+
+    with patch.dict("sys.modules", {"mediapipe": fake_mp}):
+        detector = create_hand_detector()
+    assert isinstance(detector, MediaPipeHandDetector)
+
+
+def test_create_hand_detector_raises_without_mediapipe(monkeypatch) -> None:
     monkeypatch.setattr(
         "unmouse.gestures.landmarks.MediaPipeHandDetector",
         MagicMock(side_effect=ImportError("missing")),
     )
     from unmouse.gestures.landmarks import create_hand_detector
 
-    detector = create_hand_detector(prefer_mediapipe=True)
-    assert isinstance(detector, NullHandLandmarkDetector)
+    with pytest.raises(ImportError):
+        create_hand_detector()

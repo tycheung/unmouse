@@ -22,8 +22,8 @@ RESERVED_PROFILE_NAMES = frozenset({".", ".."})
 class PanelSettingsSnapshot:
     profile_name: str
     profiles: tuple[str, ...]
-    kalman_measurement_noise: float
-    saccade_threshold_px: float
+    gaze_calibration_points: int
+    fixation_threshold: float
     snap_radius_px: float
     scroll_speed_multiplier: float
     camera_index: int
@@ -139,8 +139,8 @@ def panel_settings_snapshot(settings: Settings) -> PanelSettingsSnapshot:
     return PanelSettingsSnapshot(
         profile_name=settings.profile_name,
         profiles=tuple(list_profiles(settings)),
-        kalman_measurement_noise=settings.kalman_measurement_noise,
-        saccade_threshold_px=settings.saccade_threshold_px,
+        gaze_calibration_points=settings.gaze_calibration_points,
+        fixation_threshold=settings.fixation_threshold,
         snap_radius_px=settings.snap_radius_px,
         scroll_speed_multiplier=settings.scroll_speed_multiplier,
         camera_index=settings.camera_index,
@@ -180,8 +180,8 @@ def _current_settings(settings: Settings) -> Settings:
 
 
 _PANEL_FIELD_COERCERS: dict[str, Callable[[object], object]] = {
-    "kalman_measurement_noise": as_float,
-    "saccade_threshold_px": as_float,
+    "gaze_calibration_points": as_int,
+    "fixation_threshold": as_float,
     "snap_radius_px": as_float,
     "scroll_speed_multiplier": as_float,
     "camera_index": as_int,

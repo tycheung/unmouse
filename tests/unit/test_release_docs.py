@@ -40,12 +40,10 @@ def test_smoke_test_covers_v1_flows() -> None:
     text = SMOKE_TEST.read_text(encoding="utf-8")
     for topic in (
         "onboarding",
-        "polynomial",
-        "offset",
+        "calibration",
         "gesture",
         "Pause",
         "gaze-only",
-        "multi-monitor",
         "unmouse.exe",
     ):
         assert topic.lower() in text.lower()

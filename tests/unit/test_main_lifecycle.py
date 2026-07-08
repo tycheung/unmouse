@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from unittest.mock import patch
 
+from tests.fakes.gaze import FakeGazeTracker
 from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.config import Settings
 from unmouse.diagnostics import (
@@ -9,7 +10,6 @@ from unmouse.diagnostics import (
     load_diagnostics_snapshot,
     save_diagnostics_snapshot,
 )
-from unmouse.gaze.tracker import NullGazeTracker
 from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.main import run_engine
 from unmouse.state import create_system_state
@@ -20,8 +20,11 @@ def _stub_engine_backends() -> ExitStack:
     stack.enter_context(
         patch(
             "unmouse.gaze.thread.create_gaze_tracker",
-            return_value=NullGazeTracker(x=0.0, y=0.0),
+            return_value=FakeGazeTracker(),
         )
+    )
+    stack.enter_context(
+        patch("unmouse.gaze.thread.load_gaze_model", return_value=None)
     )
     stack.enter_context(
         patch(

@@ -6,15 +6,14 @@ import numpy as np
 
 from tests.conftest import load_landmark_fixture
 from tests.fakes.broker import MockFrameSource
+from tests.fakes.gaze import FakeGazeTracker
 from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.arbitrator.controller import ActionController
 from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
 from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
-from unmouse.gaze.calibration import fit_calibration
-from unmouse.gaze.pipeline import GazePipeline
 from unmouse.gaze.thread import GazeWorker
-from unmouse.gaze.tracker import NullGazeTracker
+from unmouse.gaze.tracker import GazeSample
 from unmouse.gestures.fsm import ClickFsm
 from unmouse.gestures.landmarks import HandLandmarks, LandmarkDetectionResult
 from unmouse.gestures.scroll_fsm import ScrollFsm
@@ -36,36 +35,15 @@ class _SequenceDetector:
         return LandmarkDetectionResult(hands=(hand,))
 
 
-def _calibration_points(
-    screen_width: int,
-    screen_height: int,
-) -> list[tuple[float, float, float, float]]:
-    xs = (0.0, 0.5, 1.0)
-    ys = (0.0, 0.5, 1.0)
-    points: list[tuple[float, float, float, float]] = []
-    for raw_y in ys:
-        for raw_x in xs:
-            points.append(
-                (
-                    raw_x,
-                    raw_y,
-                    100 + (screen_width - 200) * raw_x,
-                    100 + (screen_height - 200) * raw_y,
-                ),
-            )
-    return points
-
-
 def test_gaze_worker_feeds_controller_cursor_moves() -> None:
-    settings = Settings(screen_width=800, screen_height=600, saccade_threshold_px=200.0)
+    settings = Settings(screen_width=800, screen_height=600)
     state = create_system_state(settings)
     frame = np.zeros((24, 32, 3), dtype=np.uint8)
     broker = VideoBroker(state, settings, source=MockFrameSource([frame] * 10))
     gaze_worker = GazeWorker(
         state,
         settings,
-        tracker=NullGazeTracker(x=450.0, y=275.0, confidence=0.92),
-        pipeline=GazePipeline(settings),
+        tracker=FakeGazeTracker(sample=GazeSample(x=450.0, y=275.0, fixation=0.92)),
     )
     driver = NoopActionDriver()
     controller = ActionController(
@@ -96,53 +74,8 @@ def test_gaze_worker_feeds_controller_cursor_moves() -> None:
     snap = state.get_gaze()
     assert driver.moves
     assert driver.moves[-1] == (int(round(snap.x)), int(round(snap.y)))
-    assert abs(snap.x - settings.screen_width / 2) > 1.0
-    assert abs(snap.y - settings.screen_height / 2) > 1.0
-
-
-def test_gaze_to_action_applies_calibration_before_controller() -> None:
-    settings = Settings(screen_width=820, screen_height=620, saccade_threshold_px=200.0)
-    model = fit_calibration(_calibration_points(settings.screen_width, settings.screen_height))
-    pipeline = GazePipeline(settings, calibration=model)
-    state = create_system_state(settings)
-    frame = np.zeros((24, 32, 3), dtype=np.uint8)
-    broker = VideoBroker(state, settings, source=MockFrameSource([frame] * 8))
-    gaze_worker = GazeWorker(
-        state,
-        settings,
-        tracker=NullGazeTracker(x=1.0, y=1.0, confidence=0.95),
-        pipeline=pipeline,
-    )
-    driver = NoopActionDriver()
-    controller = ActionController(
-        state,
-        settings,
-        driver=driver,
-        snap_orchestrator=StaticSnapProvider(()),
-        enable_overlay=False,
-    )
-
-    broker.start()
-    gaze_worker.start()
-    controller.start()
-
-    deadline = time.time() + 2.0
-    while time.time() < deadline:
-        snap = state.get_gaze()
-        if driver.moves and driver.moves[-1] == (int(round(snap.x)), int(round(snap.y))):
-            if abs(snap.x - 720.0) < 1.0 and abs(snap.y - 520.0) < 1.0:
-                break
-        time.sleep(0.01)
-
-    state.stop()
-    controller.join(timeout=2.0)
-    gaze_worker.join(timeout=2.0)
-    broker.join(timeout=2.0)
-
-    snap = state.get_gaze()
-    assert driver.moves[-1] == (720, 520)
-    assert abs(snap.x - 720.0) < 1.0
-    assert abs(snap.y - 520.0) < 1.0
+    assert snap.x == 450.0
+    assert snap.y == 275.0
 
 
 def test_gaze_to_action_snaps_cursor_to_target() -> None:

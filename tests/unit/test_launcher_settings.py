@@ -29,14 +29,14 @@ def test_save_and_load_persisted_settings(tmp_path, monkeypatch) -> None:
     settings = _settings(tmp_path, monkeypatch)
     settings = settings.model_copy(
         update={
-            "kalman_measurement_noise": 15.0,
+            "gaze_calibration_points": 16,
             "gaze_mode": GazeMode.GAZE_ONLY,
             "scroll_speed_multiplier": 1.5,
         }
     )
     save_persisted_settings(settings)
     loaded = load_persisted_settings()
-    assert loaded.kalman_measurement_noise == 15.0
+    assert loaded.gaze_calibration_points == 16
     assert loaded.gaze_mode is GazeMode.GAZE_ONLY
     assert loaded.scroll_speed_multiplier == 1.5
 

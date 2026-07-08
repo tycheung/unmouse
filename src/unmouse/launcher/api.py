@@ -103,14 +103,11 @@ class PanelApi:
     def onboarding_check_camera(self) -> dict[str, object]:
         return self._forward_with_status(self._onboarding.check_camera(), "Camera OK")
 
-    def onboarding_run_polynomial(self) -> dict[str, object]:
+    def onboarding_run_calibration(self) -> dict[str, object]:
         return self._forward_with_status(
-            self._onboarding.run_polynomial_step(),
+            self._onboarding.run_calibration_step(),
             "Calibration saved",
         )
-
-    def onboarding_run_offset(self) -> dict[str, object]:
-        return self._onboarding.run_offset_step()
 
     def onboarding_run_gestures(self) -> dict[str, object]:
         if profile_has_gesture_templates(self._state.settings):
@@ -157,9 +154,9 @@ class PanelApi:
         )
 
     def start_calibrate(self) -> dict[str, object]:
-        from unmouse.launcher.calibration_wizards import run_full_calibration
+        from unmouse.launcher.calibration_wizards import run_calibration_wizard
 
-        outcome = run_full_calibration(self._state.settings)
+        outcome = run_calibration_wizard(self._state.settings)
         self._set_status_message(outcome.message)
         return action(outcome.success, outcome.message)
 

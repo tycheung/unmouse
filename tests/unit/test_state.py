@@ -12,7 +12,7 @@ def test_create_system_state_centers_gaze() -> None:
     snap = state.get_gaze()
     assert snap.x == 400.0
     assert snap.y == 300.0
-    assert snap.confidence == 1.0
+    assert snap.fixation == 0.0
 
 
 def test_concurrent_gaze_updates() -> None:
@@ -36,7 +36,7 @@ def test_concurrent_gaze_updates() -> None:
     assert not errors
     snap = state.get_gaze()
     assert 0.0 <= snap.x <= 4000.0
-    assert 0.0 <= snap.confidence <= 1.0
+    assert 0.0 <= snap.fixation <= 1.0
 
 
 def test_stop_sets_running_false() -> None:

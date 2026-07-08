@@ -25,7 +25,6 @@ class Settings(BaseSettings):
     screen_width: int = Field(default=1920, ge=1)
     screen_height: int = Field(default=1080, ge=1)
 
-    saccade_threshold_px: float = Field(default=80.0, gt=0)
     pinch_threshold: float = Field(default=0.03, gt=0)
     v_sign_log_likelihood_min: float = -800.0
     v_sign_loss_debounce_ms: int = Field(default=300, ge=0)
@@ -49,14 +48,9 @@ class Settings(BaseSettings):
 
     broker_queue_size: int = Field(default=2, ge=1, le=8)
 
-    gaze_confidence_min: float = Field(default=0.4, ge=0.0, le=1.0)
-    head_pose_drift_deg: float = Field(default=15.0, gt=0)
-    head_pose_drift_dwell_s: float = Field(default=2.0, gt=0)
-    kalman_measurement_noise: float = Field(default=10.0, gt=0)
-    kalman_process_noise: float = Field(default=0.1, gt=0)
-    calibration_max_residual_px: float = Field(default=75.0, gt=0)
-    calibration_point_duration_s: float = Field(default=1.5, gt=0)
-    calibration_discard_s: float = Field(default=0.5, ge=0)
+    gaze_calibration_points: int = Field(default=25, ge=4, le=64)
+    gaze_calibration_radius: int = Field(default=1000, gt=0)
+    fixation_threshold: float = Field(default=1.0, gt=0.0, le=1.0)
     scroll_speed_multiplier: float = Field(default=1.0, gt=0)
 
     @property

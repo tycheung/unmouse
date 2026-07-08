@@ -37,13 +37,13 @@
           <button type="button" @click="renameProfile()" :disabled="busy">Rename</button>
           <button type="button" class="danger" @click="deleteProfile()" :disabled="busy">Delete</button>
         </div>
-        <label class="field">Sensitivity (Kalman R)
-          <input type="range" min="1" max="50" step="0.5" x-model.number="settingsForm.kalman_measurement_noise" />
-          <span x-text="settingsForm.kalman_measurement_noise"></span>
+        <label class="field">Calibration points
+          <input type="range" min="4" max="49" step="1" x-model.number="settingsForm.gaze_calibration_points" />
+          <span x-text="settingsForm.gaze_calibration_points"></span>
         </label>
-        <label class="field">Saccade threshold (px)
-          <input type="range" min="20" max="200" step="5" x-model.number="settingsForm.saccade_threshold_px" />
-          <span x-text="settingsForm.saccade_threshold_px"></span>
+        <label class="field">Fixation threshold
+          <input type="range" min="0.1" max="1" step="0.05" x-model.number="settingsForm.fixation_threshold" />
+          <span x-text="settingsForm.fixation_threshold"></span>
         </label>
         <label class="field">Snap radius (px)
           <input type="range" min="10" max="150" step="5" x-model.number="settingsForm.snap_radius_px" />
@@ -98,9 +98,9 @@
       </section>
       <footer class="status-bar">
         <span class="status-pill" :class="status.tracking ? 'on' : 'off'" x-text="status.tracking ? (status.paused ? 'Paused' : 'Tracking') : 'Idle'"></span>
-        <span class="conf-wrap" x-show="status.tracking && status.confidence != null">
-          <span class="conf-label">Conf</span>
-          <span class="conf-bar"><span class="conf-fill" :style="'width:' + Math.round((status.confidence ?? 0) * 100) + '%'"></span></span>
+        <span class="conf-wrap" x-show="status.tracking && status.fixation != null">
+          <span class="conf-label">Focus</span>
+          <span class="conf-bar"><span class="conf-fill" :style="'width:' + Math.round((status.fixation ?? 0) * 100) + '%'"></span></span>
         </span>
         <span class="metric" x-show="status.tracking && status.fps != null" x-text="status.fps.toFixed(1) + ' fps'"></span>
         <span class="metric" x-show="status.last_calibrated" x-text="'Cal ' + status.last_calibrated"></span>
