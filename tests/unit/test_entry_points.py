@@ -24,7 +24,7 @@ def test_main_engine_flag_runs_engine() -> None:
 
 def test_engine_entry_delegates_to_run_engine() -> None:
     with patch("unmouse.engine.run_engine") as run_engine:
-        with patch("unmouse.engine.get_settings") as get_settings:
-            settings = get_settings.return_value
+        with patch("unmouse.engine.load_persisted_settings") as load_settings:
+            settings = load_settings.return_value
             run_engine_entry()
     run_engine.assert_called_once_with(settings)

@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from unmouse.launcher.engine_runner import EngineRunner, build_engine_command
+from unmouse.launcher.engine_runner import (
+    EngineProcessStatus,
+    EngineRunner,
+    EngineWatchdog,
+    WatchdogEvent,
+    build_engine_command,
+)
 
 
 def test_build_engine_command_uses_module_flag() -> None:
@@ -31,6 +37,18 @@ def test_engine_runner_start_and_stop() -> None:
     assert stopped.ok is True
     assert stopped.running is False
     assert runner.is_running() is False
+    assert runner.intentional_stop is True
+
+
+def test_engine_runner_clears_intentional_stop_on_start() -> None:
+    process = MagicMock()
+    process.poll.return_value = None
+    process.pid = 7
+    popen = MagicMock(return_value=process)
+    runner = EngineRunner(popen=popen)
+    runner._intentional_stop = True
+    runner.start()
+    assert runner.intentional_stop is False
 
 
 def test_engine_runner_start_is_idempotent() -> None:
@@ -53,3 +71,34 @@ def test_engine_runner_stop_when_not_running() -> None:
     assert stopped.ok is True
     assert stopped.running is False
     assert stopped.message == "Engine is not running."
+
+
+def test_watchdog_restarts_on_unexpected_exit() -> None:
+    runner = MagicMock()
+    runner.poll.return_value = 1
+    runner.intentional_stop = False
+    runner.start.return_value = EngineProcessStatus(
+        ok=True,
+        running=True,
+        pid=42,
+        message="Tracking engine started.",
+    )
+    events: list[WatchdogEvent] = []
+    watchdog = EngineWatchdog(runner, on_crash=events.append, poll_interval_s=0.01)
+    watchdog._sleep = lambda _interval: setattr(watchdog, "_running", False)
+    watchdog.start()
+    watchdog.stop()
+    assert events[0].restarted is True
+    runner.start.assert_called_once()
+
+
+def test_watchdog_ignores_intentional_stop() -> None:
+    runner = MagicMock()
+    runner.poll.return_value = 0
+    runner.intentional_stop = True
+    events: list[WatchdogEvent] = []
+    watchdog = EngineWatchdog(runner, on_crash=events.append, poll_interval_s=0.01)
+    watchdog._sleep = lambda _interval: setattr(watchdog, "_running", False)
+    watchdog.start()
+    watchdog.stop()
+    assert events == []

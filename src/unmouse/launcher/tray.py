@@ -32,11 +32,14 @@ class TrayBackend(Protocol):
 
     def refresh_menu(self) -> None: ...
 
+    def notify(self, message: str, *, title: str = "unmouse") -> None: ...
+
 
 @dataclass
 class FakeTrayBackend:
     handlers: TrayHandlers
     running: bool = False
+    notifications: list[str] | None = None
 
     def ensure_running(self) -> None:
         self.running = True
@@ -46,6 +49,11 @@ class FakeTrayBackend:
 
     def refresh_menu(self) -> None:
         return None
+
+    def notify(self, message: str, *, title: str = "unmouse") -> None:
+        if self.notifications is None:
+            self.notifications = []
+        self.notifications.append(message)
 
 
 class TrayController:
@@ -85,6 +93,13 @@ class TrayController:
             update = getattr(self._icon, "update_menu", None)
             if callable(update):
                 update()
+
+    def notify(self, message: str, *, title: str = "unmouse") -> None:
+        if self._icon is None:
+            return
+        notify = getattr(self._icon, "notify", None)
+        if callable(notify):
+            notify(message, title)
 
     def _build_menu(self, pystray: Any) -> Any:
         items: list[Any] = [

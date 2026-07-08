@@ -7,7 +7,8 @@ from dataclasses import asdict, dataclass
 from typing import Literal
 
 from unmouse.config import GazeMode, Settings
-from unmouse.launcher.engine_runner import EngineRunner
+from unmouse.diagnostics import load_diagnostics_snapshot
+from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.settings import (
@@ -76,11 +77,13 @@ class PanelApi:
         *,
         engine_runner: EngineRunner | None = None,
         tray: TrayBackend | None = None,
+        watchdog: EngineWatchdog | None = None,
     ) -> None:
         self._settings = settings or load_persisted_settings()
         self._onboarding = onboarding or OnboardingController.create(self._settings)
         self._engine_runner = engine_runner or EngineRunner()
         self._tray = tray
+        self._watchdog = watchdog
         self._on_show_panel: Callable[[], None] | None = None
         self._on_minimize_panel: Callable[[], None] | None = None
         self._on_quit_app: Callable[[], None] | None = None
@@ -99,11 +102,16 @@ class PanelApi:
     def get_status(self) -> dict[str, object]:
         self._settings = load_persisted_settings()
         runtime = load_runtime(self._settings)
+        diagnostics = (
+            load_diagnostics_snapshot(self._settings)
+            if self._engine_runner.is_running()
+            else None
+        )
         return asdict(
             PanelStatus(
                 message=self._status.message,
-                fps=self._status.fps,
-                confidence=self._status.confidence,
+                fps=diagnostics.broker_fps if diagnostics else self._status.fps,
+                confidence=diagnostics.gaze_confidence if diagnostics else self._status.confidence,
                 tracking=self._engine_runner.is_running(),
                 paused=runtime.paused if self._engine_runner.is_running() else False,
                 gaze_mode=self._settings.gaze_mode.value,
@@ -248,6 +256,7 @@ class PanelApi:
             return asdict(result)
         set_paused(self._settings, False)
         self._ensure_tray()
+        self._start_watchdog()
         if self._on_minimize_panel is not None:
             self._on_minimize_panel()
         self._status = self._runtime_panel_status(status.message)
@@ -258,11 +267,13 @@ class PanelApi:
         return payload
 
     def stop_engine(self) -> dict[str, object]:
+        self._stop_watchdog()
         status = self._engine_runner.stop()
         self._status = self._runtime_panel_status(status.message)
         return asdict(PanelActionResult(status.ok, status.message))
 
     def shutdown(self) -> None:
+        self._stop_watchdog()
         self._engine_runner.stop()
         if self._tray is not None:
             self._tray.stop()
@@ -443,3 +454,20 @@ class PanelApi:
         self.shutdown()
         if self._on_quit_app is not None:
             self._on_quit_app()
+
+    def _start_watchdog(self) -> None:
+        if self._watchdog is None:
+            self._watchdog = EngineWatchdog(
+                self._engine_runner,
+                on_crash=self._handle_engine_crash,
+            )
+        self._watchdog.start()
+
+    def _stop_watchdog(self) -> None:
+        if self._watchdog is not None:
+            self._watchdog.stop()
+
+    def _handle_engine_crash(self, event: WatchdogEvent) -> None:
+        if self._tray is not None:
+            self._tray.notify(event.message)
+        self._status = self._runtime_panel_status(event.message)

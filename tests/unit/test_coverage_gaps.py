@@ -63,8 +63,8 @@ def test_run_engine_handles_keyboard_interrupt(settings: Settings) -> None:
 
 def test_run_invokes_engine_with_settings() -> None:
     with patch("unmouse.main.run_engine") as run_engine_mock:
-        with patch("unmouse.main.get_settings") as get_settings:
-            settings = get_settings.return_value
+        with patch("unmouse.main.load_persisted_settings") as load_settings:
+            settings = load_settings.return_value
             run()
     run_engine_mock.assert_called_once()
     assert run_engine_mock.call_args.args[0] is settings

@@ -6,13 +6,17 @@ import signal
 import sys
 import time
 
-from unmouse.config import Settings, get_settings
+from unmouse.config import Settings
+from unmouse.diagnostics import DiagnosticsService
 from unmouse.engine_controls import EngineRuntimeController
+from unmouse.launcher.settings import load_persisted_settings
 from unmouse.state import SystemState, create_system_state
+from unmouse.utils.logging import setup_logging
 
 
 def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     runtime_state = state or create_system_state(settings)
+    logger = setup_logging(settings, name="unmouse.engine")
     _install_signal_handlers(runtime_state)
 
     from unmouse.arbitrator.controller import ActionController
@@ -20,7 +24,12 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     from unmouse.gaze.thread import GazeWorker
     from unmouse.gestures.thread import GestureWorker
 
-    broker = VideoBroker(runtime_state, settings)
+    diagnostics = DiagnosticsService(runtime_state, settings)
+    broker = VideoBroker(
+        runtime_state,
+        settings,
+        on_frame=diagnostics.record_broker_frame,
+    )
     gaze_worker = GazeWorker(runtime_state, settings)
     gesture_worker = GestureWorker(runtime_state, settings)
     controller = ActionController(runtime_state, settings, enable_overlay=False)
@@ -30,25 +39,27 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     gesture_worker.start()
     controller.start()
     runtime_controller.start()
+    diagnostics.start()
 
-    print(f"unmouse engine — screen {settings.screen_width}x{settings.screen_height}")
+    logger.info("Engine started for screen %sx%s", settings.screen_width, settings.screen_height)
     try:
         while runtime_state.is_running():
             time.sleep(0.05)
     except KeyboardInterrupt:
         runtime_state.stop()
     finally:
+        diagnostics.stop()
         runtime_controller.stop()
         controller.stop()
         controller.join(timeout=1.0)
         gesture_worker.join(timeout=1.0)
         gaze_worker.join(timeout=1.0)
         broker.join(timeout=1.0)
-        print("unmouse engine stopped.")
+        logger.info("Engine stopped")
 
 
 def run() -> None:
-    settings = get_settings()
+    settings = load_persisted_settings()
     state = create_system_state(settings)
     run_engine(settings, state)
 

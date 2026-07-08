@@ -5,9 +5,10 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from unmouse.config import Settings
+from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
-from unmouse.launcher.engine_runner import EngineRunner
+from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
@@ -211,3 +212,53 @@ def test_panel_api_enrollment_capture_marks_onboarding_complete() -> None:
         result = api.enrollment_capture()
     assert result["ok"] is True
     assert api._onboarding.gestures_complete is True
+
+
+def test_panel_api_watchdog_diagnostics_and_crash(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    settings = Settings(screen_width=800, screen_height=600)
+    runner = EngineRunner()
+    tray = FakeTrayBackend(
+        TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
+    )
+    watchdog = MagicMock(spec=EngineWatchdog)
+    api = PanelApi(
+        settings=settings,
+        onboarding=MagicMock(spec=OnboardingController),
+        engine_runner=runner,
+        tray=tray,
+        watchdog=watchdog,
+    )
+    api._onboarding.should_show_on_startup.return_value = False
+
+    class FakeProcess:
+        pid = 55
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    with patch.object(runner, "_popen", return_value=FakeProcess()):
+        api.start_launch()
+    watchdog.start.assert_called_once()
+    save_diagnostics_snapshot(
+        settings,
+        DiagnosticsSnapshot(
+            broker_fps=28.5,
+            gaze_confidence=0.77,
+            gaze_queue_depth=0,
+            gesture_queue_depth=0,
+        ),
+    )
+    status = api.get_status()
+    assert status["fps"] == 28.5
+    assert status["confidence"] == 0.77
+    api._handle_engine_crash(
+        WatchdogEvent(exit_code=1, message="Engine exited unexpectedly (code 1).", restarted=True),
+    )
+    assert tray.notifications == ["Engine exited unexpectedly (code 1)."]

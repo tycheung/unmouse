@@ -9,6 +9,7 @@ from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.settings import load_persisted_settings
+from unmouse.utils.logging import setup_logging
 from unmouse.utils.paths import resource_path
 
 PANEL_TITLE = "unmouse"
@@ -62,6 +63,7 @@ def run(*, debug: bool = False) -> None:
         raise FileNotFoundError(msg)
 
     api = create_panel_api()
+    setup_logging(api._settings, name="unmouse.launcher")
     show_panel, minimize_panel, quit_app = _panel_window_callbacks(api)
     api.configure_launcher_shell(
         on_show_panel=show_panel,

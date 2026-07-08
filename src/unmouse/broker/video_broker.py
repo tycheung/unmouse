@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from queue import Empty, Full, Queue
 from typing import Protocol
@@ -33,10 +34,13 @@ class VideoBroker:
         state: SystemState,
         settings: Settings,
         source: FrameSource | None = None,
+        *,
+        on_frame: Callable[[], None] | None = None,
     ) -> None:
         self._state = state
         self._settings = settings
         self._source = source
+        self._on_frame = on_frame
         self._thread: threading.Thread | None = None
         self._frame_id = 0
 
@@ -61,6 +65,8 @@ class VideoBroker:
                 self._frame_id += 1
                 packet = FramePacket(self._frame_id, frame.copy())
                 self._publish(packet)
+                if self._on_frame is not None:
+                    self._on_frame()
         finally:
             source.release()
 

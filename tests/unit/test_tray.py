@@ -31,5 +31,12 @@ def test_create_tray_backend_uses_fake_when_disabled() -> None:
     assert isinstance(create_tray_backend(handlers, prefer_pystray=False), FakeTrayBackend)
 
 
+def test_fake_tray_notify_records_message() -> None:
+    handlers = TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None)
+    tray = FakeTrayBackend(handlers)
+    tray.notify("Engine crashed", title="unmouse")
+    assert tray.notifications == ["Engine crashed"]
+
+
 def test_create_tray_icon_image_returns_pil_image() -> None:
     assert create_tray_icon_image().size == (64, 64)
