@@ -147,6 +147,52 @@ button.primary:hover:not(:disabled) {
   color: var(--danger);
 }
 
+.status-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.status-pill.on {
+  background: rgba(152, 195, 121, 0.18);
+  color: var(--success);
+}
+
+.status-pill.off {
+  background: rgba(154, 160, 166, 0.15);
+  color: var(--muted);
+}
+
+.conf-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conf-label {
+  font-size: 0.75rem;
+}
+
+.conf-bar {
+  width: 64px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.conf-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.metric {
+  font-size: 0.78rem;
+}
+
 .status-bar .sep::before {
   content: "│";
   margin-right: 12px;

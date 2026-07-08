@@ -26,10 +26,13 @@ def test_ui_index_references_local_assets() -> None:
     assert 'src="alpine.min.js"' in html
     assert "Update Software" in html
     assert "Calibrate" in html
-    assert "Launch" in html
+    assert "Stop Tracking" in html
+    assert "Pause / Resume" in html
     assert "Settings" in html
     assert "Train Gestures" in html
     assert "update-badge" in html
+    assert "conf-bar" in html
+    assert "last_calibrated" in html
 
 
 def test_create_panel_api_uses_settings() -> None:

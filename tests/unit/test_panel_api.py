@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
-from unmouse.launcher.api import PanelApi
+from unmouse.launcher.api import PanelApi, last_calibration_label
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
@@ -262,3 +262,17 @@ def test_panel_api_watchdog_diagnostics_and_crash(tmp_path, monkeypatch) -> None
         WatchdogEvent(exit_code=1, message="Engine exited unexpectedly (code 1).", restarted=True),
     )
     assert tray.notifications == ["Engine exited unexpectedly (code 1)."]
+
+
+def test_last_calibration_label_uses_profile_calibration_file(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    settings = Settings(screen_width=800, screen_height=600)
+    cal_path = settings.profile_dir / "calibration.json"
+    cal_path.parent.mkdir(parents=True, exist_ok=True)
+    cal_path.write_text(
+        '{"x_coeffs": [0, 1, 0, 0, 0, 0], "y_coeffs": [0, 0, 1, 0, 0, 0]}',
+        encoding="utf-8",
+    )
+    assert last_calibration_label(settings) is not None
+    empty = Settings(screen_width=800, screen_height=600, profile_name="other")
+    assert last_calibration_label(empty) is None

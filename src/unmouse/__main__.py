@@ -1,7 +1,7 @@
 import sys
 
 from unmouse.engine import run as run_engine
-from unmouse.main import run as run_launcher
+from unmouse.launcher.panel import run as run_launcher
 
 
 def main() -> None:

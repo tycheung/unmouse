@@ -9,7 +9,6 @@ import time
 from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsService
 from unmouse.engine_controls import EngineRuntimeController
-from unmouse.launcher.settings import load_persisted_settings
 from unmouse.state import SystemState, create_system_state
 from unmouse.utils.logging import setup_logging
 
@@ -59,9 +58,10 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
 
 
 def run() -> None:
-    settings = load_persisted_settings()
-    state = create_system_state(settings)
-    run_engine(settings, state)
+    """Default user entry: open the control panel launcher."""
+    from unmouse.launcher.panel import run as run_panel
+
+    run_panel()
 
 
 def _install_signal_handlers(state: SystemState) -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Literal
 
 from unmouse.config import GazeMode, Settings
@@ -36,6 +37,7 @@ class PanelStatus:
     tracking: bool = False
     paused: bool = False
     gaze_mode: str = "cursor_follow"
+    last_calibrated: str | None = None
 
 
 @dataclass(frozen=True)
@@ -115,6 +117,7 @@ class PanelApi:
                 tracking=self._engine_runner.is_running(),
                 paused=runtime.paused if self._engine_runner.is_running() else False,
                 gaze_mode=self._settings.gaze_mode.value,
+                last_calibrated=last_calibration_label(self._settings),
             ),
         )
 
@@ -401,6 +404,7 @@ class PanelApi:
             tracking=self._engine_runner.is_running(),
             paused=runtime.paused if self._engine_runner.is_running() else False,
             gaze_mode=self._settings.gaze_mode.value,
+            last_calibrated=last_calibration_label(self._settings),
         )
 
     def _tray_handlers(self) -> TrayHandlers:
@@ -471,3 +475,20 @@ class PanelApi:
         if self._tray is not None:
             self._tray.notify(event.message)
         self._status = self._runtime_panel_status(event.message)
+
+
+def last_calibration_label(settings: Settings) -> str | None:
+    """Return the most recent calibration file date for the active profile."""
+    from unmouse.gaze.calibration import calibration_path, load_calibration
+    from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
+
+    candidates: list[float] = []
+    cal_path = calibration_path(settings)
+    if load_calibration(cal_path) is not None and cal_path.is_file():
+        candidates.append(cal_path.stat().st_mtime)
+    off_path = offset_profile_path(settings)
+    if load_offset_profile(off_path) is not None and off_path.is_file():
+        candidates.append(off_path.stat().st_mtime)
+    if not candidates:
+        return None
+    return datetime.fromtimestamp(max(candidates)).strftime("%Y-%m-%d")

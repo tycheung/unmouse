@@ -61,13 +61,10 @@ def test_run_engine_handles_keyboard_interrupt(settings: Settings) -> None:
     assert state.is_running() is False
 
 
-def test_run_invokes_engine_with_settings() -> None:
-    with patch("unmouse.main.run_engine") as run_engine_mock:
-        with patch("unmouse.main.load_persisted_settings") as load_settings:
-            settings = load_settings.return_value
-            run()
-    run_engine_mock.assert_called_once()
-    assert run_engine_mock.call_args.args[0] is settings
+def test_run_opens_control_panel() -> None:
+    with patch("unmouse.launcher.panel.run") as panel_run:
+        run()
+    panel_run.assert_called_once()
 
 
 def test_fit_gaussian_rejects_invalid_samples() -> None:

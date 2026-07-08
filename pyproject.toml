@@ -28,9 +28,11 @@ mypy = "^1.9"
 ruff = "^0.4"
 
 [tool.poetry.scripts]
-unmouse = "unmouse.main:run"
+unmouse = "unmouse.launcher.panel:run"
 unmouse-engine = "unmouse.engine:run"
 unmouse-panel = "unmouse.launcher.panel:run"
+mggist = "unmouse.launcher.panel:run"
+mggist-engine = "unmouse.engine:run"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
