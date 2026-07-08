@@ -23,7 +23,7 @@ class GazeWorker:
     ) -> None:
         self._state = state
         self._settings = settings
-        self._tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)
+        self._tracker = tracker or create_gaze_tracker()
         if pipeline is None:
             calibration = load_calibration(settings.profile_dir / "calibration.json")
             desktop = probe_virtual_desktop(settings)

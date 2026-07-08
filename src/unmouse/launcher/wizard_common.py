@@ -243,7 +243,7 @@ def run_stare_wizard(
 ) -> object:
     wait = sleep or time.sleep
     now_s = clock or time.perf_counter
-    gaze_tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)
+    gaze_tracker = tracker or create_gaze_tracker()
     source = frame_source or create_frame_source(settings)
     ui = overlay or create_calibration_overlay(prefer_win32=prefer_win32_overlay)
     try:

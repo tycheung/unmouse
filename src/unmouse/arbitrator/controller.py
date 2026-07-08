@@ -39,10 +39,7 @@ class ActionController:
     ) -> None:
         self._state = state
         self._settings = settings
-        self._driver = driver or create_action_driver(
-            failsafe=settings.pyautogui_failsafe,
-            prefer_pyautogui=False,
-        )
+        self._driver = driver or create_action_driver(failsafe=settings.pyautogui_failsafe)
         self._snap_engine = snap_engine or SnapEngine(snap_radius_px=settings.snap_radius_px)
         self._snap_orchestrator = snap_orchestrator or _default_snap_orchestrator(prefer_win32)
         self._sampler = luminance_sampler

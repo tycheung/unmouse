@@ -39,7 +39,7 @@ class GestureWorker:
     ) -> None:
         self._state = state
         self._settings = settings
-        self._detector = detector or create_hand_detector(prefer_mediapipe=False)
+        self._detector = detector or create_hand_detector()
         self._library = library if library is not None else load_runtime_gesture_library(settings)
         self._click_fsm = click_fsm or ClickFsm.from_settings(settings)
         self._scroll_fsm = scroll_fsm or ScrollFsm.from_settings(settings)
