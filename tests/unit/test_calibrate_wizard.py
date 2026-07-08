@@ -13,9 +13,10 @@ from unmouse.gaze.offset_profile import (
 from unmouse.launcher.calibration_wizards import (
     NUM_OFFSET_TARGETS,
     OffsetWizardOutcome,
-    OffsetWizardRunner,
     build_offset_targets,
     build_polynomial_targets,
+    create_offset_stare_runner,
+    offset_outcome_from_measurements,
     polynomial_prerequisite_message,
     run_offset_wizard,
 )
@@ -71,8 +72,11 @@ def test_runner_finish_from_measurements_saves_profile(tmp_path, monkeypatch) ->
     assert model is not None
     targets = build_offset_targets(settings.screen_width, settings.screen_height)
     measurements = [(target.x, target.y) for target in targets]
-    runner = OffsetWizardRunner(settings, model)
-    outcome = runner.finish_from_measurements(measurements)
+    outcome = offset_outcome_from_measurements(
+        settings,
+        targets=targets,
+        measurements=measurements,
+    )
     assert outcome.success is True
     loaded = load_offset_profile(offset_profile_path(settings))
     assert loaded is not None
@@ -93,8 +97,8 @@ def test_runner_collects_samples_over_point_duration(tmp_path, monkeypatch) -> N
 
     model = load_calibration(calibration_path(settings))
     assert model is not None
-    runner = OffsetWizardRunner(settings, model)
     targets = build_offset_targets(settings.screen_width, settings.screen_height)
+    runner = create_offset_stare_runner(settings, model)
     for index, target in enumerate(targets):
         runner.begin_point(float(index))
         for step in range(16):
@@ -161,6 +165,6 @@ def test_runner_requires_begin_point(tmp_path, monkeypatch) -> None:
 
     model = load_calibration(calibration_path(settings))
     assert model is not None
-    runner = OffsetWizardRunner(settings, model)
+    runner = create_offset_stare_runner(settings, model)
     with pytest.raises(RuntimeError, match="begin_point"):
         runner.add_sample(GazeSample(0.0, 0.1, 0.2))

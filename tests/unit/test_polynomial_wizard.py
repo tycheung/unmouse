@@ -7,8 +7,9 @@ from unmouse.gaze.calibration import calibration_path, load_calibration, save_ca
 from unmouse.launcher.calibration_overlay import create_calibration_overlay
 from unmouse.launcher.calibration_wizards import (
     NUM_POLY_TARGETS,
-    PolynomialWizardRunner,
     build_polynomial_targets,
+    create_polynomial_stare_runner,
+    polynomial_outcome_from_pairs,
 )
 from unmouse.launcher.wizard_common import (
     GazeSample,
@@ -72,8 +73,10 @@ def _ideal_pairs(settings: Settings) -> list[tuple[float, float, float, float]]:
 
 def test_runner_accepts_ideal_pairs_with_low_residual() -> None:
     settings = Settings(screen_width=800, screen_height=600, calibration_max_residual_px=75.0)
-    runner = PolynomialWizardRunner(settings)
-    outcome = runner.finish_from_pairs(_ideal_pairs(settings))
+    outcome = polynomial_outcome_from_pairs(
+        _ideal_pairs(settings),
+        max_residual_px=settings.calibration_max_residual_px,
+    )
     assert outcome.success is True
     assert outcome.model is not None
     assert outcome.residual_px < 1.0
@@ -84,8 +87,10 @@ def test_runner_rejects_high_residual() -> None:
     settings = Settings(screen_width=800, screen_height=600, calibration_max_residual_px=10.0)
     pairs = _ideal_pairs(settings)
     pairs[0] = (0.0, 0.0, 999.0, 999.0)
-    runner = PolynomialWizardRunner(settings)
-    outcome = runner.finish_from_pairs(pairs)
+    outcome = polynomial_outcome_from_pairs(
+        pairs,
+        max_residual_px=settings.calibration_max_residual_px,
+    )
     assert outcome.success is False
     assert outcome.retry_recommended is True
     assert "retry" in outcome.message.lower()
@@ -93,8 +98,8 @@ def test_runner_rejects_high_residual() -> None:
 
 def test_runner_collects_samples_over_point_duration() -> None:
     settings = Settings(screen_width=800, screen_height=600)
-    runner = PolynomialWizardRunner(settings)
     targets = build_polynomial_targets(settings.screen_width, settings.screen_height)
+    runner = create_polynomial_stare_runner(settings)
     for index, target in enumerate(targets):
         runner.begin_point(float(index))
         for step in range(16):
@@ -113,8 +118,10 @@ def test_runner_collects_samples_over_point_duration() -> None:
 def test_wizard_save_roundtrip(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600, profile_name="lab")
-    runner = PolynomialWizardRunner(settings)
-    outcome = runner.finish_from_pairs(_ideal_pairs(settings))
+    outcome = polynomial_outcome_from_pairs(
+        _ideal_pairs(settings),
+        max_residual_px=settings.calibration_max_residual_px,
+    )
     assert outcome.success is True
     assert outcome.model is not None
     save_calibration(calibration_path(settings), outcome.model)
@@ -130,7 +137,7 @@ def test_create_calibration_overlay_uses_fake_off_windows(monkeypatch) -> None:
 
 
 def test_polynomial_wizard_runner_requires_begin_point(settings: Settings) -> None:
-    runner = PolynomialWizardRunner(settings)
+    runner = create_polynomial_stare_runner(settings)
     with pytest.raises(RuntimeError, match="begin_point"):
         runner.add_sample(GazeSample(0.0, 0.1, 0.2))
 
