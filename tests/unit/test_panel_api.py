@@ -170,6 +170,44 @@ def test_panel_api_view_navigation() -> None:
     assert api.show_main()["view"] == "main"
 
 
+def test_panel_api_calibrate_stops_engine_for_camera_access() -> None:
+    runner = EngineRunner()
+    api = PanelApi(
+        settings=Settings(screen_width=800, screen_height=600),
+        onboarding=MagicMock(spec=OnboardingController),
+        engine_runner=runner,
+    )
+    api._onboarding.should_show_on_startup.return_value = False
+
+    class FakeProcess:
+        pid = 42
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    with patch.object(runner, "_popen", return_value=FakeProcess()):
+        api.start_launch()
+    assert runner.is_running()
+
+    camera_free = {"during": None}
+
+    def run_wizard(_settings: object) -> ActionResult:
+        camera_free["during"] = not runner.is_running()
+        return ActionResult(True, "Calibration saved (9 points).")
+
+    with patch("unmouse.launcher.calibration_wizards.run_calibration_wizard", side_effect=run_wizard):
+        api.start_calibrate()
+
+    assert camera_free["during"] is True
+    assert runner.is_running()
+
+
 def test_panel_api_show_enrollment_opens_session() -> None:
     api = _api_without_onboarding_prompt()
     with patch(

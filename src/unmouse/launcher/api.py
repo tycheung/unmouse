@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
 from typing import Literal
 
@@ -147,13 +148,15 @@ class PanelApi:
         return self._onboarding.skip_current_step(confirmed=confirmed)
 
     def onboarding_check_camera(self) -> dict[str, object]:
-        return self._forward_with_status(self._onboarding.check_camera(), "Camera OK")
+        with self._release_camera():
+            return self._forward_with_status(self._onboarding.check_camera(), "Camera OK")
 
     def onboarding_run_calibration(self) -> dict[str, object]:
-        return self._forward_with_status(
-            self._onboarding.run_calibration_step(),
-            "Calibration saved",
-        )
+        with self._release_camera():
+            return self._forward_with_status(
+                self._onboarding.run_calibration_step(),
+                "Calibration saved",
+            )
 
     def onboarding_run_gestures(self) -> dict[str, object]:
         if profile_has_gesture_templates(self._state.settings):
@@ -199,7 +202,8 @@ class PanelApi:
     def start_calibrate(self) -> dict[str, object]:
         from unmouse.launcher.calibration_wizards import run_calibration_wizard
 
-        outcome = run_calibration_wizard(self._state.settings)
+        with self._release_camera():
+            outcome = run_calibration_wizard(self._state.settings)
         self.set_status(outcome.message)
         return action(outcome.ok, outcome.message)
 
@@ -337,7 +341,8 @@ class PanelApi:
         self._close_enrollment()
         session = GestureEnrollmentSession(self._state.settings)
         try:
-            session.open()
+            with self._release_camera():
+                session.open()
         except RuntimeError as exc:
             return action(False, str(exc))
         self._state.enrollment = session
@@ -349,6 +354,22 @@ class PanelApi:
         if self._state.enrollment is not None:
             self._state.enrollment.close()
             self._state.enrollment = None
+
+    @contextmanager
+    def _release_camera(self) -> Iterator[None]:
+        was_running = self._engine_runner.is_running()
+        if was_running:
+            self._stop_watchdog()
+            self._engine_runner.stop()
+        try:
+            yield
+        finally:
+            if was_running:
+                status = self._engine_runner.start()
+                if status.ok and status.running:
+                    set_paused(self._state.settings, False)
+                    self._start_watchdog()
+                    self.set_status(status.message)
 
     def _reload_if_running(self) -> bool:
         if not self._engine_runner.is_running():
