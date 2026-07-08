@@ -115,20 +115,21 @@ class PanelApi:
     def onboarding_run_gestures(self) -> dict[str, object]:
         if profile_has_gesture_templates(self._state.settings):
             self._onboarding.gestures_complete = True
-            return {
-                **action(True, "Gesture templates already saved."),
-                "state": self._onboarding.get_state(),
-            }
+            return self._with_onboarding_state(action(True, "Gesture templates already saved."))
         opened = self._open_enrollment(return_view="onboarding")
         if not opened.get("ok", True):
-            return {**opened, "state": self._onboarding.get_state()}
-        return {
-            "ok": True,
-            "message": "Hold each pose for 1 second while capturing.",
-            "view": opened["view"],
-            "enrollment": opened.get("enrollment"),
-            "state": self._onboarding.get_state(),
-        }
+            return self._with_onboarding_state(opened)
+        return self._with_onboarding_state(
+            {
+                "ok": True,
+                "message": "Hold each pose for 1 second while capturing.",
+                "view": opened["view"],
+                "enrollment": opened.get("enrollment"),
+            }
+        )
+
+    def _with_onboarding_state(self, payload: dict[str, object]) -> dict[str, object]:
+        return {**payload, "state": self._onboarding.get_state()}
 
     def onboarding_complete(self) -> dict[str, object]:
         result = self._onboarding.complete()
@@ -148,7 +149,7 @@ class PanelApi:
         if self._state.update_status is None or not self._state.update_status.available:
             return action(False, "No update is available.")
         self._state.update_status = apply_update(self._state.update_status)
-        self._state.status = PanelStatus(message=self._state.update_status.message)
+        self._set_status_message(self._state.update_status.message)
         payload = action(not self._state.update_status.available, self._state.update_status.message)
         payload["update"] = update_payload(self._state.update_status)
         return payload
@@ -192,7 +193,7 @@ class PanelApi:
     def save_settings_panel(self, updates: dict[str, object]) -> dict[str, object]:
         snapshot = update_panel_settings(self._state.settings, updates)
         self._state.settings = load_persisted_settings()
-        self._state.status = PanelStatus(message="Settings saved")
+        self._set_status_message("Settings saved")
         return {"ok": True, "message": "Settings saved.", "settings": snapshot}
 
     def _profile_action(
@@ -247,7 +248,7 @@ class PanelApi:
         capture = self._state.enrollment.capture_current_gesture()
         if capture.ok and capture.done:
             self._onboarding.gestures_complete = True
-        self._state.status = PanelStatus(message=capture.message)
+        self._set_status_message(capture.message)
         payload = capture.to_dict()
         payload["enrollment"] = self._state.enrollment.get_state()
         return payload
