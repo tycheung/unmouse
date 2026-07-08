@@ -6,7 +6,7 @@ from typing import Literal
 
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
-from unmouse.launcher.api_helpers import ActionResult
+from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.persistence import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 OnboardingStepId = Literal["welcome", "camera", "calibration", "gestures", "ready"]

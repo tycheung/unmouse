@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi, last_calibration_label
-from unmouse.launcher.api_helpers import ActionResult
+from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers

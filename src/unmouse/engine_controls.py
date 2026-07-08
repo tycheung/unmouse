@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from unmouse.config import Settings
-from unmouse.runtime import sync_engine_controls, toggle_paused
+from unmouse.persistence import sync_engine_controls, toggle_paused
 
 HotkeyCallback = Callable[[], None]
 

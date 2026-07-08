@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from unmouse.config import GazeMode, Settings, clear_settings_cache
-from unmouse.utils.json_io import read_json_object_or_empty, write_json_object
+from unmouse.utils.json_io import read_json_object, read_json_object_or_empty, write_json_object
 
 SETTINGS_FILENAME = "settings.json"
+RUNTIME_FILENAME = "runtime.json"
 
 PERSISTED_SETTING_FIELDS = (
     "profile_name",
@@ -29,8 +30,24 @@ class LauncherFlags:
         return cls(first_run_complete=bool(data.get("first_run_complete", False)))
 
 
+@dataclass
+class RuntimeState:
+    paused: bool = False
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> RuntimeState:
+        return cls(paused=bool(data.get("paused", False)))
+
+
 def settings_file_path(settings: Settings) -> Path:
     return settings.app_data_dir / SETTINGS_FILENAME
+
+
+def runtime_file_path(settings: Settings) -> Path:
+    return settings.app_data_dir / RUNTIME_FILENAME
 
 
 def read_settings_file(path: Path) -> dict[str, object]:
@@ -70,6 +87,40 @@ def save_persisted_settings(settings: Settings) -> Path:
     settings.profile_dir.mkdir(parents=True, exist_ok=True)
     clear_settings_cache()
     return path
+
+
+def load_runtime(settings: Settings) -> RuntimeState:
+    path = runtime_file_path(settings)
+    if not path.is_file():
+        return RuntimeState()
+    data = read_json_object(path, error_message="runtime JSON must be an object")
+    return RuntimeState.from_dict(data)
+
+
+def save_runtime(settings: Settings, state: RuntimeState) -> Path:
+    path = runtime_file_path(settings)
+    write_json_object(path, state.to_dict())
+    return path
+
+
+def set_paused(settings: Settings, paused: bool) -> RuntimeState:
+    state = RuntimeState(paused=paused)
+    save_runtime(settings, state)
+    return state
+
+
+def toggle_paused(settings: Settings) -> RuntimeState:
+    state = load_runtime(settings)
+    state.paused = not state.paused
+    save_runtime(settings, state)
+    return state
+
+
+def sync_engine_controls(settings: Settings) -> None:
+    settings.paused = load_runtime(settings).paused
+    persisted = load_persisted_settings()
+    settings.gaze_mode = persisted.gaze_mode
+    settings.pause_hotkey = persisted.pause_hotkey
 
 
 def _settings_to_dict(settings: Settings) -> dict[str, object]:

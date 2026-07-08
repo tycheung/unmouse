@@ -3,11 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
+from datetime import datetime
 from typing import Literal
 
 from unmouse.config import GazeMode, Settings
 from unmouse.diagnostics import load_diagnostics_snapshot
-from unmouse.launcher.api_helpers import action, last_calibration_label, update_payload
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
@@ -22,12 +22,39 @@ from unmouse.launcher.settings import (
 )
 from unmouse.launcher.tray import TrayBackend, TrayHandlers, create_tray_backend
 from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
-from unmouse.persistence import load_persisted_settings
-from unmouse.runtime import RuntimeState, load_runtime, set_paused, toggle_paused
+from unmouse.launcher.calibration_wizards import ActionResult
+from unmouse.persistence import (
+    RuntimeState,
+    load_persisted_settings,
+    load_runtime,
+    set_paused,
+    toggle_paused,
+)
 
 PanelView = Literal["main", "settings", "onboarding", "enrollment"]
 
-__all__ = ["PanelApi", "PanelStatus", "PanelView", "last_calibration_label"]
+__all__ = ["PanelApi", "PanelStatus", "PanelView", "ActionResult", "last_calibration_label"]
+
+
+def action(ok: bool, message: str, **extra: object) -> dict[str, object]:
+    payload = ActionResult(ok, message).to_dict()
+    payload.update(extra)
+    return payload
+
+
+def update_payload(status: UpdateStatus) -> dict[str, object]:
+    payload = status.to_dict()
+    payload["version"] = status.latest_version
+    return payload
+
+
+def last_calibration_label(settings: Settings) -> str | None:
+    from unmouse.gaze.tracker import gaze_model_path
+
+    path = gaze_model_path(settings)
+    if not path.is_file():
+        return None
+    return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
 
 
 @dataclass

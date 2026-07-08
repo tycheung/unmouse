@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from unmouse.config import Settings
-from unmouse.launcher.api_helpers import ActionResult
+from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.persistence import LauncherFlags, load_launcher_flags, save_launcher_flags
 

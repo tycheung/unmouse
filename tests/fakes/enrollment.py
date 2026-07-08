@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from unmouse.config import Settings
-from unmouse.launcher.api_helpers import ActionResult
+from unmouse.launcher.calibration_wizards import ActionResult
 from unmouse.launcher.enroll_ui import EnrollmentPreview
 
 

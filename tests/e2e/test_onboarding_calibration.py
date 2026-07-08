@@ -73,7 +73,7 @@ def test_calibrate_runs_wizard_from_main(
 
     def fake_wizard(_settings: object) -> object:
         calls["calibration"] += 1
-        from unmouse.launcher.api_helpers import ActionResult
+        from unmouse.launcher.calibration_wizards import ActionResult
 
         return ActionResult(True, "Gaze calibration saved (mock).")
 

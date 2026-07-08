@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unmouse.config import GazeMode, Settings
 from unmouse.launcher.settings import save_persisted_settings
-from unmouse.runtime import (
+from unmouse.persistence import (
     RuntimeState,
     save_runtime,
     sync_engine_controls,
