@@ -1,4 +1,9 @@
 function panelApp() {
+  function applyIfPresent(s, fn) {
+    if (!s) return;
+    fn(s);
+  }
+
   return {
     view: "main",
     busy: false,
@@ -48,16 +53,17 @@ function panelApp() {
       notice: "",
     },
     applyStatus(s) {
-      if (!s) return;
-      this.statusMessage = s.message ?? "Ready";
-      this.status = {
-        tracking: !!s.tracking,
-        paused: !!s.paused,
-        fps: s.fps ?? null,
-        confidence: s.confidence ?? null,
-        last_calibrated: s.last_calibrated ?? null,
-        gaze_mode: s.gaze_mode ?? "cursor_follow",
-      };
+      applyIfPresent(s, (s) => {
+        this.statusMessage = s.message ?? "Ready";
+        this.status = {
+          tracking: !!s.tracking,
+          paused: !!s.paused,
+          fps: s.fps ?? null,
+          confidence: s.confidence ?? null,
+          last_calibrated: s.last_calibrated ?? null,
+          gaze_mode: s.gaze_mode ?? "cursor_follow",
+        };
+      });
     },
     async init() {
       await this.refreshStatus();
@@ -69,42 +75,45 @@ function panelApp() {
       }
     },
     applyEnrollment(s) {
-      if (!s) return;
-      this.enrollment = {
-        active: !!s.active,
-        done: !!s.done,
-        gesture_index: s.gesture_index ?? 0,
-        gesture_count: s.gesture_count ?? 3,
-        gesture_label: s.gesture_label ?? "",
-        instruction: s.instruction ?? "",
-        message: s.message ?? "",
-      };
+      applyIfPresent(s, (s) => {
+        this.enrollment = {
+          active: !!s.active,
+          done: !!s.done,
+          gesture_index: s.gesture_index ?? 0,
+          gesture_count: s.gesture_count ?? 3,
+          gesture_label: s.gesture_label ?? "",
+          instruction: s.instruction ?? "",
+          message: s.message ?? "",
+        };
+      });
     },
     applyOnboarding(s) {
-      if (!s) return;
-      this.onboarding = {
-        step_index: s.step_index ?? 0,
-        step_count: s.step_count ?? 6,
-        title: s.title ?? "",
-        description: s.description ?? "",
-        actions: s.actions ?? [],
-        skippable: !!s.skippable,
-        skip_warning: s.skip_warning ?? "",
-        notice: s.notice ?? "",
-      };
+      applyIfPresent(s, (s) => {
+        this.onboarding = {
+          step_index: s.step_index ?? 0,
+          step_count: s.step_count ?? 6,
+          title: s.title ?? "",
+          description: s.description ?? "",
+          actions: s.actions ?? [],
+          skippable: !!s.skippable,
+          skip_warning: s.skip_warning ?? "",
+          notice: s.notice ?? "",
+        };
+      });
     },
     applySettings(s) {
-      if (!s) return;
-      this.settingsForm = {
-        profile_name: s.profile_name ?? "default",
-        profiles: s.profiles ?? ["default"],
-        kalman_measurement_noise: s.kalman_measurement_noise ?? 10,
-        saccade_threshold_px: s.saccade_threshold_px ?? 80,
-        snap_radius_px: s.snap_radius_px ?? 50,
-        scroll_speed_multiplier: s.scroll_speed_multiplier ?? 1,
-        camera_index: s.camera_index ?? 0,
-        gaze_mode: s.gaze_mode ?? "cursor_follow",
-      };
+      applyIfPresent(s, (s) => {
+        this.settingsForm = {
+          profile_name: s.profile_name ?? "default",
+          profiles: s.profiles ?? ["default"],
+          kalman_measurement_noise: s.kalman_measurement_noise ?? 10,
+          saccade_threshold_px: s.saccade_threshold_px ?? 80,
+          snap_radius_px: s.snap_radius_px ?? 50,
+          scroll_speed_multiplier: s.scroll_speed_multiplier ?? 1,
+          camera_index: s.camera_index ?? 0,
+          gaze_mode: s.gaze_mode ?? "cursor_follow",
+        };
+      });
     },
     async refreshStatus() {
       if (!window.pywebview?.api) return;
