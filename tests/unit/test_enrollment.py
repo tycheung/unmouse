@@ -1,12 +1,10 @@
-"""Unit tests for gesture enrollment helpers."""
-
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from unittest.mock import MagicMock, patch
 
 from unmouse.gestures.angles import FEATURE_DIM, compute_joint_angle_vector
 from unmouse.gestures.enrollment import (

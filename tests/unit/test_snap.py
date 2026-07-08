@@ -1,5 +1,3 @@
-"""Unit tests for gaze snap and sticky hysteresis."""
-
 from __future__ import annotations
 
 from unmouse.arbitrator.snap import (

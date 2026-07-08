@@ -1,5 +1,3 @@
-"""Subprocess lifecycle for the tracking engine."""
-
 from __future__ import annotations
 
 import subprocess

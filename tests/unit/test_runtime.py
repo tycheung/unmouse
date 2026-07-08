@@ -1,5 +1,3 @@
-"""Unit tests for launcher/engine runtime flag sync."""
-
 from __future__ import annotations
 
 from unmouse.config import GazeMode, Settings

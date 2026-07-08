@@ -1,5 +1,3 @@
-"""Gaze quality gate: confidence hold and head-pose drift detection."""
-
 from __future__ import annotations
 
 import time

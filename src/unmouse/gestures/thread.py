@@ -1,5 +1,3 @@
-"""Gesture worker thread with adaptive MediaPipe inference rate."""
-
 from __future__ import annotations
 
 import threading

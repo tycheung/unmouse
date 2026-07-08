@@ -1,5 +1,3 @@
-"""Unit tests for multi-monitor display mapping."""
-
 from unmouse.gaze.display import DisplayMapper, MonitorInfo, VirtualDesktop
 
 

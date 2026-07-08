@@ -1,5 +1,3 @@
-"""Per-user 16-point offset correction field with bilinear interpolation."""
-
 from __future__ import annotations
 
 import json
@@ -101,7 +99,6 @@ def build_calibration_targets(
     *,
     corner_inset: float = DEFAULT_CORNER_INSET,
 ) -> tuple[tuple[float, float], ...]:
-    """Return 16 stare targets: 4 inset corners then 4×3 cell centers."""
     if screen_width <= 0 or screen_height <= 0:
         msg = "screen dimensions must be positive"
         raise ValueError(msg)

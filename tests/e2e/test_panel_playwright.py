@@ -1,5 +1,3 @@
-"""Playwright end-to-end tests for the control panel shell."""
-
 from __future__ import annotations
 
 import pytest

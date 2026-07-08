@@ -1,5 +1,3 @@
-"""Engine lifecycle and tray integration for the control panel."""
-
 from __future__ import annotations
 
 from collections.abc import Callable

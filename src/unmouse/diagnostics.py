@@ -1,5 +1,3 @@
-"""Optional debug diagnostics snapshots for launcher status and logging."""
-
 from __future__ import annotations
 
 import json

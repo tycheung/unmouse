@@ -55,5 +55,3 @@ Engine entry point: `unmouse.main:run_engine_cli` (also `poetry run unmouse-engi
 ## CI
 
 GitHub Actions installs Chromium, builds `unmouse.exe`, then runs `pytest tests/e2e -m e2e`.
-
-The Playwright E2E merge (`e6842ba`, `bae8f20`) has a **one-time** epic line-budget exception in [`scripts/epic_budget_overrides.json`](../scripts/epic_budget_overrides.json) (limit 1600). Later changes still use the 600-line cap.

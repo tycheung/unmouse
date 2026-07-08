@@ -1,5 +1,3 @@
-"""Unit tests for gaze tracker adapters."""
-
 import numpy as np
 
 from unmouse.gaze.tracker import GazeResult, NullGazeTracker, create_gaze_tracker

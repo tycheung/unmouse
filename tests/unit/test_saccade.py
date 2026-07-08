@@ -1,5 +1,3 @@
-"""Unit tests for saccade detection."""
-
 import pytest
 
 from unmouse.gaze.saccade import frame_distance, is_saccade

@@ -1,5 +1,3 @@
-"""Unit tests for joint-angle feature extraction."""
-
 from __future__ import annotations
 
 import math

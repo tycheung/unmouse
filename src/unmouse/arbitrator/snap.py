@@ -1,11 +1,10 @@
-"""Gaze snapping to UI targets with sticky hysteresis."""
-
 from __future__ import annotations
 
 import math
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from typing import Protocol
 
 DEFAULT_STICKY_DWELL_S = 0.2
 DEFAULT_RELEASE_RADIUS_RATIO = 0.6
@@ -38,9 +37,8 @@ class SnapResult:
     target_id: str | None
 
 
-class SnapProvider:
-    def list_targets(self) -> tuple[SnapTarget, ...]:
-        raise NotImplementedError
+class SnapProvider(Protocol):
+    def list_targets(self) -> tuple[SnapTarget, ...]: ...
 
 
 @dataclass

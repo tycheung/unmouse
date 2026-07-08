@@ -1,5 +1,3 @@
-"""Gesture enrollment session for the control panel camera preview flow."""
-
 from __future__ import annotations
 
 import base64

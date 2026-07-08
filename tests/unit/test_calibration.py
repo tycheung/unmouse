@@ -1,5 +1,3 @@
-"""Unit tests for polynomial gaze calibration."""
-
 import numpy as np
 
 from unmouse.gaze.calibration import (

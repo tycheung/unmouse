@@ -1,5 +1,3 @@
-"""Unit tests for gesture worker thread."""
-
 from __future__ import annotations
 
 import time

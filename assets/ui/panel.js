@@ -225,16 +225,14 @@ function panelApp() {
     },
     async checkUpdates() {
       await this.run(async () => {
-        if (this.updateAvailable) {
-          if (!confirm("Apply the available update now?")) return;
-          const r = await window.pywebview.api.apply_update();
-          this.updateAvailable = !!(r.update && r.update.available);
-          this.statusMessage = r.message ?? "";
-          return;
-        }
         const r = await window.pywebview.api.check_for_updates();
         this.updateAvailable = !!r.available;
         this.statusMessage = r.message ?? "";
+        if (this.updateAvailable && confirm("Apply the available update now?")) {
+          const applied = await window.pywebview.api.apply_update();
+          this.updateAvailable = !!(applied.update && applied.update.available);
+          this.statusMessage = applied.message ?? this.statusMessage;
+        }
       });
     },
     async calibrate() {

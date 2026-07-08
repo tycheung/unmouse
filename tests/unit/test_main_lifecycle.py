@@ -1,5 +1,3 @@
-"""Unit tests for engine lifecycle."""
-
 from unittest.mock import patch
 
 from unmouse.config import Settings

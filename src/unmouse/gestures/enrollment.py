@@ -1,5 +1,3 @@
-"""Gesture enrollment helpers and synthetic default poses."""
-
 from __future__ import annotations
 
 import json

@@ -1,5 +1,3 @@
-"""Shared Tk transparent overlay thread and Win32 click-through helpers."""
-
 from __future__ import annotations
 
 import queue
@@ -169,7 +167,10 @@ class TkWin32IndicatorBackend:
 
         apply_click_through_styles(root.winfo_id())
         self._host.mark_ready()
-        self._host.poll(root, lambda state: self._render(root, canvas, state))
+        self._host.poll(
+            root,
+            lambda state: self._render(root, canvas, state),  # type: ignore[arg-type]
+        )
         root.mainloop()
 
     def _render(self, root: tk.Tk, canvas: tk.Canvas, state: IndicatorState) -> None:

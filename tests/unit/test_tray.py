@@ -1,5 +1,3 @@
-"""Unit tests for launcher tray backend."""
-
 from __future__ import annotations
 
 from unmouse.launcher.tray import (

@@ -1,5 +1,3 @@
-"""Unit tests for scroll activation FSM."""
-
 from __future__ import annotations
 
 from unmouse.gestures.scroll_fsm import (

@@ -1,5 +1,3 @@
-"""Unit tests for gaze processing pipeline."""
-
 from unmouse.config import Settings
 from unmouse.gaze.calibration import fit_calibration
 from unmouse.gaze.display import DisplayMapper, MonitorInfo, VirtualDesktop

@@ -1,5 +1,3 @@
-"""Unit tests for PyInstaller packaging artifacts."""
-
 from __future__ import annotations
 
 from pathlib import Path

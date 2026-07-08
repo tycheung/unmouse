@@ -1,5 +1,3 @@
-"""Gaze tracker adapters."""
-
 from __future__ import annotations
 
 import importlib
@@ -38,8 +36,6 @@ class NullGazeTracker:
 
 
 class EyeGesturesTracker:
-    """Adapter for EyeGestures V3 when installed."""
-
     def __init__(self) -> None:
         try:
             module = importlib.import_module("eyegestures")

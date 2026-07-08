@@ -1,9 +1,11 @@
-"""Unit tests for window chrome snap targets."""
-
 from __future__ import annotations
 
 from unmouse.arbitrator.snap import SnapEngine, SnapRect, SnapTarget, StaticSnapProvider
-from unmouse.arbitrator.uia_provider import NullUiaTreeReader, UiaControlRect, create_uia_snap_provider
+from unmouse.arbitrator.uia_provider import (
+    NullUiaTreeReader,
+    UiaControlRect,
+    create_uia_snap_provider,
+)
 from unmouse.arbitrator.window_chrome import (
     NullWindowChromeReader,
     WindowRect,

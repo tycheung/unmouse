@@ -1,5 +1,3 @@
-"""Video capture broker fan-out to per-consumer frame queues."""
-
 from __future__ import annotations
 
 import threading

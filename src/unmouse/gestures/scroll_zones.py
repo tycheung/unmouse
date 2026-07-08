@@ -1,5 +1,3 @@
-"""Nine-zone thumb-angle scroll mapping with logarithmic speed scaling."""
-
 from __future__ import annotations
 
 import math

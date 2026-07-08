@@ -1,5 +1,3 @@
-"""Integration tests for broker fan-out and concurrent consumer threads."""
-
 from __future__ import annotations
 
 import time

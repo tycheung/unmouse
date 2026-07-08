@@ -1,5 +1,3 @@
-"""System tray integration for the launcher."""
-
 from __future__ import annotations
 
 import importlib

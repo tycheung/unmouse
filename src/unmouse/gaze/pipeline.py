@@ -1,5 +1,3 @@
-"""End-to-end gaze signal processing pipeline."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

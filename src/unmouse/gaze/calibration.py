@@ -1,5 +1,3 @@
-"""Second-degree polynomial gaze-to-screen calibration."""
-
 from __future__ import annotations
 
 import json

@@ -1,5 +1,3 @@
-"""Gaussian MLE gesture classification and template persistence."""
-
 from __future__ import annotations
 
 import json

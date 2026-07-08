@@ -1,5 +1,3 @@
-"""Unit tests for hand landmark detection and skeleton drawing."""
-
 from unittest.mock import MagicMock, patch
 
 import numpy as np

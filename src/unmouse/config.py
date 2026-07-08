@@ -1,5 +1,3 @@
-"""Application settings loaded from environment and defaults."""
-
 from __future__ import annotations
 
 import os

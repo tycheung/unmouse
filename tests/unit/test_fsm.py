@@ -1,5 +1,3 @@
-"""Unit tests for click mode FSM transitions."""
-
 from __future__ import annotations
 
 from unmouse.gestures.fsm import (

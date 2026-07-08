@@ -1,5 +1,3 @@
-"""Unit tests for release documentation and CI workflow."""
-
 from __future__ import annotations
 
 from pathlib import Path

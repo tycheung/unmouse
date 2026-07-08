@@ -1,5 +1,3 @@
-"""Thread-safe shared runtime state for broker, gaze, and gesture threads."""
-
 from __future__ import annotations
 
 import threading

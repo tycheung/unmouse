@@ -1,5 +1,3 @@
-"""HTTP harness that serves the control panel UI and bridges Playwright to PanelApi."""
-
 from __future__ import annotations
 
 import inspect
@@ -47,8 +45,6 @@ def _panel_api_methods(api: PanelApi) -> set[str]:
 
 
 class E2EHarness:
-    """Serve Alpine UI over HTTP with a pywebview-compatible API bridge."""
-
     def __init__(self, api: PanelApi, *, host: str = "127.0.0.1", port: int = 0) -> None:
         self.api = api
         self.host = host

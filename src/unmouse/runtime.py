@@ -1,5 +1,3 @@
-"""Shared runtime flags synchronized between launcher and engine."""
-
 from __future__ import annotations
 
 import json

@@ -1,12 +1,10 @@
-"""Fullscreen click-through overlay for calibration target dots."""
-
 from __future__ import annotations
 
-from unmouse.platform import is_windows
 from typing import TYPE_CHECKING
 
 from unmouse.launcher.wizard_common import NoopWizardOverlayBackend, WizardOverlayBackend
 from unmouse.overlay.tk_overlay import TkFullscreenOverlay
+from unmouse.platform import is_windows
 
 if TYPE_CHECKING:
     import tkinter as tk

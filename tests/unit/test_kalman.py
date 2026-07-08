@@ -1,5 +1,3 @@
-"""Unit tests for gaze Kalman filter."""
-
 from unmouse.gaze.kalman import GazeKalmanFilter
 
 

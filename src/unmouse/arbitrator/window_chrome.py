@@ -1,10 +1,9 @@
-"""Window chrome snap targets for title-bar controls."""
-
 from __future__ import annotations
 
 import ctypes
 from ctypes import wintypes
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Protocol
 
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
@@ -35,9 +34,8 @@ class ChromeButton:
     bounds: SnapRect
 
 
-class WindowChromeReader:
-    def read_buttons(self) -> tuple[ChromeButton, ...]:
-        raise NotImplementedError
+class WindowChromeReader(Protocol):
+    def read_buttons(self) -> tuple[ChromeButton, ...]: ...
 
 
 @dataclass

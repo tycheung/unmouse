@@ -1,22 +1,22 @@
-"""Unit tests for launcher settings persistence and profiles."""
-
 from __future__ import annotations
 
 import json
 
 from unmouse.config import GazeMode, Settings
 from unmouse.launcher.settings import (
-    LauncherFlags,
     activate_profile,
     create_profile,
     delete_profile,
+    rename_profile,
+    update_panel_settings,
+)
+from unmouse.persistence import (
+    LauncherFlags,
     load_launcher_flags,
     load_persisted_settings,
-    rename_profile,
     save_launcher_flags,
     save_persisted_settings,
     settings_file_path,
-    update_panel_settings,
 )
 
 

@@ -1,5 +1,3 @@
-"""Saccade vs fixation detection by frame-to-frame gaze displacement."""
-
 from __future__ import annotations
 
 import math

@@ -1,5 +1,3 @@
-"""Unit tests for gaze quality gate."""
-
 from unittest.mock import patch
 
 from unmouse.gaze.quality import GazeQualityGate

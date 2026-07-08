@@ -1,5 +1,3 @@
-"""Unit tests for gaze indicator overlay."""
-
 from __future__ import annotations
 
 import time
@@ -13,11 +11,11 @@ from unmouse.overlay.indicator import (
     LIGHT_FILL,
     RIGHT_CLICK_FILL,
     THIN_STROKE,
-    NoopIndicatorBackend,
-    NoopLuminanceSampler,
     GazeIndicatorOverlay,
     IndicatorAppearance,
     IndicatorState,
+    NoopIndicatorBackend,
+    NoopLuminanceSampler,
     adaptive_fill_color,
     average_luminance_from_bgra,
     compose_indicator_state,

@@ -1,5 +1,3 @@
-"""User settings and profile persistence for the control panel."""
-
 from __future__ import annotations
 
 import re
@@ -10,10 +8,7 @@ from pathlib import Path
 from unmouse.config import GazeMode, Settings
 from unmouse.launcher.api_helpers import action
 from unmouse.persistence import (
-    LauncherFlags,
-    load_launcher_flags,
     load_persisted_settings,
-    save_launcher_flags,
     save_persisted_settings,
     settings_file_path,
 )

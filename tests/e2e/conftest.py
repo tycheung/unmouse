@@ -1,5 +1,3 @@
-"""Shared fixtures for Playwright end-to-end tests."""
-
 from __future__ import annotations
 
 import subprocess
@@ -13,12 +11,12 @@ from tests.e2e.harness import E2EHarness
 from tests.fakes.enrollment import FakeEnrollmentSession
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.calibration_wizards import OffsetWizardOutcome, PolynomialWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
-from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
+from unmouse.persistence import LauncherFlags, save_launcher_flags
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXE_PATH = REPO_ROOT / "dist" / "unmouse.exe"

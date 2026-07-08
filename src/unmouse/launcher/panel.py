@@ -1,5 +1,3 @@
-"""pywebview control panel shell hosting Alpine.js UI."""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -54,7 +52,6 @@ def _panel_window_callbacks(
 
 
 def run(*, debug: bool = False) -> None:
-    """Open the control panel window."""
     import webview
 
     index = ui_index_path()

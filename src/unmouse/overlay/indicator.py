@@ -1,8 +1,5 @@
-"""Always-on-top click-through gaze indicator overlay."""
-
 from __future__ import annotations
 
-from unmouse.platform import is_windows
 import threading
 import time
 from collections.abc import Callable
@@ -10,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 from unmouse.overlay.tk_overlay import MIN_OVERLAY_FPS, TkWin32IndicatorBackend
+from unmouse.platform import is_windows
 from unmouse.state import SystemState
 
 MIN_INDICATOR_FPS = MIN_OVERLAY_FPS

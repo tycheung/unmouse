@@ -1,10 +1,8 @@
-"""Enrollment UI test doubles."""
-
 from __future__ import annotations
 
 from unmouse.config import Settings
-from unmouse.launcher.enroll_ui import EnrollmentPreview
 from unmouse.launcher.api_helpers import ActionResult
+from unmouse.launcher.enroll_ui import EnrollmentPreview
 
 
 class FakeEnrollmentSession:

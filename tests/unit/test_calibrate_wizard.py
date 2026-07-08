@@ -1,5 +1,3 @@
-"""Unit tests for the sixteen-point offset calibration wizard."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -21,7 +19,7 @@ from unmouse.launcher.calibration_wizards import (
     polynomial_prerequisite_message,
     run_offset_wizard,
 )
-from unmouse.launcher.wizard_common import NoopWizardOverlayBackend, GazeSample
+from unmouse.launcher.wizard_common import GazeSample, NoopWizardOverlayBackend
 
 
 def _save_identity_polynomial(settings: Settings) -> None:

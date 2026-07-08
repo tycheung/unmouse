@@ -1,5 +1,3 @@
-"""Mockable OS action drivers for cursor movement and clicks."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

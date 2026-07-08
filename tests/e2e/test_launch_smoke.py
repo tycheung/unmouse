@@ -1,5 +1,3 @@
-"""Launch and installer smoke tests for dev and frozen builds."""
-
 from __future__ import annotations
 
 import subprocess

@@ -1,5 +1,3 @@
-"""Unit tests for offset profile calibration and bilinear apply."""
-
 from __future__ import annotations
 
 from unmouse.config import Settings

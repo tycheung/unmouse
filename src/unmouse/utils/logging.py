@@ -1,5 +1,3 @@
-"""Rotating file logging for launcher and engine processes."""
-
 from __future__ import annotations
 
 import logging

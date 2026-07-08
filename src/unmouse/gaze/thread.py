@@ -1,5 +1,3 @@
-"""Gaze worker thread consuming broker frames."""
-
 from __future__ import annotations
 
 import threading

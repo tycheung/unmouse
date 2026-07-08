@@ -1,5 +1,3 @@
-"""Scroll activation FSM with dwell timing and gaze-anchored ticks."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

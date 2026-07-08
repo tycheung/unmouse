@@ -1,10 +1,8 @@
-"""Windows UI Automation provider for gaze snap targets."""
-
 from __future__ import annotations
 
 import importlib.util
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 from unmouse.arbitrator.snap import CachedSnapProvider, SnapProvider, SnapRect, SnapTarget
 from unmouse.platform import is_windows
@@ -37,9 +35,8 @@ class UiaControlRect:
     height: float
 
 
-class UiaTreeReader:
-    def enumerate_focusable(self) -> tuple[UiaControlRect, ...]:
-        raise NotImplementedError
+class UiaTreeReader(Protocol):
+    def enumerate_focusable(self) -> tuple[UiaControlRect, ...]: ...
 
 
 @dataclass

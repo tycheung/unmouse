@@ -1,5 +1,3 @@
-"""Platform detection for backend selection."""
-
 from __future__ import annotations
 
 import sys

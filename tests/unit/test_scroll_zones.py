@@ -1,5 +1,3 @@
-"""Unit tests for scroll zone mapping and speed scaling."""
-
 from __future__ import annotations
 
 import pytest

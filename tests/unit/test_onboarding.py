@@ -1,13 +1,11 @@
-"""Unit tests for first-run onboarding."""
-
 from __future__ import annotations
 
 import json
 
 from unmouse.config import Settings
-from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
+from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
+from unmouse.persistence import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 
 def _settings(tmp_path, monkeypatch) -> Settings:

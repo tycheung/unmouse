@@ -37,7 +37,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 - [ ] **Launch** starts tracking and minimizes panel to tray
 - [ ] Tray **Show Panel** restores the window
-- [ ] Footer shows live status (tracking, confidence, FPS when engine running)
+- [ ] Footer shows status after launch/stop and pause actions (refreshed on demand, not polled)
 - [ ] **Stop Tracking** from panel stops the engine
 - [ ] Tray **Stop** stops the engine
 

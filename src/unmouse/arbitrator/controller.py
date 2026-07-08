@@ -1,5 +1,3 @@
-"""Main action loop: snap gaze, drive cursor, clicks, scroll, and indicator."""
-
 from __future__ import annotations
 
 import threading

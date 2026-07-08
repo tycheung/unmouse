@@ -1,5 +1,3 @@
-"""Shared helpers for the control panel API layer."""
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass

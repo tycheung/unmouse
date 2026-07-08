@@ -1,5 +1,3 @@
-"""Unit tests for application settings."""
-
 from pathlib import Path
 
 import pytest

@@ -1,5 +1,3 @@
-"""Unit tests for resource path resolution."""
-
 import logging
 from pathlib import Path
 

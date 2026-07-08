@@ -1,5 +1,3 @@
-"""Disk persistence for user settings shared by launcher and engine."""
-
 from __future__ import annotations
 
 import json

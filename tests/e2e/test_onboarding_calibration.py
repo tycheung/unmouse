@@ -1,5 +1,3 @@
-"""Playwright end-to-end tests for first-run onboarding and calibration."""
-
 from __future__ import annotations
 
 import pytest

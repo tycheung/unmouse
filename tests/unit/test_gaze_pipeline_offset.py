@@ -1,5 +1,3 @@
-"""Pipeline integration with offset profile correction."""
-
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import build_calibration_targets, build_profile_from_measurements
 from unmouse.gaze.pipeline import GazePipeline

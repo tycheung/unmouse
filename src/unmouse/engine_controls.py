@@ -1,5 +1,3 @@
-"""Background sync of launcher runtime flags and pause hotkey in the engine."""
-
 from __future__ import annotations
 
 import importlib

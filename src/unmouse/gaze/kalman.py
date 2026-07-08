@@ -1,5 +1,3 @@
-"""Kalman filter smoothing for gaze fixation."""
-
 from __future__ import annotations
 
 import numpy as np

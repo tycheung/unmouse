@@ -1,5 +1,3 @@
-"""Joint-angle feature extraction with palm-normalized landmarks."""
-
 from __future__ import annotations
 
 import math

@@ -1,5 +1,3 @@
-"""Shared stare-calibration helpers for polynomial and offset wizards."""
-
 from __future__ import annotations
 
 import time

@@ -1,5 +1,3 @@
-"""Polynomial and offset stare-calibration wizards."""
-
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence

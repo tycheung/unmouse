@@ -1,5 +1,3 @@
-"""Unit tests for thread-safe system state."""
-
 import threading
 
 from unmouse.config import Settings

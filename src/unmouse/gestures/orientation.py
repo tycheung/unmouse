@@ -1,5 +1,3 @@
-"""Hand orientation heuristics for left vs right click intent."""
-
 from __future__ import annotations
 
 from enum import Enum

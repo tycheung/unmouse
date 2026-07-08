@@ -1,5 +1,3 @@
-"""Unit tests for hand orientation click intent."""
-
 from __future__ import annotations
 
 import numpy as np

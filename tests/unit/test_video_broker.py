@@ -1,5 +1,3 @@
-"""Unit tests for video broker queue fan-out."""
-
 import time
 
 import numpy as np

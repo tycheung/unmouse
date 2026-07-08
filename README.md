@@ -28,13 +28,11 @@ poetry install --with dev
 poetry run unmouse
 ```
 
-Alternative entry points:
-
 | Command | Action |
 |---------|--------|
 | `poetry run unmouse` | Open control panel (default) |
 | `poetry run unmouse-engine` | Run tracking engine only |
-| `python -m unmouse --engine` | Engine subprocess entry (also used by Launch) |
+| `python -m unmouse --engine` | Engine subprocess entry (used by Launch) |
 | `python -m unmouse --smoke` | Import and asset smoke check (no UI) |
 
 User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, settings).
@@ -45,13 +43,12 @@ User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, set
 poetry run ruff check src tests
 poetry run mypy src
 poetry run pytest --ignore=tests/e2e
-poetry run python scripts/check_epic_size.py
 .\scripts\run_e2e.ps1          # Playwright panel + launch smoke (after playwright install)
 ```
 
 CI runs the same checks on `windows-latest`, a PyInstaller smoke build, and Playwright E2E tests (see `.github/workflows/ci.yml`).
 
-Coverage floor is **85%** (`pyproject.toml` / pytest addopts). Unit and meta tests use `--ignore=tests/e2e`; E2E runs with `--no-cov`.
+Coverage floor is **85%** (`pyproject.toml`). Unit tests use `--ignore=tests/e2e`; E2E runs with `--no-cov`.
 
 ## Build release executable
 
@@ -71,18 +68,21 @@ poetry run python scripts/generate_icon.py
 
 ```
 Control panel (pywebview + Alpine.js)
-  └─ PanelApi → engine / enrollment services, settings.py
+  └─ PanelApi → engine / enrollment services, settings
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
   └─ Video broker, gaze pipeline, gesture FSMs, arbitrator, indicator overlay
 
 Shared
-  └─ persistence.py      settings.json load/save (launcher + engine)
+  └─ persistence.py      settings.json + launcher flags
   └─ runtime.py          pause / gaze-mode flags
+  └─ platform.py         Windows backend selection
   └─ broker/camera.py    OpenCV camera helper
   └─ overlay/tk_overlay  Tk thread + Win32 click-through (calibration + indicator)
 ```
+
+Non-Windows development uses null backends (`NullGazeTracker`, `NoopActionDriver`, etc.) so unit tests run without hardware.
 
 ## Project layout
 
@@ -92,7 +92,9 @@ assets/gestures/        Default gesture templates
 src/unmouse/            Application package
   main.py               Engine orchestrator and --engine CLI entry
   persistence.py        Shared settings persistence
-  launcher/             Panel shell, calibration_wizards, onboarding, tray
+  platform.py           Platform detection helpers
+  launcher/             Panel shell, calibration wizards, onboarding, tray
+    api_helpers.py      Panel API helpers and ActionResult
     services/           Engine and enrollment lifecycle helpers
   overlay/              Gaze indicator + shared Tk overlay helpers
   broker/               Video fan-out and camera helpers
@@ -102,7 +104,7 @@ src/unmouse/            Application package
 tests/                  Unit, integration, and E2E (Playwright) tests
   fakes/                Shared test doubles (MockFrameSource, etc.)
 unmouse.spec            PyInstaller spec
-scripts/                build_exe.ps1, run_e2e.ps1, generate_icon.py, check_epic_size.py
+scripts/                build_exe.ps1, run_e2e.ps1, generate_icon.py
 docs/SMOKE_TEST.md      Manual release checklist
 docs/E2E_TEST.md        Automated Playwright + launch smoke tests
 ```

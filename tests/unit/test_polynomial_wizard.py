@@ -1,5 +1,3 @@
-"""Unit tests for the nine-point polynomial calibration wizard."""
-
 from __future__ import annotations
 
 import pytest
@@ -13,8 +11,8 @@ from unmouse.launcher.calibration_wizards import (
     build_polynomial_targets,
 )
 from unmouse.launcher.wizard_common import (
-    NoopWizardOverlayBackend,
     GazeSample,
+    NoopWizardOverlayBackend,
     filter_samples_for_point,
     geometric_mean_gaze,
 )

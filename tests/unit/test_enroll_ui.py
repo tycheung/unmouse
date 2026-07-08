@@ -1,5 +1,3 @@
-"""Unit tests for gesture enrollment panel session."""
-
 from __future__ import annotations
 
 from unittest.mock import MagicMock

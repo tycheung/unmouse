@@ -1,5 +1,3 @@
-"""Enrollment session handling for the control panel."""
-
 from __future__ import annotations
 
 from unmouse.launcher.api_helpers import action

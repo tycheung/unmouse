@@ -1,5 +1,3 @@
-"""Unit tests for action controller loop."""
-
 from __future__ import annotations
 
 from unmouse.arbitrator.actions import NoopActionDriver

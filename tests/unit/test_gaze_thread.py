@@ -1,5 +1,3 @@
-"""Unit tests for gaze worker thread."""
-
 import time
 
 import numpy as np

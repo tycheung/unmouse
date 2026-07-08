@@ -1,5 +1,3 @@
-"""Integration tests for the gesture pipeline using landmark JSON fixtures."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -24,8 +22,6 @@ from unmouse.state import create_system_state
 
 
 class SequenceHandDetector:
-    """Return a predefined sequence of landmark detections frame-by-frame."""
-
     def __init__(self, hands: Sequence[HandLandmarks | None]) -> None:
         self._hands = tuple(hands)
         self._index = 0

@@ -1,5 +1,3 @@
-"""Resolve bundled and development asset paths."""
-
 from __future__ import annotations
 
 import sys

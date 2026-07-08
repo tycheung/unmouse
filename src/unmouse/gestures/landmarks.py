@@ -1,5 +1,3 @@
-"""MediaPipe hand landmark detection and optional skeleton overlay."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -35,8 +33,6 @@ class HandLandmarkDetector(Protocol):
 
 
 class MediaPipeHandDetector:
-    """Hand landmark detector backed by MediaPipe Hands."""
-
     def __init__(
         self,
         *,
@@ -75,8 +71,6 @@ class MediaPipeHandDetector:
 
 
 class NullHandLandmarkDetector:
-    """Deterministic detector for tests and offline development."""
-
     def __init__(self, hands: Sequence[HandLandmarks] | None = None) -> None:
         self._hands = tuple(hands or ())
 
