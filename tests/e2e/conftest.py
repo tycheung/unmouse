@@ -187,7 +187,7 @@ def patch_calibration_wizards(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def patch_enrollment_session(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "unmouse.launcher.services.enrollment_service.GestureEnrollmentSession",
+        "unmouse.launcher.api.GestureEnrollmentSession",
         FakeEnrollmentSession,
     )
 

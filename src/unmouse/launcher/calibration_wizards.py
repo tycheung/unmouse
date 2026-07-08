@@ -327,3 +327,11 @@ def run_offset_wizard(
     )
     assert isinstance(outcome, OffsetWizardOutcome)
     return outcome
+
+
+def run_full_calibration(settings: Settings) -> OffsetWizardOutcome:
+    if load_calibration(calibration_path(settings)) is None:
+        poly = run_polynomial_wizard(settings)
+        if not poly.success:
+            return OffsetWizardOutcome(success=False, message=poly.message)
+    return run_offset_wizard(settings)

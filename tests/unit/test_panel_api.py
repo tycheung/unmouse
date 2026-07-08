@@ -55,7 +55,7 @@ def test_panel_api_update_check_without_git_repo() -> None:
 def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
     api = _api_without_onboarding_prompt()
     with patch(
-        "unmouse.gaze.calibration.load_calibration",
+        "unmouse.launcher.calibration_wizards.load_calibration",
         return_value=object(),
     ), patch(
         "unmouse.launcher.calibration_wizards.run_offset_wizard",
@@ -185,7 +185,7 @@ def test_panel_api_set_status_message() -> None:
 def test_panel_api_show_enrollment_opens_session() -> None:
     api = _api_without_onboarding_prompt()
     with patch(
-        "unmouse.launcher.services.enrollment_service.GestureEnrollmentSession",
+        "unmouse.launcher.api.GestureEnrollmentSession",
     ) as session_cls:
         session_cls.return_value.get_state.return_value = {
             "active": True,
@@ -202,7 +202,7 @@ def test_panel_api_show_enrollment_opens_session() -> None:
 def test_panel_api_enrollment_capture_marks_onboarding_complete() -> None:
     api = _api_without_onboarding_prompt()
     with patch(
-        "unmouse.launcher.services.enrollment_service.GestureEnrollmentSession",
+        "unmouse.launcher.api.GestureEnrollmentSession",
     ) as session_cls:
         session_cls.return_value.get_state.return_value = {"active": True, "done": True}
         session_cls.return_value.capture_current_gesture.return_value = ActionResult(

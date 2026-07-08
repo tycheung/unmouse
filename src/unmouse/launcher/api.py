@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import asdict, replace
 
 from unmouse.config import Settings
 from unmouse.launcher.api_helpers import action, last_calibration_label, update_payload
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog
+from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.services.engine_service import EngineService
-from unmouse.launcher.services.enrollment_service import EnrollmentService
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus, PanelView
 from unmouse.launcher.settings import (
     activate_profile,
@@ -44,7 +44,6 @@ class PanelApi:
             tray=tray,
             watchdog=watchdog,
         )
-        self._enrollment_service = EnrollmentService(self._state, self._onboarding)
         if self._onboarding.should_show_on_startup():
             self._state.view = "onboarding"
 
@@ -69,7 +68,7 @@ class PanelApi:
         return result
 
     def _show_view(self, view: PanelView) -> dict[str, str]:
-        self._enrollment_service.close()
+        self._close_enrollment()
         self._state.view = view
         return {"view": self._state.view}
 
@@ -110,7 +109,22 @@ class PanelApi:
         return self._onboarding.run_offset_step()
 
     def onboarding_run_gestures(self) -> dict[str, object]:
-        return self._enrollment_service.open_gestures_from_onboarding()
+        if profile_has_gesture_templates(self._state.settings):
+            self._onboarding.gestures_complete = True
+            return {
+                **action(True, "Gesture templates already saved."),
+                "state": self._onboarding.get_state(),
+            }
+        opened = self._open_enrollment(return_view="onboarding")
+        if not opened.get("ok", True):
+            return {**opened, "state": self._onboarding.get_state()}
+        return {
+            "ok": True,
+            "message": "Hold each pose for 1 second while capturing.",
+            "view": opened["view"],
+            "enrollment": opened.get("enrollment"),
+            "state": self._onboarding.get_state(),
+        }
 
     def onboarding_complete(self) -> dict[str, object]:
         result = self._onboarding.complete()
@@ -136,14 +150,9 @@ class PanelApi:
         return payload
 
     def start_calibrate(self) -> dict[str, object]:
-        from unmouse.gaze.calibration import calibration_path, load_calibration
-        from unmouse.launcher.calibration_wizards import run_offset_wizard, run_polynomial_wizard
+        from unmouse.launcher.calibration_wizards import run_full_calibration
 
-        if load_calibration(calibration_path(self._state.settings)) is None:
-            poly = run_polynomial_wizard(self._state.settings)
-            if not poly.success:
-                return action(False, poly.message)
-        outcome = run_offset_wizard(self._state.settings)
+        outcome = run_full_calibration(self._state.settings)
         self._set_status_message(outcome.message)
         return action(outcome.success, outcome.message)
 
@@ -168,7 +177,7 @@ class PanelApi:
 
     def shutdown(self) -> None:
         self._engine.shutdown()
-        self._enrollment_service.close()
+        self._close_enrollment()
 
     def show_settings(self) -> dict[str, str]:
         return self._show_view("settings")
@@ -212,19 +221,55 @@ class PanelApi:
         return self._show_view("onboarding")
 
     def show_enrollment(self, return_view: PanelView = "main") -> dict[str, object]:
-        return self._enrollment_service.show(return_view=return_view)
+        return self._open_enrollment(return_view=return_view)
 
     def get_enrollment_state(self) -> dict[str, object]:
-        return self._enrollment_service.get_state()
+        if self._state.enrollment is None:
+            return {"active": False, "done": False, "message": "Enrollment is not active."}
+        return self._state.enrollment.get_state()
 
     def get_enrollment_preview(self) -> dict[str, object]:
-        return self._enrollment_service.get_preview()
+        if self._state.enrollment is None:
+            return {
+                "preview_jpeg": None,
+                "hand_detected": False,
+                "message": "Enrollment is not active.",
+            }
+        return asdict(self._state.enrollment.grab_preview())
 
     def enrollment_capture(self) -> dict[str, object]:
-        return self._enrollment_service.capture()
+        if self._state.enrollment is None:
+            return action(False, "Enrollment is not active.")
+        capture = self._state.enrollment.capture_current_gesture()
+        if capture.ok and capture.done:
+            self._onboarding.gestures_complete = True
+        self._state.status = PanelStatus(message=capture.message)
+        payload = capture.to_dict()
+        payload["enrollment"] = self._state.enrollment.get_state()
+        return payload
 
     def leave_enrollment(self) -> dict[str, str]:
-        return self._enrollment_service.leave()
+        return_view = self._state.enrollment_return_view
+        self._close_enrollment()
+        self._state.view = return_view
+        return {"view": self._state.view}
+
+    def _open_enrollment(self, *, return_view: PanelView) -> dict[str, object]:
+        self._close_enrollment()
+        session = GestureEnrollmentSession(self._state.settings)
+        try:
+            session.open()
+        except RuntimeError as exc:
+            return action(False, str(exc))
+        self._state.enrollment = session
+        self._state.enrollment_return_view = return_view
+        self._state.view = "enrollment"
+        return {"ok": True, "view": self._state.view, "enrollment": session.get_state()}
+
+    def _close_enrollment(self) -> None:
+        if self._state.enrollment is not None:
+            self._state.enrollment.close()
+            self._state.enrollment = None
 
     def show_main(self) -> dict[str, str]:
         return self._show_view("main")
