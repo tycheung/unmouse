@@ -55,9 +55,13 @@ class PanelApi:
     def _settings(self) -> Settings:
         return self._state.settings
 
-    @property
-    def _onboarding_ref(self) -> OnboardingController:
-        return self._onboarding
+    def _set_status_message(self, message: str) -> None:
+        self._state.status = PanelStatus(message=message)
+
+    def _show_view(self, view: PanelView) -> dict[str, str]:
+        self._enrollment_service.close()
+        self._state.view = view
+        return {"view": self._state.view}
 
     def get_status(self) -> dict[str, object]:
         return self._engine.get_status()
@@ -77,7 +81,7 @@ class PanelApi:
     def onboarding_advance(self) -> dict[str, object]:
         result = self._onboarding.advance()
         if result.get("ok") and self._onboarding.current_step.id == "ready":
-            self._state.status = PanelStatus(message="Setup complete")
+            self._set_status_message("Setup complete")
         return result
 
     def onboarding_skip(self, confirmed: bool = False) -> dict[str, object]:
@@ -86,15 +90,13 @@ class PanelApi:
     def onboarding_check_camera(self) -> dict[str, object]:
         result = self._onboarding.check_camera()
         if result.get("ok"):
-            self._state.status = PanelStatus(message=str(result.get("message", "Camera OK")))
+            self._set_status_message(str(result.get("message", "Camera OK")))
         return result
 
     def onboarding_run_polynomial(self) -> dict[str, object]:
         result = self._onboarding.run_polynomial_step()
         if result.get("ok"):
-            self._state.status = PanelStatus(
-                message=str(result.get("message", "Calibration saved")),
-            )
+            self._set_status_message(str(result.get("message", "Calibration saved")))
         return result
 
     def onboarding_run_offset(self) -> dict[str, object]:
@@ -106,7 +108,7 @@ class PanelApi:
     def onboarding_complete(self) -> dict[str, object]:
         result = self._onboarding.complete()
         self._state.view = "main"
-        self._state.status = PanelStatus(message="Ready")
+        self._set_status_message("Ready")
         return result
 
     def check_for_updates(self) -> dict[str, object]:
@@ -140,7 +142,7 @@ class PanelApi:
             if not poly.success:
                 return action(False, poly.message)
         outcome = run_offset_wizard(self._state.settings)
-        self._state.status = PanelStatus(message=outcome.message)
+        self._set_status_message(outcome.message)
         return action(outcome.success, outcome.message)
 
     def configure_launcher_shell(
@@ -167,9 +169,7 @@ class PanelApi:
         self._enrollment_service.close()
 
     def show_settings(self) -> dict[str, str]:
-        self._enrollment_service.close()
-        self._state.view = "settings"
-        return {"view": self._state.view}
+        return self._show_view("settings")
 
     def get_settings_panel(self) -> dict[str, object]:
         return get_panel_settings(self._state.settings)
@@ -199,9 +199,7 @@ class PanelApi:
         return result
 
     def show_onboarding(self) -> dict[str, str]:
-        self._enrollment_service.close()
-        self._state.view = "onboarding"
-        return {"view": self._state.view}
+        return self._show_view("onboarding")
 
     def show_enrollment(self, return_view: PanelView = "main") -> dict[str, object]:
         return self._enrollment_service.show(return_view=return_view)
@@ -219,9 +217,7 @@ class PanelApi:
         return self._enrollment_service.leave()
 
     def show_main(self) -> dict[str, str]:
-        self._enrollment_service.close()
-        self._state.view = "main"
-        return {"view": self._state.view}
+        return self._show_view("main")
 
     def set_status_message(self, message: str) -> dict[str, object]:
         return self._engine.set_status_message(message)
