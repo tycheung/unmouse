@@ -145,6 +145,25 @@ class EngineService:
         )
         return action(status.ok, status.message)
 
+    def reload_if_running(self) -> bool:
+        """Restart the engine subprocess so freshly saved settings take effect."""
+        if not self._engine_runner.is_running():
+            return False
+        self._stop_watchdog()
+        self._engine_runner.stop()
+        status = self._engine_runner.start()
+        if status.ok and status.running:
+            set_paused(self._state.settings, False)
+            self._start_watchdog()
+        self._state.status = self._runtime_panel_status(
+            status.message,
+            settings=self._state.settings,
+        )
+        return status.ok and status.running
+
+    def note_status(self, message: str) -> None:
+        self._state.status = self._runtime_panel_status(message, settings=self._state.settings)
+
     def shutdown(self) -> None:
         self._stop_watchdog()
         self._engine_runner.stop()

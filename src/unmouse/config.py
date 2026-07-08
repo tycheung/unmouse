@@ -38,7 +38,6 @@ class Settings(BaseSettings):
     camera_height: int = Field(default=480, ge=120)
 
     debug: bool = False
-    draw_hand_skeleton: bool = False
     gaze_mode: GazeMode = GazeMode.CURSOR_FOLLOW
     paused: bool = False
     pyautogui_failsafe: bool = False

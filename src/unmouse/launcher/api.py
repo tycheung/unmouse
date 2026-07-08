@@ -60,7 +60,7 @@ class PanelApi:
         return self._state.settings
 
     def _set_status_message(self, message: str) -> None:
-        self._state.status = PanelStatus(message=message)
+        self._engine.note_status(message)
 
     def _forward_with_status(
         self,
@@ -192,8 +192,10 @@ class PanelApi:
     def save_settings_panel(self, updates: dict[str, object]) -> dict[str, object]:
         snapshot = update_panel_settings(self._state.settings, updates)
         self._state.settings = load_persisted_settings()
-        self._set_status_message("Settings saved")
-        return {"ok": True, "message": "Settings saved.", "settings": snapshot}
+        restarted = self._engine.reload_if_running()
+        message = "Settings saved. Restarting tracking." if restarted else "Settings saved."
+        self._set_status_message(message)
+        return {"ok": True, "message": message, "settings": snapshot, "restarted": restarted}
 
     def _profile_action(
         self,
