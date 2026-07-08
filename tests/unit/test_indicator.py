@@ -8,7 +8,6 @@ import pytest
 
 from unmouse.overlay.indicator import (
     BOLD_STROKE,
-    CLICK_THROUGH_STYLES,
     DARK_FILL,
     LIGHT_FILL,
     RIGHT_CLICK_FILL,
@@ -18,14 +17,17 @@ from unmouse.overlay.indicator import (
     GazeIndicatorOverlay,
     IndicatorAppearance,
     IndicatorState,
-    _window_origin,
     adaptive_fill_color,
-    apply_click_through_styles,
     average_luminance_from_bgra,
     compose_indicator_state,
     create_indicator_backend,
     indicator_state_from_system,
     relative_luminance,
+)
+from unmouse.overlay.tk_overlay import (
+    CLICK_THROUGH_STYLES,
+    _window_origin,
+    apply_click_through_styles,
 )
 from unmouse.state import SystemState
 
@@ -61,7 +63,7 @@ def test_overlay_rejects_fps_below_minimum() -> None:
 
 
 def test_apply_click_through_styles_sets_win32_flags(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("unmouse.overlay.indicator.sys.platform", "win32")
+    monkeypatch.setattr("unmouse.overlay.tk_overlay.sys.platform", "win32")
     recorded: list[int] = []
 
     fake_user32 = MagicMock()
