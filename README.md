@@ -48,9 +48,10 @@ poetry run ruff check src tests
 poetry run mypy src
 poetry run pytest
 poetry run python scripts/check_epic_size.py
+.\scripts\run_e2e.ps1          # Playwright panel + launch smoke (after playwright install)
 ```
 
-CI runs the same checks on `windows-latest` plus a PyInstaller smoke build (see `.github/workflows/ci.yml`).
+CI runs the same checks on `windows-latest`, a PyInstaller smoke build, and Playwright E2E tests (see `.github/workflows/ci.yml`).
 
 Coverage floor is **85%** (`pyproject.toml` / pytest addopts).
 
@@ -78,15 +79,16 @@ src/unmouse/        Application package
   gaze/             Tracking pipeline
   gestures/         MediaPipe + MLE classifier
   arbitrator/       Snap, actions, controller
-tests/              Unit + integration tests
+tests/              Unit, integration, and E2E (Playwright) tests
 mggist.spec         PyInstaller spec
-scripts/            build_exe.ps1, generate_icon.py, check_epic_size.py
+scripts/            build_exe.ps1, run_e2e.ps1, generate_icon.py, check_epic_size.py
 docs/SMOKE_TEST.md  Manual release checklist
+docs/E2E_TEST.md    Automated Playwright + launch smoke tests
 ```
 
 ## Release testing
 
-Before tagging a release, walk through [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) on dev and frozen builds.
+Before tagging a release, run `.\scripts\run_e2e.ps1` and walk through [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) on dev and frozen builds. See [docs/E2E_TEST.md](docs/E2E_TEST.md) for automated coverage details.
 
 ## License
 

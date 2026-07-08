@@ -33,7 +33,7 @@ jobs:
         run: poetry run mypy src
 
       - name: Pytest
-        run: poetry run pytest
+        run: poetry run pytest --ignore=tests/e2e
 
       - name: Epic line budget
         run: poetry run python scripts/check_epic_size.py --base-ref origin/main
@@ -47,3 +47,9 @@ jobs:
       - name: Verify executable artifact
         run: |
           if (-not (Test-Path dist/MGGIST.exe)) { throw "dist/MGGIST.exe missing" }
+
+      - name: Install Playwright Chromium
+        run: poetry run playwright install chromium
+
+      - name: E2E tests
+        run: poetry run pytest tests/e2e -m e2e --no-cov

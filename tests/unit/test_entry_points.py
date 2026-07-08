@@ -22,6 +22,20 @@ def test_main_engine_flag_runs_engine() -> None:
     engine.assert_called_once()
 
 
+def test_main_smoke_flag_runs_smoke_check() -> None:
+    with patch.object(main_module, "smoke_check") as smoke:
+        with patch.object(main_module.sys, "argv", ["unmouse", "--smoke"]):
+            main_module.main()
+    smoke.assert_called_once()
+
+
+def test_smoke_check_prints_version(capsys) -> None:
+    main_module.smoke_check()
+    output = capsys.readouterr().out
+    assert "smoke ok" in output
+    assert "1.0.0" in output
+
+
 def test_engine_entry_delegates_to_run_engine() -> None:
     with patch("unmouse.engine.run_engine") as run_engine:
         with patch("unmouse.engine.load_persisted_settings") as load_settings:

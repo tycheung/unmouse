@@ -18,12 +18,14 @@ def test_ui_assets_paths_exist() -> None:
     assert index.is_file()
     assert (assets / "styles.css").is_file()
     assert (assets / "alpine.min.js").is_file()
+    assert (assets / "panel.js").is_file()
 
 
 def test_ui_index_references_local_assets() -> None:
     html = ui_index_path().read_text(encoding="utf-8")
     assert 'href="styles.css"' in html
     assert 'src="alpine.min.js"' in html
+    assert 'src="panel.js"' in html
     assert "Update Software" in html
     assert "Calibrate" in html
     assert "Stop Tracking" in html

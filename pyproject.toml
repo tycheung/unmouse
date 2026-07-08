@@ -27,6 +27,8 @@ pytest-mock = "^3.12"
 mypy = "^1.9"
 ruff = "^0.4"
 pyinstaller = { version = "^6.11", markers = "sys_platform == 'win32'" }
+playwright = "^1.49"
+pytest-playwright = "^0.6"
 
 [tool.poetry.scripts]
 unmouse = "unmouse.launcher.panel:run"
@@ -38,6 +40,9 @@ mggist-engine = "unmouse.engine:run"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --cov=unmouse --cov-fail-under=85 --cov-report=term-missing"
+markers = [
+    "e2e: browser and launch end-to-end tests (Playwright + subprocess smoke)",
+]
 
 [tool.ruff]
 line-length = 100

@@ -13,8 +13,16 @@ SMOKE_TEST = REPO_ROOT / "docs" / "SMOKE_TEST.md"
 def test_ci_workflow_runs_quality_gates() -> None:
     text = CI_WORKFLOW.read_text(encoding="utf-8")
     assert "windows-latest" in text
-    for step in ("ruff check", "mypy", "pytest", "check_epic_size", "pyinstaller"):
-        assert step in text
+    for step in (
+        "ruff check",
+        "mypy",
+        "pytest",
+        "check_epic_size",
+        "pyinstaller",
+        "playwright",
+        "e2e",
+    ):
+        assert step in text.lower()
 
 
 def test_readme_documents_entry_points_and_build() -> None:
@@ -23,6 +31,12 @@ def test_readme_documents_entry_points_and_build() -> None:
     assert "MGGIST.exe" in text
     assert "build_exe.ps1" in text
     assert "SMOKE_TEST.md" in text
+
+
+def test_smoke_test_documents_automated_e2e() -> None:
+    text = SMOKE_TEST.read_text(encoding="utf-8")
+    assert "run_e2e.ps1" in text
+    assert "E2E_TEST.md" in text
 
 
 def test_smoke_test_covers_v1_flows() -> None:

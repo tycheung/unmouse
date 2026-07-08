@@ -3,6 +3,8 @@
 Manual checklist before tagging a release or shipping `dist/MGGIST.exe` to testers.
 Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clean VM without Python installed when validating the frozen build.
 
+**Automated coverage:** Run `.\scripts\run_e2e.ps1` (Playwright panel clicks, onboarding with mocked calibration, `--smoke` launch checks). See [`E2E_TEST.md`](E2E_TEST.md).
+
 ## Environment
 
 - [ ] Windows 10 or 11, 64-bit
