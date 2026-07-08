@@ -14,7 +14,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 ## Dev install (`poetry run unmouse`)
 
-- [ ] `poetry install` succeeds
+- [ ] `poetry install --extras gaze` (required for gaze tracking validation)
 - [ ] `poetry run pytest` passes locally
 - [ ] Control panel opens (`poetry run unmouse`)
 

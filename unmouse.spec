@@ -24,6 +24,7 @@ a = Analysis(
         "uiautomation",
         "mss",
         "keyboard",
+        "eyegestures",
         "cv2",
         "PIL",
         "PIL.Image",

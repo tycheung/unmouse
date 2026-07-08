@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot\..
 
 try {
-    poetry install
+    poetry install --extras gaze
     poetry run python scripts/generate_icon.py
     poetry run pytest -q
     poetry run pyinstaller unmouse.spec --noconfirm --clean

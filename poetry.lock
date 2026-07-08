@@ -633,6 +633,19 @@ typing-extensions = {version = ">=4.6.0", markers = "python_version < \"3.13\""}
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "eyegestures"
+version = "1.4.5"
+description = "Package for eye tracking algorithm allowing for development of gaze controlled computer interface"
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"gaze\""
+files = [
+    {file = "eyegestures-1.4.5-py3-none-any.whl", hash = "sha256:1adfcf8970f2ff54b8ff0c48624db8998123517320263a2a3ca0f557e37428db"},
+    {file = "eyegestures-1.4.5.tar.gz", hash = "sha256:e56eedbbfcce3855edfe22e0cdace5e423f764090d3a092274648bcab1785299"},
+]
+
+[[package]]
 name = "filterpy"
 version = "1.4.5"
 description = "Kalman filtering and optimal estimation library"
@@ -6472,7 +6485,10 @@ h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
+[extras]
+gaze = ["eyegestures"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "4b4ad2a88e4659e5b14b4291178281048478183555029efd060341a1e174a27e"
+content-hash = "ee6ca755d02d2630e5b2268a6a3cc1cc573712a69137787d64b0aaa3ead29b7b"

@@ -18,13 +18,14 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 - **Python 3.10–3.13** for development ([Poetry](https://python-poetry.org/))
 - Webcam
 - Poetry lockfile committed for reproducible installs
+- **Gaze tracking:** optional [`eyegestures`](https://pypi.org/project/eyegestures/) package (`poetry install --extras gaze`). Without it, the engine falls back to a static center-point tracker.
 
 ## Quick start (development)
 
 ```powershell
 git clone git@github.com:tycheung/unmouse.git
 cd unmouse
-poetry install --with dev
+poetry install --with dev --extras gaze
 poetry run unmouse
 ```
 
@@ -56,7 +57,7 @@ Coverage floor is **85%** (`pyproject.toml`). Unit tests use `--ignore=tests/e2e
 .\scripts\build_exe.ps1
 ```
 
-Output: `dist/unmouse.exe` (single-file, windowed). The launcher spawns the engine as `unmouse.exe --engine` when frozen.
+Output: `dist/unmouse.exe` (single-file, windowed). The launcher spawns the engine as `unmouse.exe --engine` when frozen. The build script installs the `gaze` extra so the frozen executable includes eye tracking.
 
 To regenerate the app icon only:
 
@@ -72,17 +73,14 @@ Control panel (pywebview + Alpine.js)
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
-  └─ Video broker, gaze pipeline, gesture FSMs, arbitrator, indicator overlay
+  └─ Video broker → gaze worker (tracker + pipeline) + gesture worker (MediaPipe + MLE)
+  └─ Action controller (snap, PyAutoGUI, gaze indicator)
 
-Shared
-  └─ persistence.py      settings.json + launcher flags
-  └─ runtime.py          pause / gaze-mode flags
-  └─ platform.py         Windows backend selection
-  └─ broker/camera.py    OpenCV camera helper
-  └─ overlay/tk_overlay  Tk thread + Win32 click-through (calibration + indicator)
+Backends
+  └─ Factories prefer real implementations (MediaPipe, PyAutoGUI, uiautomation, pystray, Tk/Win32 overlays)
+  └─ Fall back to no-op/null doubles when a dependency is missing
+  └─ Gaze requires the optional eyegestures extra; unit tests inject fakes explicitly
 ```
-
-Non-Windows development uses null backends (`NullGazeTracker`, `NoopActionDriver`, etc.) so unit tests run without hardware.
 
 ## Project layout
 
