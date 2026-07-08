@@ -6,14 +6,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from unmouse.gestures.angles import (
-    FEATURE_DIM,
-    TRIPLET_INDICES,
-    compute_joint_angle_vector,
-    compute_joint_angles,
-    joint_angle,
-    normalize_palm,
-)
+from unmouse.gestures.angles import FEATURE_DIM, compute_feature_vector
 from unmouse.gestures.landmarks import HandLandmarks
 
 
@@ -22,54 +15,42 @@ def _as_landmarks(points: npt.NDArray[np.float64]) -> HandLandmarks:
     return HandLandmarks(points=tuples, handedness="Right")
 
 
-def test_triplet_index_count_matches_feature_dimension() -> None:
-    assert len(TRIPLET_INDICES) == 21 * 20 * 19
-    assert FEATURE_DIM == len(TRIPLET_INDICES) + 10
-
-
-def test_joint_angle_right_angle_at_pivot(
-    right_angle_points: npt.NDArray[np.float64],
-) -> None:
-    angle = joint_angle(1, 0, 5, right_angle_points)
-    assert angle == pytest.approx(math.pi / 2, abs=1e-6)
-
-
-def test_normalize_palm_is_translation_and_scale_invariant(
-    open_palm_points: npt.NDArray[np.float64],
-) -> None:
-    base = compute_joint_angles(normalize_palm(open_palm_points))
-    shifted = open_palm_points + np.array([0.25, -0.15, 0.05])
-    scaled = (shifted - shifted[0]) * 2.5 + shifted[0]
-    transformed = compute_joint_angles(normalize_palm(scaled))
-    assert base == pytest.approx(transformed, abs=1e-5)
-
-
-def test_compute_joint_angle_vector_matches_manual_concat(
+def test_feature_vector_has_expected_shape_and_range(
     open_palm_landmarks: HandLandmarks,
 ) -> None:
-    vector = compute_joint_angle_vector(open_palm_landmarks)
+    vector = compute_feature_vector(open_palm_landmarks)
     assert vector.shape == (FEATURE_DIM,)
-    assert np.all(vector >= 0.0)
-    assert np.all(vector <= math.pi)
+    assert FEATURE_DIM == 21
+    assert np.all(np.isfinite(vector))
 
 
-def test_normalization_stabilizes_rotated_copy(
+def test_feature_vector_is_invariant_to_translation_rotation_and_scale(
     open_palm_points: npt.NDArray[np.float64],
 ) -> None:
-    reference = compute_joint_angle_vector(_as_landmarks(open_palm_points))
+    reference = compute_feature_vector(_as_landmarks(open_palm_points))
     rotation = np.array(
         [
-            [0.0, -1.0, 0.0],
-            [1.0, 0.0, 0.0],
+            [math.cos(0.7), -math.sin(0.7), 0.0],
+            [math.sin(0.7), math.cos(0.7), 0.0],
             [0.0, 0.0, 1.0],
         ],
         dtype=np.float64,
     )
-    rotated = ((rotation @ (open_palm_points - open_palm_points[0]).T).T) + open_palm_points[0]
-    candidate = compute_joint_angle_vector(_as_landmarks(rotated))
-    assert reference == pytest.approx(candidate, abs=1e-4)
+    transformed = (rotation @ open_palm_points.T).T * 2.5 + np.array([0.25, -0.15, 0.05])
+    candidate = compute_feature_vector(_as_landmarks(transformed))
+    assert reference == pytest.approx(candidate, abs=1e-6)
 
 
-def test_normalize_palm_rejects_invalid_shape() -> None:
-    with pytest.raises(ValueError, match="expected shape"):
-        normalize_palm(np.zeros((5, 3), dtype=np.float64))
+def test_distinct_poses_yield_distinct_features(
+    open_palm_landmarks: HandLandmarks,
+    right_angle_landmarks: HandLandmarks,
+) -> None:
+    open_palm = compute_feature_vector(open_palm_landmarks)
+    right_angle = compute_feature_vector(right_angle_landmarks)
+    assert not np.allclose(open_palm, right_angle)
+
+
+def test_degenerate_hand_produces_finite_features() -> None:
+    flat = _as_landmarks(np.zeros((21, 3), dtype=np.float64))
+    vector = compute_feature_vector(flat)
+    assert np.all(np.isfinite(vector))

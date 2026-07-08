@@ -7,7 +7,7 @@ import pytest
 
 from tests.conftest import load_landmark_fixture
 from unmouse.config import Settings
-from unmouse.gestures.angles import compute_joint_angle_vector
+from unmouse.gestures.angles import compute_feature_vector
 from unmouse.gestures.enrollment import default_gestures_dir, synthetic_landmarks
 from unmouse.gestures.fsm import ClickFsm
 from unmouse.gestures.landmarks import (
@@ -67,7 +67,7 @@ def test_landmark_fixtures_classify_with_bundled_templates(
     settings: Settings,
 ) -> None:
     hand = load_landmark_fixture(gesture)
-    theta = compute_joint_angle_vector(hand)
+    theta = compute_feature_vector(hand)
     result = classify(
         theta,
         gesture_library,

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 
-from unmouse.gestures.angles import compute_joint_angle_vector
+from unmouse.gestures.angles import compute_feature_vector
 from unmouse.gestures.landmarks import NUM_HAND_LANDMARKS, HandLandmarks
 from unmouse.gestures.mle import GestureTemplate, build_template, save_template
 from unmouse.utils.paths import resource_path
@@ -41,20 +40,20 @@ def synthetic_landmarks(gesture: str) -> HandLandmarks:
     points[1] = (0.38, 0.74, 0.0)
 
     if gesture == "v_sign":
-        _extend_finger(points, (5, 6, 7, 8), (0.44, 0.72, 0.0), (0.40, 0.42, 0.0))
-        _extend_finger(points, (9, 10, 11, 12), (0.50, 0.72, 0.0), (0.50, 0.40, 0.0))
+        _fill_chain(points, (5, 6, 7, 8), (0.44, 0.72, 0.0), (0.40, 0.42, 0.0))
+        _fill_chain(points, (9, 10, 11, 12), (0.50, 0.72, 0.0), (0.50, 0.40, 0.0))
         _curl_finger(points, (13, 14, 15, 16), (0.56, 0.72, 0.0))
         _curl_finger(points, (17, 18, 19, 20), (0.62, 0.72, 0.0))
         _curl_finger(points, (1, 2, 3, 4), (0.38, 0.74, 0.0))
     elif gesture == "pinch_close":
         pinch = (0.50, 0.56, 0.0)
-        _extend_finger(points, (5, 6, 7, 8), (0.46, 0.72, 0.0), pinch)
-        _extend_finger(points, (1, 2, 3, 4), (0.54, 0.74, 0.0), pinch)
+        _fill_chain(points, (5, 6, 7, 8), (0.46, 0.72, 0.0), pinch)
+        _fill_chain(points, (1, 2, 3, 4), (0.54, 0.74, 0.0), pinch)
         _curl_finger(points, (9, 10, 11, 12), (0.50, 0.72, 0.0))
         _curl_finger(points, (13, 14, 15, 16), (0.56, 0.72, 0.0))
         _curl_finger(points, (17, 18, 19, 20), (0.62, 0.72, 0.0))
     else:
-        _extend_finger(points, (1, 2, 3, 4), (0.38, 0.74, 0.0), (0.34, 0.40, 0.0))
+        _fill_chain(points, (1, 2, 3, 4), (0.38, 0.74, 0.0), (0.34, 0.40, 0.0))
         for chain, base in (
             ((5, 6, 7, 8), (0.44, 0.72, 0.0)),
             ((9, 10, 11, 12), (0.50, 0.72, 0.0)),
@@ -81,7 +80,7 @@ def samples_from_landmarks(
         jitter = base + rng.normal(0.0, noise, base.shape)
         tuples = tuple((float(x), float(y), float(z)) for x, y, z in jitter)
         jittered = HandLandmarks(points=tuples, handedness=hand.handedness)
-        rows.append(compute_joint_angle_vector(jittered))
+        rows.append(compute_feature_vector(jittered))
     return np.stack(rows, axis=0)
 
 
@@ -98,7 +97,7 @@ def build_default_template(
         noise=sample_noise,
         seed=seed,
     )
-    return build_template(gesture, samples, force_diagonal=True)
+    return build_template(gesture, samples)
 
 
 def enroll_from_samples(
@@ -106,18 +105,10 @@ def enroll_from_samples(
     samples: npt.NDArray[np.float64],
     output_dir: Path,
 ) -> Path:
-    template = build_template(gesture, samples, force_diagonal=True)
+    template = build_template(gesture, samples)
     path = output_dir / f"{gesture}.json"
     save_template(path, template)
     return path
-
-
-def save_template_compact(path: Path, template: GestureTemplate) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(template.to_dict(), separators=(",", ":")),
-        encoding="utf-8",
-    )
 
 
 def generate_default_templates(output_dir: Path) -> list[Path]:
@@ -127,7 +118,7 @@ def generate_default_templates(output_dir: Path) -> list[Path]:
     for gesture in DEFAULT_GESTURE_NAMES:
         template = build_default_template(gesture, seed=seeds[gesture])
         path = output_dir / f"{gesture}.json"
-        save_template_compact(path, template)
+        save_template(path, template, compact=True)
         written.append(path)
     return written
 
@@ -169,7 +160,7 @@ def capture_angle_samples(
             frame_u8 = np.asarray(frame, dtype=np.uint8)
             result = detector.detect(frame_u8)
             if elapsed >= warmup_s and result.hands:
-                samples.append(compute_joint_angle_vector(result.hands[0]))
+                samples.append(compute_feature_vector(result.hands[0]))
 
             sleep_for = frame_interval - (time.monotonic() - loop_start)
             if sleep_for > 0:
@@ -182,15 +173,6 @@ def capture_angle_samples(
         msg = "no hand samples captured during enrollment window"
         raise RuntimeError(msg)
     return np.stack(samples, axis=0)
-
-
-def _extend_finger(
-    points: npt.NDArray[np.float64],
-    chain: tuple[int, ...],
-    base: tuple[float, float, float],
-    tip: tuple[float, float, float],
-) -> None:
-    _fill_chain(points, chain, base, tip)
 
 
 def _curl_finger(

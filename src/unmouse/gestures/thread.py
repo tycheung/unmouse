@@ -8,7 +8,7 @@ import numpy.typing as npt
 
 from unmouse.broker.video_broker import drain_latest
 from unmouse.config import Settings
-from unmouse.gestures.angles import compute_joint_angle_vector, landmarks_to_array
+from unmouse.gestures.angles import compute_feature_vector, landmarks_to_array
 from unmouse.gestures.enrollment import default_gestures_dir, profile_gestures_dir
 from unmouse.gestures.fsm import ClickFrameInput, ClickFsm
 from unmouse.gestures.landmarks import HandLandmarkDetector, HandLandmarks, create_hand_detector
@@ -118,7 +118,7 @@ class GestureWorker:
 
         self._missed_hand_frames = 0
         hand = detection.hands[0]
-        theta = compute_joint_angle_vector(hand)
+        theta = compute_feature_vector(hand)
         result = classify(
             theta,
             self._library,

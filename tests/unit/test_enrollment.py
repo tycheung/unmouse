@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from unmouse.gestures.angles import FEATURE_DIM, compute_joint_angle_vector
+from unmouse.gestures.angles import FEATURE_DIM, compute_feature_vector
 from unmouse.gestures.enrollment import (
     DEFAULT_GESTURE_NAMES,
     build_default_template,
@@ -21,7 +21,7 @@ from unmouse.gestures.mle import classify, load_gesture_library
 
 def test_synthetic_landmarks_yield_distinct_angle_vectors() -> None:
     vectors = {
-        gesture: compute_joint_angle_vector(synthetic_landmarks(gesture))
+        gesture: compute_feature_vector(synthetic_landmarks(gesture))
         for gesture in DEFAULT_GESTURE_NAMES
     }
     assert vectors["v_sign"].shape == (FEATURE_DIM,)
@@ -29,9 +29,8 @@ def test_synthetic_landmarks_yield_distinct_angle_vectors() -> None:
     assert not np.allclose(vectors["pinch_close"], vectors["thumbs_up"])
 
 
-def test_build_default_template_uses_diagonal_covariance() -> None:
+def test_build_default_template_matches_feature_dimension() -> None:
     template = build_default_template("v_sign")
-    assert template.diagonal is True
     assert template.dim == FEATURE_DIM
 
 
@@ -42,7 +41,7 @@ def test_enroll_from_samples_writes_profile_template(tmp_path: Path) -> None:
     assert path.is_file()
     library = load_gesture_library(tmp_path)
     result = classify(
-        compute_joint_angle_vector(hand),
+        compute_feature_vector(hand),
         library,
         absolute_min=-1000.0,
         margin_min=0.0,
@@ -56,7 +55,7 @@ def test_generate_default_templates_writes_all_gestures(tmp_path: Path) -> None:
     library = load_gesture_library(tmp_path)
     assert set(library) == set(DEFAULT_GESTURE_NAMES)
     for gesture in DEFAULT_GESTURE_NAMES:
-        vector = compute_joint_angle_vector(synthetic_landmarks(gesture))
+        vector = compute_feature_vector(synthetic_landmarks(gesture))
         result = classify(vector, library, absolute_min=-1000.0, margin_min=1.0)
         assert result.gesture == gesture
 

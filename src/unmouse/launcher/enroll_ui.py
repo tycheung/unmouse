@@ -11,7 +11,7 @@ import numpy.typing as npt
 
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
-from unmouse.gestures.angles import compute_joint_angle_vector
+from unmouse.gestures.angles import compute_feature_vector
 from unmouse.gestures.enrollment import (
     DEFAULT_CAPTURE_DURATION_S,
     DEFAULT_CAPTURE_FPS,
@@ -220,7 +220,7 @@ def _collect_angle_samples(
         frame_u8 = np.asarray(frame, dtype=np.uint8)
         result = detector.detect(frame_u8)
         if elapsed >= warmup_s and result.hands:
-            samples.append(compute_joint_angle_vector(result.hands[0]))
+            samples.append(compute_feature_vector(result.hands[0]))
 
         sleep_for = frame_interval - (clock() - loop_start)
         if sleep_for > 0:
