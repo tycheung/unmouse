@@ -2,11 +2,85 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_MAX_LINES = 600
 DEFAULT_EXCLUDE = ("poetry.lock",)
+DEFAULT_OVERRIDES_PATH = Path("scripts/epic_budget_overrides.json")
+
+
+@dataclass(frozen=True)
+class BudgetOverride:
+    id: str
+    commits: tuple[str, ...]
+    max_lines: int
+    reason: str
+
+
+def load_budget_overrides(path: Path) -> tuple[BudgetOverride, ...]:
+    if not path.is_file():
+        return ()
+    data = json.loads(path.read_text(encoding="utf-8"))
+    raw = data.get("overrides", [])
+    overrides: list[BudgetOverride] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        overrides.append(
+            BudgetOverride(
+                id=str(entry["id"]),
+                commits=tuple(str(c) for c in entry.get("commits", ())),
+                max_lines=int(entry.get("max_lines", DEFAULT_MAX_LINES)),
+                reason=str(entry.get("reason", "")),
+            ),
+        )
+    return tuple(overrides)
+
+
+def resolve_override(
+    head_sha: str,
+    stats: DiffStats,
+    overrides: tuple[BudgetOverride, ...],
+    *,
+    range_commits: tuple[str, ...] = (),
+) -> BudgetOverride | None:
+    if not overrides:
+        return None
+
+    def commit_matches(sha: str, override: BudgetOverride) -> bool:
+        normalized = sha.lower()
+        return any(
+            normalized == commit.lower() or normalized.startswith(commit.lower())
+            for commit in override.commits
+        )
+
+    def override_for_commit(sha: str) -> BudgetOverride | None:
+        for override in overrides:
+            if commit_matches(sha, override):
+                return override
+        return None
+
+    head_override = override_for_commit(head_sha)
+    if head_override is not None and stats.total <= head_override.max_lines:
+        return head_override
+
+    if not range_commits:
+        return None
+
+    matched: BudgetOverride | None = None
+    max_allowed = DEFAULT_MAX_LINES
+    for sha in range_commits:
+        entry = override_for_commit(sha)
+        if entry is None:
+            return None
+        if entry.max_lines > max_allowed:
+            max_allowed = entry.max_lines
+            matched = entry
+    if matched is not None and stats.total <= max_allowed:
+        return matched
+    return None
 
 
 @dataclass(frozen=True)

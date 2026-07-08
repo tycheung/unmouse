@@ -10,11 +10,14 @@ from pathlib import Path
 from unmouse.utils.epic_size import (
     DEFAULT_EXCLUDE,
     DEFAULT_MAX_LINES,
+    DEFAULT_OVERRIDES_PATH,
     ParseResult,
     count_untracked_lines,
     is_within_budget,
+    load_budget_overrides,
     merge_parse_results,
     parse_numstat_output,
+    resolve_override,
 )
 
 
@@ -42,6 +45,32 @@ def collect_worktree_diff(base_ref: str, repo_root: Path, exclude: tuple[str, ..
         count_untracked_lines(repo_root, exclude=exclude),
     ]
     return merge_parse_results(*parts)
+
+
+def get_head_sha(repo_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "git rev-parse HEAD failed")
+    return result.stdout.strip()
+
+
+def list_commits_since(base_ref: str, repo_root: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        ["git", "log", f"{base_ref}..HEAD", "--format=%H"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "git log failed")
+    return tuple(line for line in result.stdout.splitlines() if line.strip())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,6 +102,23 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Excluded: {', '.join(result.excluded_files)}")
 
     if not is_within_budget(stats, args.max_lines):
+        try:
+            head_sha = get_head_sha(args.repo_root)
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        override = resolve_override(
+            head_sha,
+            stats,
+            load_budget_overrides(args.repo_root / DEFAULT_OVERRIDES_PATH),
+            range_commits=list_commits_since(args.base_ref, args.repo_root),
+        )
+        if override is not None:
+            print(
+                f"OK: one-time budget override '{override.id}' "
+                f"(limit {override.max_lines}). {override.reason}"
+            )
+            return 0
         print(
             f"FAIL: {stats.total} lines exceed budget of {args.max_lines}. "
             "Split this epic into smaller changes.",

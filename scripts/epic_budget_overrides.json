@@ -1,0 +1,10 @@
+{
+  "overrides": [
+    {
+      "id": "playwright-e2e-infrastructure",
+      "commits": ["e6842ba", "bae8f20"],
+      "max_lines": 1600,
+      "reason": "Playwright E2E harness, panel.js extraction, and CI job (one-time exception)"
+    }
+  ]
+}
