@@ -6,6 +6,7 @@ from tests.fakes.broker import MockFrameSource
 from tests.fakes.gaze import FakeGazeTracker
 from unmouse.broker.video_broker import VideoBroker, drain_latest
 from unmouse.config import Settings
+from unmouse.gaze.display import VirtualDesktop
 from unmouse.gaze.thread import GazeWorker
 from unmouse.gaze.tracker import GazeSample
 from unmouse.state import create_system_state
@@ -34,4 +35,28 @@ def test_gaze_worker_updates_state_from_queue() -> None:
     assert snap.x == 321.0
     assert snap.y == 210.0
     assert snap.fixation == 0.88
+    assert snap.valid is True
     assert drain_latest(state.gesture_frame_queue) is not None
+
+
+def test_gaze_worker_marks_gaze_invalid_after_timeout_without_eyes() -> None:
+    settings = Settings(screen_width=800, screen_height=600, gaze_lost_timeout_ms=200)
+    state = create_system_state(settings)
+    desktop = VirtualDesktop(0, 0, settings.screen_width, settings.screen_height)
+    worker = GazeWorker(
+        state,
+        settings,
+        tracker=FakeGazeTracker(),
+        desktop=desktop,
+    )
+
+    worker._handle_sample(GazeSample(x=300.0, y=200.0, fixation=0.9), now=0.0)
+    assert state.get_gaze().valid is True
+
+    worker._handle_sample(None, now=0.1)
+    assert state.get_gaze().valid is True
+
+    worker._handle_sample(None, now=0.3)
+    assert state.get_gaze().valid is False
+    assert state.get_gaze().x == 300.0
+    assert state.get_gaze().y == 200.0

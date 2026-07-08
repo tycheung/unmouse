@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     gaze_calibration_radius: int = Field(default=1000, gt=0)
     fixation_threshold: float = Field(default=1.0, gt=0.0, le=1.0)
     scroll_speed_multiplier: float = Field(default=1.0, gt=0)
+    gaze_lost_timeout_ms: int = Field(default=500, ge=0)
 
     @property
     def app_data_dir(self) -> Path:

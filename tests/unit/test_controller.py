@@ -62,6 +62,7 @@ def test_controller_respects_gaze_only_mode() -> None:
 def test_controller_executes_queued_click_and_scroll() -> None:
     settings = Settings(screen_width=800, screen_height=600)
     state = create_system_state(settings)
+    state.set_gaze(400.0, 300.0, 0.9)
     driver = NoopActionDriver()
     controller = ActionController(
         state,
@@ -75,3 +76,27 @@ def test_controller_executes_queued_click_and_scroll() -> None:
     controller.tick(timestamp_s=0.0)
     assert driver.clicks == [(10, 20, "left")]
     assert driver.scrolls == [(30, 40, -3)]
+
+
+def test_controller_holds_cursor_when_gaze_invalid() -> None:
+    settings = Settings(screen_width=800, screen_height=600)
+    state = create_system_state(settings)
+    driver = NoopActionDriver()
+    controller = ActionController(
+        state,
+        settings,
+        driver=driver,
+        snap_orchestrator=StaticSnapProvider(()),
+        enable_overlay=False,
+    )
+
+    controller.tick(timestamp_s=0.0)
+    assert driver.moves == []
+
+    state.set_gaze(120.0, 90.0, 0.9)
+    controller.tick(timestamp_s=0.1)
+    assert driver.moves[-1] == (120, 90)
+
+    state.set_gaze_valid(False)
+    controller.tick(timestamp_s=0.2)
+    assert driver.moves[-1] == (120, 90)

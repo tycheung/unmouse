@@ -15,6 +15,7 @@ class GazeSnapshot:
     x: float
     y: float
     fixation: float
+    valid: bool = True
 
 
 @dataclass
@@ -22,6 +23,7 @@ class SystemState:
     gaze_x: float
     gaze_y: float
     gaze_fixation: float = 0.0
+    gaze_valid: bool = False
     click_mode: bool = False
     right_click_intent: bool = False
     scroll_active: bool = False
@@ -35,13 +37,18 @@ class SystemState:
 
     def get_gaze(self) -> GazeSnapshot:
         with self._lock:
-            return GazeSnapshot(self.gaze_x, self.gaze_y, self.gaze_fixation)
+            return GazeSnapshot(self.gaze_x, self.gaze_y, self.gaze_fixation, self.gaze_valid)
 
     def set_gaze(self, x: float, y: float, fixation: float) -> None:
         with self._lock:
             self.gaze_x = x
             self.gaze_y = y
             self.gaze_fixation = fixation
+            self.gaze_valid = True
+
+    def set_gaze_valid(self, valid: bool) -> None:
+        with self._lock:
+            self.gaze_valid = valid
 
     def set_click_mode(self, active: bool, right_click: bool = False) -> None:
         with self._lock:

@@ -84,7 +84,7 @@ class ActionController:
         self._last_x = snapped.x
         self._last_y = snapped.y
 
-        if not self._settings.paused:
+        if not self._settings.paused and gaze.valid:
             self._apply_pointer_actions(snapped.x, snapped.y)
         return snapped.x, snapped.y
 
@@ -102,7 +102,10 @@ class ActionController:
         return True
 
     def _indicator_state(self) -> IndicatorState:
-        styled = indicator_state_from_system(self._state, sampler=self._sampler)
+        gaze = self._state.get_gaze()
+        styled = indicator_state_from_system(
+            self._state, sampler=self._sampler, visible=gaze.valid
+        )
         return replace(styled, x=self._last_x, y=self._last_y)
 
     def _run(self) -> None:
