@@ -1,4 +1,44 @@
 function panelApp() {
+  const SCHEMAS = {
+    status: {
+      tracking: false,
+      paused: false,
+      fps: null,
+      confidence: null,
+      last_calibrated: null,
+      gaze_mode: "cursor_follow",
+    },
+    enrollment: {
+      active: false,
+      done: false,
+      gesture_index: 0,
+      gesture_count: 3,
+      gesture_label: "",
+      instruction: "",
+      message: "",
+    },
+    onboarding: {
+      step_index: 0,
+      step_count: 6,
+      title: "",
+      description: "",
+      actions: [],
+      skippable: false,
+      skip_warning: "",
+      notice: "",
+    },
+    settings: {
+      profile_name: "default",
+      profiles: ["default"],
+      kalman_measurement_noise: 10,
+      saccade_threshold_px: 80,
+      snap_radius_px: 50,
+      scroll_speed_multiplier: 1,
+      camera_index: 0,
+      gaze_mode: "cursor_follow",
+    },
+  };
+
   function applyPayload(source, schema) {
     const out = {};
     for (const [key, fallback] of Object.entries(schema)) {
@@ -19,54 +59,23 @@ function panelApp() {
     enrollmentPreview: null,
     enrollmentPreviewMessage: "",
     enrollmentTimer: null,
-    status: {
-      tracking: false,
-      paused: false,
-      fps: null,
-      confidence: null,
-      last_calibrated: null,
-      gaze_mode: "cursor_follow",
-    },
-    enrollment: {
-      active: false,
-      done: false,
-      gesture_index: 0,
-      gesture_count: 3,
-      gesture_label: "",
-      instruction: "",
-      message: "",
-    },
-    settingsForm: {
-      profile_name: "default",
-      profiles: ["default"],
-      kalman_measurement_noise: 10,
-      saccade_threshold_px: 80,
-      snap_radius_px: 50,
-      scroll_speed_multiplier: 1,
-      camera_index: 0,
-      gaze_mode: "cursor_follow",
-    },
-    onboarding: {
-      step_index: 0,
-      step_count: 6,
-      title: "",
-      description: "",
-      actions: [],
-      skippable: false,
-      skip_warning: "",
-      notice: "",
-    },
+    status: applyPayload({}, SCHEMAS.status),
+    enrollment: applyPayload({}, SCHEMAS.enrollment),
+    settingsForm: applyPayload({}, SCHEMAS.settings),
+    onboarding: applyPayload({}, SCHEMAS.onboarding),
     applyStatus(s) {
       if (!s) return;
       this.statusMessage = s.message ?? "Ready";
-      this.status = applyPayload(s, {
-        tracking: false,
-        paused: false,
-        fps: null,
-        confidence: null,
-        last_calibrated: null,
-        gaze_mode: "cursor_follow",
-      });
+      this.status = applyPayload(s, SCHEMAS.status);
+    },
+    applyEnrollment(s) {
+      if (s) this.enrollment = applyPayload(s, SCHEMAS.enrollment);
+    },
+    applyOnboarding(s) {
+      if (s) this.onboarding = applyPayload(s, SCHEMAS.onboarding);
+    },
+    applySettings(s) {
+      if (s) this.settingsForm = applyPayload(s, SCHEMAS.settings);
     },
     async init() {
       await this.refreshStatus();
@@ -76,44 +85,6 @@ function panelApp() {
         if (s.should_show) this.view = "onboarding";
         await this.refreshUpdateBadge();
       }
-    },
-    applyEnrollment(s) {
-      if (!s) return;
-      this.enrollment = applyPayload(s, {
-        active: false,
-        done: false,
-        gesture_index: 0,
-        gesture_count: 3,
-        gesture_label: "",
-        instruction: "",
-        message: "",
-      });
-    },
-    applyOnboarding(s) {
-      if (!s) return;
-      this.onboarding = applyPayload(s, {
-        step_index: 0,
-        step_count: 6,
-        title: "",
-        description: "",
-        actions: [],
-        skippable: false,
-        skip_warning: "",
-        notice: "",
-      });
-    },
-    applySettings(s) {
-      if (!s) return;
-      this.settingsForm = applyPayload(s, {
-        profile_name: "default",
-        profiles: ["default"],
-        kalman_measurement_noise: 10,
-        saccade_threshold_px: 80,
-        snap_radius_px: 50,
-        scroll_speed_multiplier: 1,
-        camera_index: 0,
-        gaze_mode: "cursor_follow",
-      });
     },
     async refreshStatus() {
       if (!window.pywebview?.api) return;
