@@ -10,7 +10,7 @@ from unmouse.launcher.api import PanelApi, last_calibration_label
 from unmouse.launcher.calibration_wizards import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
 from unmouse.launcher.update import UpdateStatus
 

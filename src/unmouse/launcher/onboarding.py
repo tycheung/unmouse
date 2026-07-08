@@ -9,7 +9,7 @@ from typing import Literal
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 OnboardingStepId = Literal["welcome", "camera", "polynomial", "offset", "gestures", "ready"]

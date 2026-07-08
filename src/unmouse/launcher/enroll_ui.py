@@ -27,7 +27,7 @@ from unmouse.gestures.landmarks import (
     create_hand_detector,
     draw_hand_skeleton,
 )
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import ActionResult
 
 GESTURE_LABELS: dict[str, str] = {
     "v_sign": "V-sign",

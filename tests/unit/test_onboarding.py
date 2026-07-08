@@ -6,7 +6,7 @@ import json
 
 from unmouse.config import Settings
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 

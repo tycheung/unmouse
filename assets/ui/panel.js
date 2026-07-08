@@ -10,7 +10,6 @@ function panelApp() {
     enrollmentPreview: null,
     enrollmentPreviewMessage: "",
     enrollmentTimer: null,
-    statusTimer: null,
     status: {
       tracking: false,
       paused: false,
@@ -60,19 +59,8 @@ function panelApp() {
         gaze_mode: s.gaze_mode ?? "cursor_follow",
       };
     },
-    startStatusPoll() {
-      this.stopStatusPoll();
-      this.statusTimer = setInterval(() => this.refreshStatus(), 1000);
-    },
-    stopStatusPoll() {
-      if (this.statusTimer) {
-        clearInterval(this.statusTimer);
-        this.statusTimer = null;
-      }
-    },
     async init() {
       await this.refreshStatus();
-      this.startStatusPoll();
       if (window.pywebview?.api) {
         const s = await window.pywebview.api.get_onboarding_state();
         this.applyOnboarding(s);

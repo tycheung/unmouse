@@ -16,7 +16,7 @@ from unmouse.launcher.api import PanelApi
 from unmouse.launcher.calibration_wizards import OffsetWizardOutcome, PolynomialWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
 
