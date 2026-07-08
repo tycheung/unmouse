@@ -24,7 +24,10 @@ class EngineProcessStatus:
 
 def build_engine_command(*, executable: str | None = None) -> list[str]:
     """Return argv for spawning the tracking engine entry point."""
-    return [executable or sys.executable, "-m", "unmouse", "--engine"]
+    exe = executable or sys.executable
+    if getattr(sys, "frozen", False):
+        return [exe, "--engine"]
+    return [exe, "-m", "unmouse", "--engine"]
 
 
 class EngineRunner:
