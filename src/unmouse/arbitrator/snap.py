@@ -42,10 +42,6 @@ class SnapProvider(Protocol):
     def list_targets(self) -> tuple[SnapTarget, ...]: ...
 
 
-class SnapOrchestrator(Protocol):
-    def list_targets(self) -> tuple[SnapTarget, ...]: ...
-
-
 @dataclass
 class StaticSnapProvider:
     targets: tuple[SnapTarget, ...]

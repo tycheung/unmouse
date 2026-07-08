@@ -14,15 +14,11 @@ from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner
-from unmouse.launcher.enroll_ui import EnrollmentCaptureResult, EnrollmentPreview
-from unmouse.launcher.onboarding import (
-    CameraCheckResult,
-    LauncherSettings,
-    OnboardingActionResult,
-    OnboardingController,
-    save_launcher_settings,
-)
+from unmouse.launcher.enroll_ui import EnrollmentPreview
+from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.launcher.polynomial_wizard import PolynomialWizardOutcome
+from unmouse.launcher.results import ActionResult
+from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
 from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -78,15 +74,15 @@ def _mock_onboarding(
         else None
     )
     if mock_calibration:
-        def run_polynomial(_s: Settings) -> OnboardingActionResult:
-            return OnboardingActionResult(
+        def run_polynomial(_s: Settings) -> ActionResult:
+            return ActionResult(
                 True,
                 "Polynomial calibration saved (mock).",
                 step_complete=True,
             )
 
-        def run_offset(_s: Settings) -> OnboardingActionResult:
-            return OnboardingActionResult(
+        def run_offset(_s: Settings) -> ActionResult:
+            return ActionResult(
                 True,
                 "Offset profile saved (mock).",
                 step_complete=True,
@@ -101,7 +97,7 @@ def _mock_onboarding(
         run_offset=run_offset,
     )
     if not first_run:
-        save_launcher_settings(settings, LauncherSettings(first_run_complete=True))
+        save_launcher_flags(settings, LauncherFlags(first_run_complete=True))
     return controller
 
 
@@ -225,14 +221,14 @@ class FakeEnrollmentSession:
             message="Mock preview.",
         )
 
-    def capture_current_gesture(self) -> EnrollmentCaptureResult:
+    def capture_current_gesture(self) -> ActionResult:
         if self._done:
-            return EnrollmentCaptureResult(True, "Enrollment complete.", done=True)
+            return ActionResult(True, "Enrollment complete.", done=True)
         gesture = self._gestures[self._index]
         self._index += 1
         done = self._index >= len(self._gestures)
         self._done = done
-        return EnrollmentCaptureResult(
+        return ActionResult(
             ok=True,
             message=f"Captured {gesture}.",
             gesture=gesture,

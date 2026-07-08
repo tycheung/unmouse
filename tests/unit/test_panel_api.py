@@ -9,8 +9,8 @@ from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi, last_calibration_label
 from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
-from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.results import ActionResult
 from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
 from unmouse.launcher.update import UpdateStatus
 
@@ -203,7 +203,7 @@ def test_panel_api_enrollment_capture_marks_onboarding_complete() -> None:
     api = _api_without_onboarding_prompt()
     with patch("unmouse.launcher.api.GestureEnrollmentSession") as session_cls:
         session_cls.return_value.get_state.return_value = {"active": True, "done": True}
-        session_cls.return_value.capture_current_gesture.return_value = EnrollmentCaptureResult(
+        session_cls.return_value.capture_current_gesture.return_value = ActionResult(
             ok=True,
             message="All gesture templates enrolled.",
             done=True,

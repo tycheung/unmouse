@@ -12,6 +12,7 @@ from unmouse.diagnostics import load_diagnostics_snapshot
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
+from unmouse.launcher.results import ActionResult
 from unmouse.launcher.settings import (
     activate_profile,
     create_profile,
@@ -40,33 +41,16 @@ class PanelStatus:
     last_calibrated: str | None = None
 
 
-@dataclass(frozen=True)
-class PanelActionResult:
-    ok: bool
-    message: str
+def _update_payload(status: UpdateStatus) -> dict[str, object]:
+    payload = status.to_dict()
+    payload["version"] = status.latest_version
+    return payload
 
 
-@dataclass(frozen=True)
-class UpdateCheckResult:
-    available: bool
-    message: str
-    version: str | None = None
-    channel: str = "none"
-    current_version: str | None = None
-    latest_version: str | None = None
-    download_url: str | None = None
-
-    @classmethod
-    def from_status(cls, status: UpdateStatus) -> UpdateCheckResult:
-        return cls(
-            available=status.available,
-            message=status.message,
-            version=status.latest_version,
-            channel=status.channel,
-            current_version=status.current_version,
-            latest_version=status.latest_version,
-            download_url=status.download_url,
-        )
+def _action(ok: bool, message: str, **extra: object) -> dict[str, object]:
+    payload = ActionResult(ok, message).to_dict()
+    payload.update(extra)
+    return payload
 
 
 class PanelApi:
@@ -123,13 +107,12 @@ class PanelApi:
 
     def toggle_pause(self) -> dict[str, object]:
         if not self._engine_runner.is_running():
-            result = PanelActionResult(False, "Start tracking before pausing.")
-            return asdict(result)
+            return _action(False, "Start tracking before pausing.")
         runtime = toggle_paused(self._settings)
         self._refresh_tray_menu()
         message = "Tracking paused." if runtime.paused else "Tracking resumed."
         self._status = self._runtime_panel_status(message)
-        payload = asdict(PanelActionResult(True, message))
+        payload = _action(True, message)
         payload["paused"] = runtime.paused
         return payload
 
@@ -143,7 +126,7 @@ class PanelApi:
             else "Cursor follow enabled."
         )
         self._status = self._runtime_panel_status(label)
-        payload = asdict(PanelActionResult(True, label))
+        payload = _action(True, label)
         payload["gaze_mode"] = mode.value
         return payload
 
@@ -180,8 +163,10 @@ class PanelApi:
     def onboarding_run_gestures(self) -> dict[str, object]:
         if profile_has_gesture_templates(self._settings):
             self._onboarding.gestures_complete = True
-            result = PanelActionResult(True, "Gesture templates already saved.")
-            return {**asdict(result), "state": self._onboarding.get_state()}
+            return {
+                **_action(True, "Gesture templates already saved."),
+                "state": self._onboarding.get_state(),
+            }
         opened = self.show_enrollment(return_view="onboarding")
         if not opened.get("ok", True):
             return {**opened, "state": self._onboarding.get_state()}
@@ -201,21 +186,15 @@ class PanelApi:
 
     def check_for_updates(self) -> dict[str, object]:
         self._update_status = check_updates()
-        result = UpdateCheckResult.from_status(self._update_status)
-        return asdict(result)
+        return _update_payload(self._update_status)
 
     def apply_update(self) -> dict[str, object]:
         if self._update_status is None or not self._update_status.available:
-            result = PanelActionResult(ok=False, message="No update is available.")
-            return asdict(result)
+            return _action(False, "No update is available.")
         self._update_status = apply_update(self._update_status)
         self._status = PanelStatus(message=self._update_status.message)
-        result = PanelActionResult(
-            ok=not self._update_status.available,
-            message=self._update_status.message,
-        )
-        payload = asdict(result)
-        payload["update"] = asdict(UpdateCheckResult.from_status(self._update_status))
+        payload = _action(not self._update_status.available, self._update_status.message)
+        payload["update"] = _update_payload(self._update_status)
         return payload
 
     def start_calibrate(self) -> dict[str, object]:
@@ -226,12 +205,10 @@ class PanelApi:
         if load_calibration(calibration_path(self._settings)) is None:
             poly = run_polynomial_wizard(self._settings)
             if not poly.success:
-                result = PanelActionResult(ok=False, message=poly.message)
-                return asdict(result)
+                return _action(False, poly.message)
         outcome = run_offset_wizard(self._settings)
         self._status = PanelStatus(message=outcome.message)
-        result = PanelActionResult(ok=outcome.success, message=outcome.message)
-        return asdict(result)
+        return _action(outcome.success, outcome.message)
 
     def configure_launcher_shell(
         self,
@@ -249,21 +226,19 @@ class PanelApi:
     def start_launch(self) -> dict[str, object]:
         if self._engine_runner.is_running():
             self._ensure_tray()
-            result = PanelActionResult(True, "Engine already running.")
-            payload = asdict(result)
+            payload = _action(True, "Engine already running.")
             payload["tracking"] = True
             return payload
         status = self._engine_runner.start()
         if not status.ok or not status.running:
-            result = PanelActionResult(False, status.message)
-            return asdict(result)
+            return _action(False, status.message)
         set_paused(self._settings, False)
         self._ensure_tray()
         self._start_watchdog()
         if self._on_minimize_panel is not None:
             self._on_minimize_panel()
         self._status = self._runtime_panel_status(status.message)
-        payload = asdict(PanelActionResult(True, status.message))
+        payload = _action(True, status.message)
         payload["tracking"] = True
         payload["minimize"] = True
         payload["pid"] = status.pid
@@ -273,7 +248,7 @@ class PanelApi:
         self._stop_watchdog()
         status = self._engine_runner.stop()
         self._status = self._runtime_panel_status(status.message)
-        return asdict(PanelActionResult(status.ok, status.message))
+        return _action(status.ok, status.message)
 
     def shutdown(self) -> None:
         self._stop_watchdog()
@@ -337,8 +312,7 @@ class PanelApi:
         try:
             session.open()
         except RuntimeError as exc:
-            result = PanelActionResult(ok=False, message=str(exc))
-            return asdict(result)
+            return _action(False, str(exc))
         self._enrollment = session
         self._enrollment_return_view = return_view
         self._view = "enrollment"
@@ -369,13 +343,12 @@ class PanelApi:
 
     def enrollment_capture(self) -> dict[str, object]:
         if self._enrollment is None:
-            result = PanelActionResult(ok=False, message="Enrollment is not active.")
-            return asdict(result)
+            return _action(False, "Enrollment is not active.")
         capture = self._enrollment.capture_current_gesture()
         if capture.ok and capture.done:
             self._onboarding.gestures_complete = True
         self._status = PanelStatus(message=capture.message)
-        payload = asdict(capture)
+        payload = capture.to_dict()
         payload["enrollment"] = self._enrollment.get_state()
         return payload
 

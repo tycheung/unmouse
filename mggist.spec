@@ -28,7 +28,7 @@ a = Analysis(
         "PIL",
         "PIL.Image",
         "PIL.ImageDraw",
-        "unmouse.engine",
+        "unmouse.main",
         "unmouse.launcher.panel",
     ],
     hookspath=[],

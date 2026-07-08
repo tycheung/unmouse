@@ -1,11 +1,10 @@
 import sys
 
-from unmouse.engine import run as run_engine
 from unmouse.launcher.panel import run as run_launcher
+from unmouse.main import run_engine_cli
 
 
 def smoke_check() -> None:
-    """Validate imports and version for CI / frozen exe smoke tests."""
     from unmouse import __version__
     from unmouse.launcher.panel import ui_index_path
 
@@ -20,7 +19,7 @@ def main() -> None:
         smoke_check()
         return
     if "--engine" in sys.argv:
-        run_engine()
+        run_engine_cli()
     else:
         run_launcher()
 

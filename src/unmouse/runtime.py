@@ -6,7 +6,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from unmouse.config import GazeMode, Settings
+from unmouse.config import Settings
 
 RUNTIME_FILENAME = "runtime.json"
 
@@ -59,14 +59,9 @@ def toggle_paused(settings: Settings) -> RuntimeState:
 
 
 def sync_engine_controls(settings: Settings) -> None:
+    from unmouse.launcher.settings import load_persisted_settings
+
     settings.paused = load_runtime(settings).paused
-    path = settings.app_data_dir / "settings.json"
-    if not path.is_file():
-        return
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        return
-    if "gaze_mode" in data:
-        settings.gaze_mode = GazeMode(str(data["gaze_mode"]))
-    if "pause_hotkey" in data:
-        settings.pause_hotkey = str(data["pause_hotkey"])
+    persisted = load_persisted_settings()
+    settings.gaze_mode = persisted.gaze_mode
+    settings.pause_hotkey = persisted.pause_hotkey

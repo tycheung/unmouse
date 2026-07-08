@@ -7,7 +7,7 @@ import time
 from queue import Empty
 
 from unmouse.arbitrator.actions import ActionDriver, create_action_driver
-from unmouse.arbitrator.snap import SnapEngine, SnapOrchestrator
+from unmouse.arbitrator.snap import CompositeSnapOrchestrator, SnapEngine, SnapProvider
 from unmouse.arbitrator.window_chrome import create_snap_orchestrator, create_window_chrome_provider
 from unmouse.config import GazeMode, Settings
 from unmouse.overlay.indicator import (
@@ -31,7 +31,7 @@ class ActionController:
         settings: Settings,
         driver: ActionDriver | None = None,
         snap_engine: SnapEngine | None = None,
-        snap_orchestrator: SnapOrchestrator | None = None,
+        snap_orchestrator: SnapProvider | None = None,
         overlay: GazeIndicatorOverlay | None = None,
         luminance_sampler: LuminanceSampler | None = None,
         *,
@@ -138,7 +138,7 @@ class ActionController:
                 time.sleep(sleep_for)
 
 
-def _default_snap_orchestrator(prefer_win32: bool) -> SnapOrchestrator:
+def _default_snap_orchestrator(prefer_win32: bool) -> CompositeSnapOrchestrator:
     from unmouse.arbitrator.uia_provider import create_uia_snap_provider
 
     return create_snap_orchestrator(

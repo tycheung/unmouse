@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Literal
 
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
 from unmouse.launcher.enroll_ui import profile_has_gesture_templates
+from unmouse.launcher.results import ActionResult
 from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
 OnboardingStepId = Literal["welcome", "camera", "polynomial", "offset", "gestures", "ready"]
@@ -17,18 +17,6 @@ SKIP_WARNING = (
     "Skipping this step may reduce tracking accuracy. "
     "You can rerun setup later from Calibrate or Settings."
 )
-
-
-@dataclass
-class LauncherSettings:
-    """Backward-compatible alias for onboarding launcher flags."""
-
-    first_run_complete: bool = False
-
-    @classmethod
-    def from_dict(cls, data: dict[str, object]) -> LauncherSettings:
-        flags = LauncherFlags.from_dict(data)
-        return cls(first_run_complete=flags.first_run_complete)
 
 
 @dataclass(frozen=True)
@@ -66,25 +54,6 @@ class CameraCheckResult:
     frame_rate_hz: float | None = None
 
 
-@dataclass(frozen=True)
-class OnboardingActionResult:
-    ok: bool
-    message: str
-    step_complete: bool = False
-
-
-def load_launcher_settings(settings: Settings) -> LauncherSettings:
-    flags = load_launcher_flags(settings)
-    return LauncherSettings(first_run_complete=flags.first_run_complete)
-
-
-def save_launcher_settings(settings: Settings, launcher_settings: LauncherSettings) -> Path:
-    return save_launcher_flags(
-        settings,
-        LauncherFlags(first_run_complete=launcher_settings.first_run_complete),
-    )
-
-
 @dataclass
 class OnboardingController:
     settings: Settings
@@ -95,9 +64,9 @@ class OnboardingController:
     offset_complete: bool = False
     gestures_complete: bool = False
     _check_camera: Callable[[Settings], CameraCheckResult] | None = None
-    _run_polynomial: Callable[[Settings], OnboardingActionResult] | None = None
-    _run_offset: Callable[[Settings], OnboardingActionResult] | None = None
-    _run_gestures: Callable[[Settings], OnboardingActionResult] | None = None
+    _run_polynomial: Callable[[Settings], ActionResult] | None = None
+    _run_offset: Callable[[Settings], ActionResult] | None = None
+    _run_gestures: Callable[[Settings], ActionResult] | None = None
 
     @classmethod
     def create(
@@ -105,9 +74,9 @@ class OnboardingController:
         settings: Settings | None = None,
         *,
         check_camera: Callable[[Settings], CameraCheckResult] | None = None,
-        run_polynomial: Callable[[Settings], OnboardingActionResult] | None = None,
-        run_offset: Callable[[Settings], OnboardingActionResult] | None = None,
-        run_gestures: Callable[[Settings], OnboardingActionResult] | None = None,
+        run_polynomial: Callable[[Settings], ActionResult] | None = None,
+        run_offset: Callable[[Settings], ActionResult] | None = None,
+        run_gestures: Callable[[Settings], ActionResult] | None = None,
     ) -> OnboardingController:
         return cls(
             settings=settings or Settings(),
@@ -122,13 +91,14 @@ class OnboardingController:
         return ONBOARDING_STEPS[self.step_index]
 
     def should_show_on_startup(self) -> bool:
-        return not load_launcher_settings(self.settings).first_run_complete
+        return not load_launcher_flags(self.settings).first_run_complete
 
     def get_state(self) -> dict[str, object]:
         step = self.current_step
+        flags = load_launcher_flags(self.settings)
         return {
             "should_show": self.should_show_on_startup(),
-            "first_run_complete": load_launcher_settings(self.settings).first_run_complete,
+            "first_run_complete": flags.first_run_complete,
             "step_id": step.id,
             "step_index": self.step_index,
             "step_count": len(ONBOARDING_STEPS),
@@ -144,7 +114,7 @@ class OnboardingController:
     def advance(self) -> dict[str, object]:
         step = self.current_step
         if step.id == "camera" and not self.camera_checked:
-            return asdict(OnboardingActionResult(ok=False, message="Run the camera check first."))
+            return ActionResult(False, "Run the camera check first.").to_dict()
         if step.id == "ready":
             return self.complete()
         self.step_index = min(self.step_index + 1, len(ONBOARDING_STEPS) - 1)
@@ -153,11 +123,9 @@ class OnboardingController:
     def skip_current_step(self, *, confirmed: bool) -> dict[str, object]:
         step = self.current_step
         if not step.skippable:
-            return asdict(OnboardingActionResult(ok=False, message="This step cannot be skipped."))
+            return ActionResult(False, "This step cannot be skipped.").to_dict()
         if not confirmed:
-            return asdict(
-                OnboardingActionResult(ok=False, message="Confirm the skip warning first.")
-            )
+            return ActionResult(False, "Confirm the skip warning first.").to_dict()
         if step.id not in self.skipped_steps:
             self.skipped_steps.append(step.id)
         self.step_index = min(self.step_index + 1, len(ONBOARDING_STEPS) - 1)
@@ -178,19 +146,22 @@ class OnboardingController:
         return self._run_hook(self._run_gestures, default_gestures_step, "gestures_complete")
 
     def complete(self) -> dict[str, object]:
-        save_launcher_settings(self.settings, LauncherSettings(first_run_complete=True))
+        save_launcher_flags(
+            self.settings,
+            LauncherFlags(first_run_complete=True),
+        )
         return {"ok": True, "message": "First-run setup complete.", "state": self.get_state()}
 
     def _run_hook(
         self,
-        override: Callable[[Settings], OnboardingActionResult] | None,
-        default: Callable[[Settings], OnboardingActionResult],
+        override: Callable[[Settings], ActionResult] | None,
+        default: Callable[[Settings], ActionResult],
         flag: str,
     ) -> dict[str, object]:
         result = (override or default)(self.settings)
         if result.ok:
             setattr(self, flag, True)
-        return {**asdict(result), "state": self.get_state()}
+        return {**result.to_dict(), "state": self.get_state()}
 
     def _step_notice(self, step_id: OnboardingStepId) -> str:
         if step_id == "camera" and self.camera_checked:
@@ -265,26 +236,30 @@ def default_camera_check(settings: Settings) -> CameraCheckResult:
     )
 
 
-def default_polynomial_step(settings: Settings) -> OnboardingActionResult:
+def default_polynomial_step(settings: Settings) -> ActionResult:
     from unmouse.launcher.polynomial_wizard import run_polynomial_wizard
 
     outcome = run_polynomial_wizard(settings)
-    return OnboardingActionResult(outcome.success, outcome.message, step_complete=outcome.success)
+    return ActionResult(
+        outcome.success,
+        outcome.message,
+        step_complete=outcome.success,
+    )
 
 
-def default_offset_step(settings: Settings) -> OnboardingActionResult:
+def default_offset_step(settings: Settings) -> ActionResult:
     if load_offset_profile(offset_profile_path(settings)) is not None:
-        return OnboardingActionResult(True, "Offset profile already saved.", step_complete=True)
+        return ActionResult(True, "Offset profile already saved.", step_complete=True)
     from unmouse.launcher.calibrate_wizard import run_offset_wizard
 
     outcome = run_offset_wizard(settings)
-    return OnboardingActionResult(outcome.success, outcome.message, step_complete=outcome.success)
+    return ActionResult(outcome.success, outcome.message, step_complete=outcome.success)
 
 
-def default_gestures_step(settings: Settings) -> OnboardingActionResult:
+def default_gestures_step(settings: Settings) -> ActionResult:
     if profile_has_gesture_templates(settings):
-        return OnboardingActionResult(True, "Gesture templates already saved.", step_complete=True)
-    return OnboardingActionResult(
+        return ActionResult(True, "Gesture templates already saved.", step_complete=True)
+    return ActionResult(
         False,
         "Use Train Gestures in the control panel to capture your poses.",
     )

@@ -26,6 +26,7 @@ from unmouse.gestures.landmarks import (
     create_hand_detector,
     draw_hand_skeleton,
 )
+from unmouse.launcher.results import ActionResult
 
 GESTURE_LABELS: dict[str, str] = {
     "v_sign": "V-sign",
@@ -38,15 +39,6 @@ GESTURE_INSTRUCTIONS: dict[str, str] = {
     "pinch_close": "Touch your thumb tip to your index fingertip.",
     "thumbs_up": "Extend your thumb upward and curl the other fingers.",
 }
-
-
-@dataclass(frozen=True)
-class EnrollmentCaptureResult:
-    ok: bool
-    message: str
-    gesture: str | None = None
-    sample_count: int = 0
-    done: bool = False
 
 
 @dataclass(frozen=True)
@@ -137,12 +129,12 @@ class GestureEnrollmentSession:
         message = "Hand detected." if hand_detected else "Show your hand to the camera."
         return EnrollmentPreview(jpeg, hand_detected, message=message)
 
-    def capture_current_gesture(self) -> EnrollmentCaptureResult:
+    def capture_current_gesture(self) -> ActionResult:
         if self.done:
-            return EnrollmentCaptureResult(True, "All gestures already enrolled.", done=True)
+            return ActionResult(True, "All gestures already enrolled.", done=True)
         gesture = DEFAULT_GESTURE_NAMES[self._index]
         if self._capture is None:
-            return EnrollmentCaptureResult(False, "Camera is not open.")
+            return ActionResult(False, "Camera is not open.")
         self._capturing = True
         try:
             samples = _collect_angle_samples(
@@ -155,7 +147,7 @@ class GestureEnrollmentSession:
                 sleep=self._sleep,
             )
         except RuntimeError as exc:
-            return EnrollmentCaptureResult(False, str(exc), gesture=gesture)
+            return ActionResult(False, str(exc), gesture=gesture)
         finally:
             self._capturing = False
 
@@ -170,7 +162,7 @@ class GestureEnrollmentSession:
         else:
             next_label = GESTURE_LABELS[DEFAULT_GESTURE_NAMES[self._index]]
             message = f"Saved {label} to {path.name}. Next: {next_label}."
-        return EnrollmentCaptureResult(
+        return ActionResult(
             ok=True,
             message=message,
             gesture=gesture,

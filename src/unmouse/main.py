@@ -57,6 +57,12 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
         logger.info("Engine stopped")
 
 
+def run_engine_cli() -> None:
+    from unmouse.launcher.settings import load_persisted_settings
+
+    run_engine(load_persisted_settings())
+
+
 def run() -> None:
     """Default user entry: open the control panel launcher."""
     from unmouse.launcher.panel import run as run_panel
