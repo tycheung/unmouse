@@ -1,5 +1,5 @@
 function panelApp() {
-  const SCHEMAS = {
+  const DEFAULTS = {
     status: {
       tracking: false,
       paused: false,
@@ -40,11 +40,10 @@ function panelApp() {
     },
   };
 
-  function applyPayload(source, schema) {
-    const out = {};
-    for (const [key, fallback] of Object.entries(schema)) {
-      const value = source[key] ?? fallback;
-      out[key] = typeof fallback === "boolean" ? !!value : value;
+  function patch(defaults, source) {
+    const out = { ...defaults, ...source };
+    for (const [key, value] of Object.entries(defaults)) {
+      if (typeof value === "boolean") out[key] = !!out[key];
     }
     return out;
   }
@@ -60,23 +59,23 @@ function panelApp() {
     enrollmentPreview: null,
     enrollmentPreviewMessage: "",
     enrollmentTimer: null,
-    status: applyPayload({}, SCHEMAS.status),
-    enrollment: applyPayload({}, SCHEMAS.enrollment),
-    settingsForm: applyPayload({}, SCHEMAS.settings),
-    onboarding: applyPayload({}, SCHEMAS.onboarding),
+    status: { ...DEFAULTS.status },
+    enrollment: { ...DEFAULTS.enrollment },
+    settingsForm: { ...DEFAULTS.settings },
+    onboarding: { ...DEFAULTS.onboarding },
     applyStatus(s) {
       if (!s) return;
       this.statusMessage = s.message ?? "Ready";
-      this.status = applyPayload(s, SCHEMAS.status);
+      this.status = patch(DEFAULTS.status, s);
     },
     applyEnrollment(s) {
-      if (s) this.enrollment = applyPayload(s, SCHEMAS.enrollment);
+      if (s) this.enrollment = patch(DEFAULTS.enrollment, s);
     },
     applyOnboarding(s) {
-      if (s) this.onboarding = applyPayload(s, SCHEMAS.onboarding);
+      if (s) this.onboarding = patch(DEFAULTS.onboarding, s);
     },
     applySettings(s) {
-      if (s) this.settingsForm = applyPayload(s, SCHEMAS.settings);
+      if (s) this.settingsForm = patch(DEFAULTS.settings, s);
     },
     async init() {
       await this.refreshStatus();
