@@ -392,8 +392,8 @@ class PanelApi:
             on_show=self._handle_tray_show,
             on_stop=self._handle_tray_stop,
             on_quit=self._handle_tray_quit,
-            on_pause_toggle=self.toggle_pause,
-            on_gaze_toggle=self.toggle_gaze_mode,
+            on_pause_toggle=self._handle_tray_pause_toggle,
+            on_gaze_toggle=self._handle_tray_gaze_toggle,
             pause_label=self._pause_menu_label,
             gaze_checked=self._gaze_only_checked,
         )
@@ -421,6 +421,12 @@ class PanelApi:
 
     def _handle_tray_stop(self) -> None:
         self.stop_engine()
+
+    def _handle_tray_pause_toggle(self) -> None:
+        self.toggle_pause()
+
+    def _handle_tray_gaze_toggle(self) -> None:
+        self.toggle_gaze_mode()
 
     def _handle_tray_quit(self) -> None:
         self.shutdown()

@@ -83,7 +83,6 @@ def draw_hand_skeleton(
     *,
     draw: bool = True,
 ) -> npt.NDArray[np.uint8]:
-    """Draw MediaPipe hand topology on a copy of the frame when enabled."""
     if not draw or not hands:
         return frame
 

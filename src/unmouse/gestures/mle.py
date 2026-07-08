@@ -72,7 +72,6 @@ def build_template(
     *,
     ridge_lambda: float = DEFAULT_RIDGE_LAMBDA,
 ) -> GestureTemplate:
-    """Fit a diagonal Gaussian template with ridge-regularized variances."""
     if samples.ndim != 2:
         msg = "samples must be a 2D array"
         raise ValueError(msg)
@@ -107,7 +106,6 @@ def classify(
     absolute_min: float,
     margin_min: float,
 ) -> ClassificationResult:
-    """Return the best gesture if absolute and margin thresholds pass."""
     feature = np.asarray(theta, dtype=np.float64)
     scored = [
         (name, log_likelihood(feature, template))

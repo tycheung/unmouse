@@ -144,7 +144,6 @@ def collect_feature_samples(
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
 ) -> npt.NDArray[np.float64]:
-    """Read frames for a fixed window and stack feature vectors of detected hands."""
     samples: list[npt.NDArray[np.float64]] = []
     frame_interval = 1.0 / target_fps
     started = clock()

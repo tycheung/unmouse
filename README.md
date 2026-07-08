@@ -4,12 +4,13 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 
 ## Features
 
-- Gaze-to-cursor tracking powered by [eyeGestures](https://pypi.org/project/eyeGestures/) (calibration, fixation, saccade, and blink detection built in)
+- Gaze-to-cursor tracking powered by [eyeGestures](https://pypi.org/project/eyeGestures/)
 - Guided gaze calibration wizard with per-profile model persistence
 - Hand-gesture recognition (V-sign click mode, pinch click, thumbs-up scroll)
 - UI snapping via accessibility tree and window chrome targets
 - Control panel (Alpine.js + pywebview): onboarding, settings, enrollment, launch
 - System tray integration with pause/resume and gaze-only mode
+- Live FPS and fixation metrics in the panel while tracking
 - Optional git/release update checker
 
 ## Requirements
@@ -17,10 +18,9 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 - **Windows 10/11** (64-bit)
 - **Python 3.10–3.13** for development ([Poetry](https://python-poetry.org/))
 - Webcam
-- Poetry lockfile committed for reproducible installs
-- Core tracking dependencies are **required**: [`eyeGestures`](https://pypi.org/project/eyeGestures/) (gaze), `mediapipe` (hand landmarks), and `pyautogui` (pointer). The engine has no silent fallbacks — a missing dependency fails loudly at startup.
+- Core tracking dependencies are **required**: `eyeGestures` (gaze), `mediapipe` (hand landmarks), and `pyautogui` (pointer). Missing dependencies fail at startup.
 
-> **License note:** unmouse and its core dependency `eyeGestures` are both licensed under GPL-3.0. Distributed builds must comply with the GPL.
+> **License note:** unmouse and its core dependency `eyeGestures` are licensed under GPL-3.0. Distributed builds must comply with the GPL.
 
 ## Quick start (development)
 
@@ -38,7 +38,7 @@ poetry run unmouse
 | `python -m unmouse --engine` | Engine subprocess entry (used by Launch) |
 | `python -m unmouse --smoke` | Import and asset smoke check (no UI) |
 
-User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, settings).
+User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, settings, `diagnostics.json`).
 
 ## Quality gates
 
@@ -71,17 +71,18 @@ poetry run python scripts/generate_icon.py
 
 ```
 Control panel (pywebview + Alpine.js)
-  └─ PanelApi → engine service, gesture enrollment, settings
+  └─ PanelApi (launcher/api.py): engine lifecycle, settings, onboarding, enrollment
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
-  └─ Video broker → gaze worker (eyeGestures tracker) + gesture worker (MediaPipe + MLE)
+  └─ Video broker → gaze worker (eyeGestures) + gesture worker (MediaPipe + MLE)
   └─ Action controller (snap, PyAutoGUI, gaze indicator)
+  └─ Diagnostics service writes diagnostics.json for the panel (~1 Hz)
 
 Backends
-  └─ Core backends are required: eyeGestures (gaze), MediaPipe (hands), PyAutoGUI (pointer)
-  └─ Windows-only enhancements degrade to no-op fallbacks off Windows: uiautomation, pystray, Tk/Win32 overlays
-  └─ Test-only doubles live in tests/fakes and are injected explicitly
+  └─ Required: eyeGestures, MediaPipe, PyAutoGUI
+  └─ Windows enhancements degrade off Windows: uiautomation, pystray, Tk/Win32 overlays
+  └─ Test doubles live in tests/fakes and are injected explicitly
 ```
 
 ## Project layout
@@ -93,9 +94,7 @@ src/unmouse/            Application package
   main.py               Engine orchestrator and --engine CLI entry
   persistence.py        Shared settings persistence
   platform.py           Platform detection helpers
-  launcher/             Panel shell, calibration wizards, onboarding, tray
-    api_helpers.py      Panel API helpers and ActionResult
-    services/           Engine lifecycle and panel state
+  launcher/             Panel shell, PanelApi, calibration wizards, onboarding, tray
   overlay/              Gaze indicator + shared Tk overlay helpers
   broker/               Video fan-out and camera helpers
   gaze/                 eyeGestures tracker + display mapping

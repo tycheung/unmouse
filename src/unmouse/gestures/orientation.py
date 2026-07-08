@@ -21,7 +21,6 @@ def detect_right_click_orientation(
     dorsal_knuckle_min: float = DEFAULT_DORSAL_KNUCKLE_MIN,
     palm_depth_min: float = DEFAULT_PALM_DEPTH_MIN,
 ) -> bool:
-    """Return True when a palm-facing orientation selects a right click."""
     if _dorsal_knuckle_heuristic(hand, dorsal_knuckle_min):
         return False
     alignment = float(np.dot(palm_normal(hand), CAMERA_FORWARD))
@@ -29,7 +28,6 @@ def detect_right_click_orientation(
 
 
 def palm_normal(hand: HandLandmarks) -> npt.NDArray[np.float64]:
-    """Unit normal for the palm plane derived from wrist and MCP landmarks."""
     points = landmarks_to_array(hand)
     normal = np.cross(points[INDEX_MCP] - points[WRIST], points[PINKY_MCP] - points[WRIST])
     norm = float(np.linalg.norm(normal))
@@ -42,14 +40,12 @@ def palm_normal(hand: HandLandmarks) -> npt.NDArray[np.float64]:
 
 
 def _dorsal_knuckle_heuristic(hand: HandLandmarks, min_score: float) -> bool:
-    """True when curled middle/ring/pinky knuckles face the camera."""
     points = landmarks_to_array(hand)
     scores = [float(points[tip][2] - points[base][2]) for base, tip in KNUCKLE_CHAINS]
     return float(np.mean(scores)) > min_score
 
 
 def _palm_facing_heuristic(hand: HandLandmarks, min_depth_delta: float) -> bool:
-    """True when fingertips are closer to the camera than the wrist."""
     points = landmarks_to_array(hand)
     wrist_z = float(points[WRIST][2])
     fingertip_z = float(np.mean([points[index][2] for index in FINGERTIPS]))

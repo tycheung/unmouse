@@ -54,7 +54,6 @@ def gesture_library() -> GestureLibrary:
 
 @pytest.fixture
 def open_palm_points() -> npt.NDArray[np.float64]:
-    """Open palm facing camera with fingers spread along +X and extending along -Y."""
     points = _blank_hand()
     points[0] = (0.50, 0.85, 0.0)
     finger_starts = [1, 5, 9, 13, 17]
@@ -77,7 +76,6 @@ def open_palm_landmarks(open_palm_points: npt.NDArray[np.float64]) -> HandLandma
 
 @pytest.fixture
 def right_angle_points() -> npt.NDArray[np.float64]:
-    """Landmarks arranged so pivot 0 forms a 90-degree angle between points 1 and 5."""
     points = _blank_hand()
     points[0] = (0.0, 0.0, 0.0)
     points[1] = (1.0, 0.0, 0.0)

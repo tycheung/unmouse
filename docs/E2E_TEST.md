@@ -6,7 +6,7 @@ Playwright and subprocess smoke tests complement the manual checklist in [`SMOKE
 
 | Suite | File | Coverage |
 |-------|------|----------|
-| Panel UI | `tests/e2e/test_panel_playwright.py` | Launch/Stop, Pause, Settings save, profile create, Update check, Calibrate, Train Gestures |
+| Panel UI | `tests/e2e/test_panel_playwright.py` | Launch/Stop, Pause, Settings save (including pause hotkey), profile create, Update check, Calibrate, Train Gestures |
 | Onboarding & calibration | `tests/e2e/test_onboarding_calibration.py` | Full onboarding wizard, skip step, gesture enrollment hook, gaze calibration from main panel |
 | Launch smoke | `tests/e2e/test_launch_smoke.py` | `--smoke` entry point (Python + `unmouse.exe`), harness HTTP bridge, build script presence |
 

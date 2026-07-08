@@ -34,7 +34,6 @@ SCROLL_ZONES: tuple[ScrollZone, ...] = (
 
 
 def zone_from_angle(phi_deg: float) -> ScrollZone:
-    """Map thumb elevation angle to one of nine scroll zones."""
     clamped = min(90.0, max(-90.0, phi_deg))
     for zone in SCROLL_ZONES:
         if zone.lower_deg <= clamped <= zone.upper_deg:
@@ -43,7 +42,6 @@ def zone_from_angle(phi_deg: float) -> ScrollZone:
 
 
 def edge_distance_in_zone(phi_deg: float, zone: ScrollZone) -> float:
-    """Return 0 at the dead-zone edge and 1 at the zone outer edge."""
     if zone.tier == 0.0:
         return 0.0
 
@@ -65,7 +63,6 @@ def scroll_speed(
     v_max: float = DEFAULT_V_MAX,
     k: float = DEFAULT_LOG_K,
 ) -> float:
-    """Signed scroll speed in lines per tick for a thumb elevation angle."""
     zone = zone_from_angle(phi_deg)
     if zone.tier == 0.0:
         return 0.0
@@ -77,7 +74,6 @@ def scroll_speed(
 
 
 def thumb_elevation_angle(hand: HandLandmarks) -> float:
-    """Thumb elevation angle relative to wrist→middle-MCP axis in the image plane."""
     points = landmarks_to_array(hand)
     wrist = points[WRIST, :2]
     middle_mcp = points[MIDDLE_MCP, :2]

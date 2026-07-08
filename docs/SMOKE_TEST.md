@@ -28,7 +28,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 ## Settings & profiles
 
-- [ ] Open Settings, adjust calibration points / fixation threshold / snap radius, Save
+- [ ] Open Settings, adjust calibration points / fixation threshold / snap radius / pause hotkey, Save
 - [ ] Saving while tracking restarts the engine so new settings apply
 - [ ] Create, rename, activate, and delete a test profile
 - [ ] Gaze mode toggle persists (`cursor_follow` vs `gaze_only`)
@@ -37,14 +37,14 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 - [ ] **Launch** starts tracking and minimizes panel to tray
 - [ ] Tray **Show Panel** restores the window
-- [ ] Footer shows status after launch/stop and pause actions (refreshed on demand, not polled)
+- [ ] Footer shows tracking status, FPS, and focus bar while engine is running
 - [ ] **Stop Tracking** from panel stops the engine
 - [ ] Tray **Stop** stops the engine
 
 ## Pause & gaze-only
 
 - [ ] Tray **Pause / Resume** toggles paused state; cursor stops moving while paused
-- [ ] Global pause hotkey toggles pause (default configured in settings)
+- [ ] Global pause hotkey toggles pause (configurable in Settings, default `ctrl+shift+p`)
 - [ ] **Gaze-only mode**: indicator tracks gaze; OS cursor moves only in Click Mode
 - [ ] Panel **Pause / Resume** button works while engine is running
 
@@ -63,7 +63,8 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 - [ ] **Update Software** check returns a message (git dev install or release channel)
 - [ ] `%APPDATA%/unmouse/logs/unmouse.log` receives entries after launch
-- [ ] With `UNMOUSE_DEBUG=true`, `diagnostics.json` updates while engine runs
+- [ ] `%APPDATA%/unmouse/diagnostics.json` updates while the engine runs
+- [ ] With `UNMOUSE_DEBUG=true`, verbose diagnostics lines appear in the log
 
 ## Frozen executable (`dist/unmouse.exe`)
 

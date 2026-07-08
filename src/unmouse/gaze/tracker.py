@@ -143,9 +143,7 @@ def _build_engine(calibration_radius: int) -> EyeGesturesEngine:
 
 
 def _make_calibrator_picklable() -> None:
-    """eyeGestures' Calibrator holds a threading.Lock and Threads, so its own
-    pickle-based saveModel/loadModel fail. Teach it to serialize only the fitted
-    state and rebuild the runtime objects on load."""
+    # eyeGestures' Calibrator embeds locks/threads that break its own pickle path.
     import threading
 
     from eyeGestures.calibration_v2 import Calibrator

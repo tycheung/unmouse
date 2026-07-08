@@ -13,7 +13,6 @@ from unmouse.gestures.landmarks import (
 
 _EPSILON = 1e-8
 
-# (base, tip) landmark indices for thumb, index, middle, ring, pinky.
 FINGERS: tuple[tuple[int, int], ...] = ((1, 4), (5, 8), (9, 12), (13, 16), (17, 20))
 FINGER_PAIRS: tuple[tuple[int, int], ...] = tuple(
     (left, right)
@@ -21,7 +20,6 @@ FINGER_PAIRS: tuple[tuple[int, int], ...] = tuple(
     for right in range(left + 1, len(FINGERS))
 )
 
-# 5 finger direction angles + 5 finger lengths + 10 inter-finger angles + 1 pinch gap.
 FEATURE_DIM = len(FINGERS) * 2 + len(FINGER_PAIRS) + 1
 
 
@@ -30,11 +28,6 @@ def landmarks_to_array(hand: HandLandmarks) -> npt.NDArray[np.float64]:
 
 
 def compute_feature_vector(hand: HandLandmarks) -> npt.NDArray[np.float64]:
-    """Rigid-transform-invariant gesture features for one hand.
-
-    Angles and palm-relative lengths are invariant to translation, rotation, and
-    uniform scale, so no explicit hand normalization is required.
-    """
     points = landmarks_to_array(hand)
     wrist = points[WRIST]
     palm_axis = _unit(points[MIDDLE_MCP] - wrist)
