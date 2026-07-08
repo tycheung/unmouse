@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from unmouse.config import Settings
+from unmouse.utils.json_io import read_json_object, write_json_object
 
 RUNTIME_FILENAME = "runtime.json"
 
@@ -29,17 +29,13 @@ def load_runtime(settings: Settings) -> RuntimeState:
     path = runtime_file_path(settings)
     if not path.is_file():
         return RuntimeState()
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = "runtime JSON must be an object"
-        raise ValueError(msg)
+    data = read_json_object(path, error_message="runtime JSON must be an object")
     return RuntimeState.from_dict(data)
 
 
 def save_runtime(settings: Settings, state: RuntimeState) -> Path:
     path = runtime_file_path(settings)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state.to_dict(), indent=2), encoding="utf-8")
+    write_json_object(path, state.to_dict())
     return path
 
 

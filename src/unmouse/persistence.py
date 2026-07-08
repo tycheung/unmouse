@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
 from unmouse.config import GazeMode, Settings, clear_settings_cache
+from unmouse.utils.json_io import read_json_object_or_empty, write_json_object
 
 SETTINGS_FILENAME = "settings.json"
 
@@ -23,18 +23,11 @@ def settings_file_path(settings: Settings) -> Path:
 
 
 def read_settings_file(path: Path) -> dict[str, object]:
-    if not path.is_file():
-        return {}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = "settings JSON must be an object"
-        raise ValueError(msg)
-    return data
+    return read_json_object_or_empty(path, error_message="settings JSON must be an object")
 
 
 def write_settings_file(path: Path, data: dict[str, object]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    write_json_object(path, data)
 
 
 def load_launcher_flags(settings: Settings) -> LauncherFlags:
