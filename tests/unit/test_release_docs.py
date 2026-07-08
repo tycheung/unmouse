@@ -28,7 +28,7 @@ def test_ci_workflow_runs_quality_gates() -> None:
 def test_readme_documents_entry_points_and_build() -> None:
     text = README.read_text(encoding="utf-8")
     assert "poetry run unmouse" in text
-    assert "MGGIST.exe" in text
+    assert "unmouse.exe" in text
     assert "build_exe.ps1" in text
     assert "SMOKE_TEST.md" in text
 
@@ -49,6 +49,6 @@ def test_smoke_test_covers_v1_flows() -> None:
         "Pause",
         "gaze-only",
         "multi-monitor",
-        "MGGIST.exe",
+        "unmouse.exe",
     ):
         assert topic.lower() in text.lower()

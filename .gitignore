@@ -1,5 +1,5 @@
 # Project planning (local only)
-MGGIST-Blueprint.md
+unmouse-blueprint.md
 roadmap.md
 
 # Python
@@ -65,5 +65,4 @@ desktop.ini
 logs/
 
 # App user data (dev)
-.mggist/
 .unmouse/

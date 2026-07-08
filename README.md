@@ -2,8 +2,6 @@
 
 Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cursor with your eyes, click and scroll with hand gestures, and calibrate per profile from a lightweight control panel.
 
-The shipping executable is branded **MGGIST** (`MGGIST.exe`); the Python package name is `unmouse`.
-
 ## Features
 
 - Gaze-to-cursor with saccade detection, Kalman smoothing, and 9-point polynomial calibration
@@ -35,7 +33,6 @@ Alternative entry points:
 | Command | Action |
 |---------|--------|
 | `poetry run unmouse` | Open control panel (default) |
-| `poetry run mggist` | Same as `unmouse` (product alias) |
 | `poetry run unmouse-engine` | Run tracking engine only |
 | `python -m unmouse --engine` | Engine subprocess entry (also used by Launch) |
 | `python -m unmouse --smoke` | Import and asset smoke check (no UI) |
@@ -62,7 +59,7 @@ Coverage floor is **85%** (`pyproject.toml` / pytest addopts).
 .\scripts\build_exe.ps1
 ```
 
-Output: `dist/MGGIST.exe` (single-file, windowed). The launcher spawns the engine as `MGGIST.exe --engine` when frozen.
+Output: `dist/unmouse.exe` (single-file, windowed). The launcher spawns the engine as `unmouse.exe --engine` when frozen.
 
 To regenerate the app icon only:
 
@@ -101,7 +98,7 @@ src/unmouse/        Application package
   arbitrator/       Snap, actions, controller
 tests/              Unit, integration, and E2E (Playwright) tests
   fakes/            Shared test doubles (MockFrameSource, etc.)
-mggist.spec         PyInstaller spec
+unmouse.spec        PyInstaller spec
 scripts/            build_exe.ps1, run_e2e.ps1, generate_icon.py, check_epic_size.py
 docs/SMOKE_TEST.md  Manual release checklist
 docs/E2E_TEST.md    Automated Playwright + launch smoke tests

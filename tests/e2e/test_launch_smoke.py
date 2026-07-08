@@ -16,7 +16,7 @@ from unmouse.launcher.panel import ui_index_path
 pytestmark = pytest.mark.e2e
 
 BUILD_SCRIPT = REPO_ROOT / "scripts" / "build_exe.ps1"
-EXE_PATH = REPO_ROOT / "dist" / "MGGIST.exe"
+EXE_PATH = REPO_ROOT / "dist" / "unmouse.exe"
 
 
 def test_smoke_entry_point_python(
@@ -28,7 +28,7 @@ def test_smoke_entry_point_python(
     assert "smoke ok" in result.stdout
 
 
-@pytest.mark.skipif(not EXE_PATH.is_file(), reason="dist/MGGIST.exe not built")
+@pytest.mark.skipif(not EXE_PATH.is_file(), reason="dist/unmouse.exe not built")
 def test_smoke_entry_point_frozen_exe(
     run_smoke_command: Callable[[list[str]], subprocess.CompletedProcess[str]],
     exe_smoke_argv: list[str] | None,
@@ -73,10 +73,10 @@ def test_engine_argv_uses_module_in_dev() -> None:
 def test_build_script_exists() -> None:
     text = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "pyinstaller" in text.lower()
-    assert "mggist.spec" in text
+    assert "unmouse.spec" in text
 
 
-@pytest.mark.skipif(not EXE_PATH.is_file(), reason="dist/MGGIST.exe not built")
+@pytest.mark.skipif(not EXE_PATH.is_file(), reason="dist/unmouse.exe not built")
 def test_frozen_exe_launches_smoke_without_python(
     run_smoke_command: Callable[[list[str]], subprocess.CompletedProcess[str]],
 ) -> None:

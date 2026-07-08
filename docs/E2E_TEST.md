@@ -8,7 +8,7 @@ Playwright and subprocess smoke tests complement the manual checklist in [`SMOKE
 |-------|------|----------|
 | Panel UI | `tests/e2e/test_panel_playwright.py` | Launch/Stop, Pause, Settings save, profile create, Update check, Calibrate, Train Gestures |
 | Onboarding & calibration | `tests/e2e/test_onboarding_calibration.py` | Full onboarding wizard, skip step, gesture enrollment hook, polynomial→offset calibrate chain |
-| Launch smoke | `tests/e2e/test_launch_smoke.py` | `--smoke` entry point (Python + `MGGIST.exe`), harness HTTP bridge, build script presence |
+| Launch smoke | `tests/e2e/test_launch_smoke.py` | `--smoke` entry point (Python + `unmouse.exe`), harness HTTP bridge, build script presence |
 
 Camera-heavy wizards (9-point overlay, 16-point overlay) are **mocked** in automated tests so CI does not require a webcam. Manual validation remains in `SMOKE_TEST.md`.
 
@@ -39,7 +39,7 @@ Or use the helper script:
 .\scripts\run_e2e.ps1
 ```
 
-Build the frozen exe first to include `MGGIST.exe` smoke tests:
+Build the frozen exe first to include `unmouse.exe` smoke tests:
 
 ```powershell
 .\scripts\build_exe.ps1
@@ -48,12 +48,12 @@ poetry run pytest tests/e2e -m e2e
 
 ## Smoke entry point
 
-`python -m unmouse --smoke` (and `MGGIST.exe --smoke`) verify imports, UI assets, and version without opening a window. CI runs this after PyInstaller builds the exe.
+`python -m unmouse --smoke` (and `unmouse.exe --smoke`) verify imports, UI assets, and version without opening a window. CI runs this after PyInstaller builds the exe.
 
 Engine entry point: `unmouse.main:run_engine_cli` (also `poetry run unmouse-engine`).
 
 ## CI
 
-GitHub Actions installs Chromium, builds `MGGIST.exe`, then runs `pytest tests/e2e -m e2e`.
+GitHub Actions installs Chromium, builds `unmouse.exe`, then runs `pytest tests/e2e -m e2e`.
 
 The Playwright E2E merge (`e6842ba`, `bae8f20`) has a **one-time** epic line-budget exception in [`scripts/epic_budget_overrides.json`](../scripts/epic_budget_overrides.json) (limit 1600). Later changes still use the 600-line cap.

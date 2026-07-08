@@ -34,8 +34,6 @@ pytest-playwright = "^0.6"
 unmouse = "unmouse.launcher.panel:run"
 unmouse-engine = "unmouse.main:run_engine_cli"
 unmouse-panel = "unmouse.launcher.panel:run"
-mggist = "unmouse.launcher.panel:run"
-mggist-engine = "unmouse.main:run_engine_cli"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

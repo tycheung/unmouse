@@ -1,4 +1,4 @@
-# PyInstaller spec for unmouse (MGGIST) - run: poetry run pyinstaller mggist.spec --noconfirm
+# PyInstaller spec for unmouse — run: poetry run pyinstaller unmouse.spec --noconfirm
 from pathlib import Path
 
 block_cipher = None
@@ -47,7 +47,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="MGGIST",
+    name="unmouse",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

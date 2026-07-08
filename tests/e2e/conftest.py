@@ -22,7 +22,7 @@ from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
 from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EXE_PATH = REPO_ROOT / "dist" / "MGGIST.exe"
+EXE_PATH = REPO_ROOT / "dist" / "unmouse.exe"
 
 
 def wait_for_panel_ready(page, *, onboarding: bool = False) -> None:

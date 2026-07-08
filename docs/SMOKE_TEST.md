@@ -1,6 +1,6 @@
 # unmouse v1 — Release Smoke Test
 
-Manual checklist before tagging a release or shipping `dist/MGGIST.exe` to testers.
+Manual checklist before tagging a release or shipping `dist/unmouse.exe` to testers.
 Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clean VM without Python installed when validating the frozen build.
 
 **Automated coverage:** Run `.\scripts\run_e2e.ps1` (Playwright panel clicks, onboarding with mocked calibration, `--smoke` launch checks). See [`E2E_TEST.md`](E2E_TEST.md).
@@ -16,7 +16,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 
 - [ ] `poetry install` succeeds
 - [ ] `poetry run pytest` passes locally
-- [ ] Control panel opens (`poetry run unmouse` or `poetry run mggist`)
+- [ ] Control panel opens (`poetry run unmouse`)
 
 ## First-run onboarding
 
@@ -66,11 +66,11 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 - [ ] `%APPDATA%/unmouse/logs/unmouse.log` receives entries after launch
 - [ ] With `UNMOUSE_DEBUG=true`, `diagnostics.json` updates while engine runs
 
-## Frozen executable (`dist/MGGIST.exe`)
+## Frozen executable (`dist/unmouse.exe`)
 
-- [ ] `.\scripts\build_exe.ps1` produces `dist/MGGIST.exe`
+- [ ] `.\scripts\build_exe.ps1` produces `dist/unmouse.exe`
 - [ ] Double-click opens control panel (no console flash)
-- [ ] **Launch** spawns engine subprocess (`MGGIST.exe --engine` internally)
+- [ ] **Launch** spawns engine subprocess (`unmouse.exe --engine` internally)
 - [ ] Calibrate and onboarding wizards work from the exe
 - [ ] Copy exe to a machine **without Python** and repeat Launch + tray + pause checks
 

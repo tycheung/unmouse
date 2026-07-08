@@ -60,11 +60,11 @@ jobs:
         run: poetry run python scripts/generate_icon.py
 
       - name: PyInstaller smoke build
-        run: poetry run pyinstaller mggist.spec --noconfirm
+        run: poetry run pyinstaller unmouse.spec --noconfirm
 
       - name: Verify executable artifact
         run: |
-          if (-not (Test-Path dist/MGGIST.exe)) { throw "dist/MGGIST.exe missing" }
+          if (-not (Test-Path dist/unmouse.exe)) { throw "dist/unmouse.exe missing" }
 
       - name: Install Playwright Chromium
         run: poetry run playwright install chromium
