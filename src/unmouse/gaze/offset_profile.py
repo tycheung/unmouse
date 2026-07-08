@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import numpy as np
@@ -25,12 +25,7 @@ class OffsetSample:
     delta_y: float
 
     def to_dict(self) -> dict[str, float]:
-        return {
-            "target_x": self.target_x,
-            "target_y": self.target_y,
-            "delta_x": self.delta_x,
-            "delta_y": self.delta_y,
-        }
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, float]) -> OffsetSample:
@@ -56,13 +51,7 @@ class OffsetProfile:
             raise ValueError(msg)
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "screen_width": self.screen_width,
-            "screen_height": self.screen_height,
-            "corner_inset": self.corner_inset,
-            "corners": [sample.to_dict() for sample in self.corners],
-            "cells": [sample.to_dict() for sample in self.cells],
-        }
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> OffsetProfile:

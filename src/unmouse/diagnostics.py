@@ -5,7 +5,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from unmouse.config import Settings
@@ -23,12 +23,7 @@ class DiagnosticsSnapshot:
     gesture_queue_depth: int
 
     def to_dict(self) -> dict[str, float | int]:
-        return {
-            "broker_fps": self.broker_fps,
-            "gaze_confidence": self.gaze_confidence,
-            "gaze_queue_depth": self.gaze_queue_depth,
-            "gesture_queue_depth": self.gesture_queue_depth,
-        }
+        return asdict(self)
 
 
 def diagnostics_file_path(settings: Settings) -> Path:
