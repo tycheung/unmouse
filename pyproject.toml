@@ -3,6 +3,7 @@ name = "unmouse"
 version = "1.0.0"
 description = "Webcam gaze and hand-gesture control for Windows"
 authors = ["Nimbus Labs LLC"]
+license = "GPL-3.0-or-later"
 readme = "README.md"
 packages = [{ include = "unmouse", from = "src" }]
 

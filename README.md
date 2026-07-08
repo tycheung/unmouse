@@ -20,7 +20,7 @@ Webcam-based gaze tracking and hand-gesture control for **Windows**. Move the cu
 - Poetry lockfile committed for reproducible installs
 - Core tracking dependencies are **required**: [`eyeGestures`](https://pypi.org/project/eyeGestures/) (gaze), `mediapipe` (hand landmarks), and `pyautogui` (pointer). The engine has no silent fallbacks — a missing dependency fails loudly at startup.
 
-> **License note:** `eyeGestures` is GPL-3.0. Review the implications before distributing a proprietary build.
+> **License note:** unmouse and its core dependency `eyeGestures` are both licensed under GPL-3.0. Distributed builds must comply with the GPL.
 
 ## Quick start (development)
 
@@ -115,4 +115,9 @@ Before tagging a release, run `.\scripts\run_e2e.ps1` and walk through [docs/SMO
 
 ## License
 
-Copyright Nimbus Labs LLC. All rights reserved.
+Copyright (C) Nimbus Labs LLC.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE) for the full text.
