@@ -3,12 +3,11 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol, cast
+from typing import Any, Literal, Protocol
 
 from unmouse.overlay.tk_overlay import MIN_OVERLAY_FPS, TkWin32IndicatorBackend
 from unmouse.platform import is_windows
 from unmouse.state import SystemState
-from unmouse.utils.backend_selection import prefer_or_fallback
 from unmouse.utils.timing import run_at_interval
 
 MIN_INDICATOR_FPS = MIN_OVERLAY_FPS
@@ -236,12 +235,6 @@ def indicator_state_from_system(
 
 
 def create_indicator_backend(*, prefer_win32: bool = True) -> IndicatorBackend:
-    return prefer_or_fallback(
-        prefer=prefer_win32 and is_windows(),
-        make_preferred=lambda: cast(
-            IndicatorBackend,
-            TkWin32IndicatorBackend(diameter=DEFAULT_INDICATOR_DIAMETER),
-        ),
-        make_fallback=lambda: cast(IndicatorBackend, NoopIndicatorBackend()),
-        exceptions=None,
-    )
+    if prefer_win32 and is_windows():
+        return TkWin32IndicatorBackend(diameter=DEFAULT_INDICATOR_DIAMETER)
+    return NoopIndicatorBackend()

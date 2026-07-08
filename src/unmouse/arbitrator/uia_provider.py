@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 from dataclasses import dataclass, field
-from typing import Any, Protocol, cast
+from typing import Any, Protocol
 
 from unmouse.arbitrator.snap import CachedSnapProvider, SnapProvider, SnapRect, SnapTarget
 from unmouse.platform import is_windows
-from unmouse.utils.backend_selection import prefer_or_fallback
 
 DEFAULT_UIA_CACHE_INTERVAL_S = 0.5
 FOCUSABLE_CONTROL_TYPES = frozenset(
@@ -78,13 +77,11 @@ def create_uia_snap_provider(
     prefer_uia: bool = True,
     reader: UiaTreeReader | None = None,
 ) -> SnapProvider:
-    resolved_reader = reader or prefer_or_fallback(
-        prefer=prefer_uia
-        and is_windows()
-        and importlib.util.find_spec("uiautomation") is not None,
-        make_preferred=lambda: cast(UiaTreeReader, UiaAutomationTreeReader()),
-        make_fallback=lambda: cast(UiaTreeReader, NullUiaTreeReader()),
-        exceptions=None,
+    prefer = (
+        prefer_uia and is_windows() and importlib.util.find_spec("uiautomation") is not None
+    )
+    resolved_reader: UiaTreeReader = reader or (
+        UiaAutomationTreeReader() if prefer else NullUiaTreeReader()
     )
 
     def loader() -> tuple[SnapTarget, ...]:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import Protocol
 
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
@@ -13,7 +13,6 @@ from unmouse.arbitrator.snap import (
     SnapTarget,
 )
 from unmouse.platform import is_windows
-from unmouse.utils.backend_selection import prefer_or_fallback
 
 DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
 DEFAULT_CHROME_BUTTON_WIDTH = 46.0
@@ -77,11 +76,10 @@ def create_window_chrome_provider(
     reader: WindowChromeReader | None = None,
     priority: int = CHROME_SNAP_PRIORITY,
 ) -> SnapProvider:
-    resolved_reader = reader or prefer_or_fallback(
-        prefer=prefer_win32 and is_windows(),
-        make_preferred=lambda: cast(WindowChromeReader, Win32WindowChromeReader()),
-        make_fallback=lambda: cast(WindowChromeReader, NullWindowChromeReader(buttons=())),
-        exceptions=None,
+    resolved_reader: WindowChromeReader = reader or (
+        Win32WindowChromeReader()
+        if prefer_win32 and is_windows()
+        else NullWindowChromeReader(buttons=())
     )
 
     def loader() -> tuple[SnapTarget, ...]:

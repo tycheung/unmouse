@@ -12,7 +12,6 @@ from unmouse.config import Settings
 from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker
 from unmouse.overlay.tk_overlay import TkFullscreenOverlay
 from unmouse.platform import is_windows
-from unmouse.utils.backend_selection import prefer_or_fallback
 
 if TYPE_CHECKING:
     import tkinter as tk
@@ -87,12 +86,9 @@ class TkCalibrationOverlay(TkFullscreenOverlay):
 
 
 def create_calibration_overlay(*, prefer_win32: bool = True) -> WizardOverlayBackend:
-    return prefer_or_fallback(
-        prefer=prefer_win32 and is_windows(),
-        make_preferred=lambda: cast(WizardOverlayBackend, TkCalibrationOverlay()),
-        make_fallback=lambda: cast(WizardOverlayBackend, NoopWizardOverlayBackend()),
-        exceptions=None,
-    )
+    if prefer_win32 and is_windows():
+        return TkCalibrationOverlay()
+    return NoopWizardOverlayBackend()
 
 
 class StareCalibrationRunner:
