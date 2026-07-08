@@ -236,21 +236,23 @@ def run_stare_wizard(
     tracker: GazeTracker | None = None,
     frame_source: FrameSource | None = None,
     overlay: WizardOverlayBackend | None = None,
-    sleep: Callable[[float], None] = time.sleep,
-    clock: Callable[[], float] = time.perf_counter,
+    sleep: Callable[[float], None] | None = None,
+    clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
     incomplete_message: str,
 ) -> object:
+    wait = sleep or time.sleep
+    now_s = clock or time.perf_counter
     gaze_tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)
     source = frame_source or create_frame_source(settings)
     ui = overlay or create_calibration_overlay(prefer_win32=prefer_win32_overlay)
     try:
-        started = clock()
+        started = now_s()
         target = runner.begin_point(started)
         ui.show_target(target.x, target.y, label=target_label(target))
         while not runner.done:
             ok, frame = source.read()
-            now = clock()
+            now = now_s()
             if ok and frame is not None:
                 gaze = gaze_tracker.predict(np.asarray(frame, dtype=np.uint8))
                 if runner.add_sample(GazeSample(now, gaze.x, gaze.y, gaze.confidence)):
@@ -258,7 +260,7 @@ def run_stare_wizard(
                         break
                     target = runner.begin_point(now)
                     ui.show_target(target.x, target.y, label=target_label(target))
-            sleep(0.01)
+            wait(0.01)
     finally:
         ui.hide()
         source.release()

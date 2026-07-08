@@ -38,6 +38,9 @@ NUM_POLY_TARGETS = 9
 NUM_OFFSET_TARGETS = NUM_SAMPLES
 GRID_SIZE = 3
 DEFAULT_TARGET_INSET = 0.05
+OFFSET_PREREQUISITE_MESSAGE = (
+    "Complete 9-point polynomial calibration before offset calibration."
+)
 
 
 @dataclass(frozen=True)
@@ -184,21 +187,27 @@ def create_offset_stare_runner(
     )
 
 
+def _targets_from_positions(
+    positions: Sequence[tuple[float, float]],
+) -> tuple[WizardTarget, ...]:
+    return tuple(
+        WizardTarget(index=index, x=x, y=y) for index, (x, y) in enumerate(positions)
+    )
+
+
 def build_polynomial_targets(
     screen_width: float,
     screen_height: float,
     *,
     inset: float = DEFAULT_TARGET_INSET,
 ) -> tuple[WizardTarget, ...]:
-    positions = build_square_grid_positions(
-        screen_width,
-        screen_height,
-        grid_size=GRID_SIZE,
-        inset=inset,
-    )
-    return tuple(
-        WizardTarget(index=index, x=x, y=y)
-        for index, (x, y) in enumerate(positions)
+    return _targets_from_positions(
+        build_square_grid_positions(
+            screen_width,
+            screen_height,
+            grid_size=GRID_SIZE,
+            inset=inset,
+        )
     )
 
 
@@ -206,16 +215,12 @@ def build_offset_targets(
     screen_width: float,
     screen_height: float,
 ) -> tuple[WizardTarget, ...]:
-    positions = build_calibration_targets(screen_width, screen_height)
-    return tuple(
-        WizardTarget(index=index, x=x, y=y)
-        for index, (x, y) in enumerate(positions)
-    )
+    return _targets_from_positions(build_calibration_targets(screen_width, screen_height))
 
 
 def polynomial_prerequisite_message(settings: Settings) -> str | None:
     if load_calibration(calibration_path(settings)) is None:
-        return "Complete 9-point polynomial calibration before offset calibration."
+        return OFFSET_PREREQUISITE_MESSAGE
     return None
 
 
@@ -234,33 +239,8 @@ def calibrated_mean_gaze(
     return geometric_mean_gaze(calibrated)
 
 
-def _run_stare_calibration(
-    settings: Settings,
-    runner: StareCalibrationRunner,
-    *,
-    target_count: int,
-    incomplete_message: str,
-    tracker: Any = None,
-    frame_source: FrameSource | None = None,
-    overlay: WizardOverlayBackend | None = None,
-    sleep: Callable[[float], None] | None = None,
-    clock: Callable[[], float] | None = None,
-    prefer_win32_overlay: bool = True,
-) -> object:
-    import time
-
-    return run_stare_wizard(
-        settings,
-        runner,
-        target_label=lambda target: f"Look here ({target.index + 1}/{target_count})",
-        tracker=tracker,
-        frame_source=frame_source,
-        overlay=overlay,
-        sleep=sleep or time.sleep,
-        clock=clock or time.perf_counter,
-        prefer_win32_overlay=prefer_win32_overlay,
-        incomplete_message=incomplete_message,
-    )
+def _look_here_label(target_count: int) -> Callable[[WizardTarget], str]:
+    return lambda target: f"Look here ({target.index + 1}/{target_count})"
 
 
 def run_polynomial_wizard(
@@ -274,10 +254,10 @@ def run_polynomial_wizard(
     max_residual_px: float | None = None,
     prefer_win32_overlay: bool = True,
 ) -> PolynomialWizardOutcome:
-    outcome = _run_stare_calibration(
+    outcome = run_stare_wizard(
         settings,
         create_polynomial_stare_runner(settings, max_residual_px=max_residual_px),
-        target_count=NUM_POLY_TARGETS,
+        target_label=_look_here_label(NUM_POLY_TARGETS),
         tracker=tracker,
         frame_source=frame_source,
         overlay=overlay,
@@ -303,20 +283,14 @@ def run_offset_wizard(
     clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
 ) -> OffsetWizardOutcome:
-    missing = polynomial_prerequisite_message(settings)
-    if missing is not None:
-        return OffsetWizardOutcome(success=False, message=missing)
     model = calibration or load_calibration(calibration_path(settings))
     if model is None:
-        return OffsetWizardOutcome(
-            success=False,
-            message="Complete 9-point polynomial calibration before offset calibration.",
-        )
+        return OffsetWizardOutcome(success=False, message=OFFSET_PREREQUISITE_MESSAGE)
 
-    outcome = _run_stare_calibration(
+    outcome = run_stare_wizard(
         settings,
         create_offset_stare_runner(settings, model),
-        target_count=NUM_OFFSET_TARGETS,
+        target_label=_look_here_label(NUM_OFFSET_TARGETS),
         tracker=tracker,
         frame_source=frame_source,
         overlay=overlay,
