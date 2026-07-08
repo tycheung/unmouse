@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import signal
-import sys
 import time
 
 from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsService
 from unmouse.engine_controls import EngineRuntimeController
+from unmouse.platform import is_windows
 from unmouse.state import SystemState, create_system_state
 from unmouse.utils.logging import setup_logging
 
@@ -70,6 +70,6 @@ def run() -> None:
 
 
 def _install_signal_handlers(state: SystemState) -> None:
-    if sys.platform == "win32":
+    if is_windows():
         signal.signal(signal.SIGINT, lambda _sig, _frame: state.stop())
         signal.signal(signal.SIGTERM, lambda _sig, _frame: state.stop())

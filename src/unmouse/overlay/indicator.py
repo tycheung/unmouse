@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sys
+from unmouse.platform import is_windows
 import threading
 import time
 from collections.abc import Callable
@@ -243,6 +243,6 @@ def indicator_state_from_system(
 
 
 def create_indicator_backend(*, prefer_win32: bool = True) -> IndicatorBackend:
-    if prefer_win32 and sys.platform == "win32":
+    if prefer_win32 and is_windows():
         return TkWin32IndicatorBackend(diameter=DEFAULT_INDICATOR_DIAMETER)
     return NoopIndicatorBackend()

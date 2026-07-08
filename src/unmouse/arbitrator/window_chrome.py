@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from dataclasses import dataclass
-from typing import Protocol
+import ctypes
+from ctypes import wintypes
+from dataclasses import dataclass, field
 
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
@@ -13,6 +13,7 @@ from unmouse.arbitrator.snap import (
     SnapRect,
     SnapTarget,
 )
+from unmouse.platform import is_windows
 
 DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
 DEFAULT_CHROME_BUTTON_WIDTH = 46.0
@@ -34,8 +35,9 @@ class ChromeButton:
     bounds: SnapRect
 
 
-class WindowChromeReader(Protocol):
-    def read_buttons(self) -> tuple[ChromeButton, ...]: ...
+class WindowChromeReader:
+    def read_buttons(self) -> tuple[ChromeButton, ...]:
+        raise NotImplementedError
 
 
 @dataclass
@@ -69,21 +71,24 @@ class Win32WindowChromeReader:
         )
 
 
-class WindowChromeSnapProvider(CachedSnapProvider):
-    def __init__(
-        self,
-        reader: WindowChromeReader | None = None,
-        *,
-        cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
-        priority: int = CHROME_SNAP_PRIORITY,
-    ) -> None:
-        super().__init__(cache_interval_s=cache_interval_s)
-        self._reader = reader or _create_default_reader()
-        self._priority = priority
+def create_window_chrome_provider(
+    *,
+    cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
+    prefer_win32: bool = True,
+    reader: WindowChromeReader | None = None,
+    priority: int = CHROME_SNAP_PRIORITY,
+) -> SnapProvider:
+    if reader is not None:
+        resolved_reader = reader
+    elif prefer_win32 and is_windows():
+        resolved_reader = _create_default_reader()
+    else:
+        resolved_reader = NullWindowChromeReader(buttons=())
 
-    def load_targets(self) -> tuple[SnapTarget, ...]:
-        buttons = self._reader.read_buttons()
-        return chrome_buttons_to_snap_targets(buttons, priority=self._priority)
+    def loader() -> tuple[SnapTarget, ...]:
+        return chrome_buttons_to_snap_targets(resolved_reader.read_buttons(), priority=priority)
+
+    return CachedSnapProvider(loader=loader, cache_interval_s=cache_interval_s)
 
 
 def build_heuristic_chrome_buttons(
@@ -125,11 +130,8 @@ def gaze_in_title_bar_band(
 
 
 def read_foreground_window_rect() -> WindowRect | None:
-    if sys.platform != "win32":
+    if not is_windows():
         return None
-
-    import ctypes
-    from ctypes import wintypes
 
     user32 = ctypes.windll.user32
     hwnd = user32.GetForegroundWindow()
@@ -148,19 +150,6 @@ def read_foreground_window_rect() -> WindowRect | None:
     )
 
 
-def create_window_chrome_provider(
-    *,
-    cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
-    prefer_win32: bool = True,
-) -> SnapProvider:
-    if prefer_win32 and sys.platform == "win32":
-        return WindowChromeSnapProvider(cache_interval_s=cache_interval_s)
-    return WindowChromeSnapProvider(
-        reader=NullWindowChromeReader(buttons=()),
-        cache_interval_s=cache_interval_s,
-    )
-
-
 def create_snap_orchestrator(
     *,
     chrome_provider: SnapProvider | None = None,
@@ -174,6 +163,6 @@ def create_snap_orchestrator(
 
 
 def _create_default_reader() -> WindowChromeReader:
-    if sys.platform == "win32":
+    if is_windows():
         return Win32WindowChromeReader()
     return NullWindowChromeReader(buttons=())

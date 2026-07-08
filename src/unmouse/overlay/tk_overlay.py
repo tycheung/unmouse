@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import queue
-import sys
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal
+
+from unmouse.platform import is_windows
 
 if TYPE_CHECKING:
     import tkinter as tk
@@ -25,7 +27,7 @@ CLICK_THROUGH_STYLES = WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX
 
 
 def apply_click_through_styles(hwnd: int) -> None:
-    if sys.platform != "win32":
+    if not is_windows():
         return
 
     import ctypes
@@ -35,29 +37,59 @@ def apply_click_through_styles(hwnd: int) -> None:
     user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | CLICK_THROUGH_STYLES)
 
 
-class TkFullscreenOverlay(ABC):
-    def __init__(self, *, thread_name: str) -> None:
+class _TkCommandHost:
+    def __init__(self, *, thread_name: str, poll_ms: int) -> None:
         self._commands: queue.Queue[Any | None] = queue.Queue()
         self._ready = threading.Event()
         self._thread: threading.Thread | None = None
         self._thread_name = thread_name
+        self._poll_ms = poll_ms
 
-    def send_command(self, command: object) -> None:
-        self._ensure_thread()
+    def submit(self, command: object) -> None:
         self._commands.put(command)
 
-    def hide(self) -> None:
+    def shutdown(self) -> None:
         if self._thread and self._thread.is_alive():
             self._commands.put(None)
 
-    def _ensure_thread(self) -> None:
+    def start(self, run_loop: Callable[[], None]) -> None:
         if self._thread and self._thread.is_alive():
             return
-        self._thread = threading.Thread(target=self._run, name=self._thread_name, daemon=True)
+        self._thread = threading.Thread(target=run_loop, name=self._thread_name, daemon=True)
         self._thread.start()
         if not self._ready.wait(timeout=2.0):
             msg = "overlay thread failed to start"
             raise RuntimeError(msg)
+
+    def mark_ready(self) -> None:
+        self._ready.set()
+
+    def poll(self, root: tk.Tk, on_command: Callable[[object], None]) -> None:
+        while True:
+            try:
+                command = self._commands.get_nowait()
+            except queue.Empty:
+                break
+            if command is None:
+                root.quit()
+                return
+            on_command(command)
+        root.after(self._poll_ms, lambda: self.poll(root, on_command))
+
+
+class TkFullscreenOverlay(ABC):
+    def __init__(self, *, thread_name: str) -> None:
+        self._host = _TkCommandHost(thread_name=thread_name, poll_ms=50)
+
+    def send_command(self, command: object) -> None:
+        self._ensure_thread()
+        self._host.submit(command)
+
+    def hide(self) -> None:
+        self._host.shutdown()
+
+    def _ensure_thread(self) -> None:
+        self._host.start(self._run)
 
     def _run(self) -> None:
         import tkinter as tk
@@ -83,21 +115,12 @@ class TkFullscreenOverlay(ABC):
         label.place(relx=0.5, y=24, anchor="n")
 
         apply_click_through_styles(root.winfo_id())
-        self._ready.set()
-        self._poll(root, canvas, label)
+        self._host.mark_ready()
+        self._host.poll(
+            root,
+            lambda command: self._render(canvas, label, command),
+        )
         root.mainloop()
-
-    def _poll(self, root: tk.Tk, canvas: tk.Canvas, label_widget: tk.Label) -> None:
-        while True:
-            try:
-                command = self._commands.get_nowait()
-            except queue.Empty:
-                break
-            if command is None:
-                root.quit()
-                return
-            self._render(canvas, label_widget, command)
-        root.after(50, lambda: self._poll(root, canvas, label_widget))
 
     @abstractmethod
     def _render(self, canvas: tk.Canvas, label_widget: tk.Label, command: object) -> None: ...
@@ -106,26 +129,25 @@ class TkFullscreenOverlay(ABC):
 class TkWin32IndicatorBackend:
     def __init__(self, *, diameter: int = 20) -> None:
         self._diameter = diameter
-        self._commands: queue.Queue[IndicatorState | None] = queue.Queue()
-        self._ready = threading.Event()
-        self._thread: threading.Thread | None = None
+        self._host = _TkCommandHost(
+            thread_name="indicator-ui",
+            poll_ms=int(1000 / MIN_OVERLAY_FPS),
+        )
 
     def start(self) -> None:
-        if self._thread and self._thread.is_alive():
-            return
-        self._thread = threading.Thread(target=self._run, name="indicator-ui", daemon=True)
-        self._thread.start()
-        if not self._ready.wait(timeout=2.0):
-            msg = "indicator UI thread failed to start"
-            raise RuntimeError(msg)
+        self._host.start(self._run)
 
     def update(self, state: IndicatorState) -> None:
-        self._commands.put(state)
+        self._ensure_thread()
+        self._host.submit(state)
 
     def stop(self) -> None:
-        self._commands.put(None)
-        if self._thread:
-            self._thread.join(timeout=1.0)
+        self._host.shutdown()
+        if self._host._thread:
+            self._host._thread.join(timeout=1.0)
+
+    def _ensure_thread(self) -> None:
+        self._host.start(self._run)
 
     def _run(self) -> None:
         import tkinter as tk
@@ -146,24 +168,9 @@ class TkWin32IndicatorBackend:
         canvas.pack()
 
         apply_click_through_styles(root.winfo_id())
-        self._ready.set()
-        self._schedule_poll(root, canvas)
+        self._host.mark_ready()
+        self._host.poll(root, lambda state: self._render(root, canvas, state))
         root.mainloop()
-
-    def _schedule_poll(self, root: tk.Tk, canvas: tk.Canvas) -> None:
-        self._drain_commands(root, canvas)
-        root.after(int(1000 / MIN_OVERLAY_FPS), lambda: self._schedule_poll(root, canvas))
-
-    def _drain_commands(self, root: tk.Tk, canvas: tk.Canvas) -> None:
-        while True:
-            try:
-                state = self._commands.get_nowait()
-            except queue.Empty:
-                break
-            if state is None:
-                root.quit()
-                return
-            self._render(root, canvas, state)
 
     def _render(self, root: tk.Tk, canvas: tk.Canvas, state: IndicatorState) -> None:
         diameter = max(state.diameter, 8)

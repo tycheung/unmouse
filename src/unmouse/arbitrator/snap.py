@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import math
 import time
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Protocol
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 
 DEFAULT_STICKY_DWELL_S = 0.2
 DEFAULT_RELEASE_RADIUS_RATIO = 0.6
@@ -39,19 +38,21 @@ class SnapResult:
     target_id: str | None
 
 
-class SnapProvider(Protocol):
-    def list_targets(self) -> tuple[SnapTarget, ...]: ...
+class SnapProvider:
+    def list_targets(self) -> tuple[SnapTarget, ...]:
+        raise NotImplementedError
 
 
+@dataclass
 class CachedSnapProvider:
-    def __init__(self, *, cache_interval_s: float) -> None:
-        self._cache_interval_s = cache_interval_s
-        self._cached_targets: tuple[SnapTarget, ...] = ()
-        self._cached_at = -float("inf")
+    loader: Callable[[], tuple[SnapTarget, ...]]
+    cache_interval_s: float
+    _cached_targets: tuple[SnapTarget, ...] = field(default=(), init=False)
+    _cached_at: float = field(default=-float("inf"), init=False)
 
     def list_targets(self) -> tuple[SnapTarget, ...]:
         now = time.monotonic()
-        if now - self._cached_at >= self._cache_interval_s:
+        if now - self._cached_at >= self.cache_interval_s:
             self._refresh(now)
         return self._cached_targets
 
@@ -62,15 +63,12 @@ class CachedSnapProvider:
 
     def _refresh(self, now: float) -> None:
         try:
-            self._cached_targets = self.load_targets()
+            self._cached_targets = self.loader()
         except OSError:
             self._cached_targets = ()
         except RuntimeError:
             self._cached_targets = ()
         self._cached_at = now
-
-    def load_targets(self) -> tuple[SnapTarget, ...]:
-        raise NotImplementedError
 
 
 @dataclass

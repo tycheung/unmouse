@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from unmouse.config import Settings
 from unmouse.launcher.api_helpers import action, last_calibration_label, update_payload
-from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
+from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.services.engine_service import EngineService
 from unmouse.launcher.services.enrollment_service import EnrollmentService
@@ -227,6 +227,3 @@ class PanelApi:
 
     def set_status_message(self, message: str) -> dict[str, object]:
         return self._engine.set_status_message(message)
-
-    def _handle_engine_crash(self, event: WatchdogEvent) -> None:
-        self._engine._handle_engine_crash(event)

@@ -136,6 +136,31 @@ class StareCalibrationRunner:
         raise NotImplementedError
 
 
+def axis_positions(span: float, inset: float) -> tuple[float, float, float]:
+    margin = span * inset
+    usable = span - (2 * margin)
+    return (margin, margin + usable / 2, span - margin)
+
+
+def build_square_grid_positions(
+    screen_width: float,
+    screen_height: float,
+    *,
+    grid_size: int,
+    inset: float,
+) -> tuple[tuple[float, float], ...]:
+    if screen_width <= 0 or screen_height <= 0:
+        msg = "screen dimensions must be positive"
+        raise ValueError(msg)
+    xs = axis_positions(screen_width, inset)
+    ys = axis_positions(screen_height, inset)
+    positions: list[tuple[float, float]] = []
+    for row in range(grid_size):
+        for col in range(grid_size):
+            positions.append((xs[col], ys[row]))
+    return tuple(positions)
+
+
 def filter_samples_for_point(
     samples: Sequence[GazeSample],
     *,

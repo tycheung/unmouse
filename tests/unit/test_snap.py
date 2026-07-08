@@ -73,12 +73,10 @@ def test_composite_orchestrator_merges_provider_targets() -> None:
     assert len(orchestrator.list_targets()) == 2
 
 
-class _FailingCachedProvider(CachedSnapProvider):
-    def load_targets(self) -> tuple[SnapTarget, ...]:
+def test_cached_snap_provider_clears_targets_on_load_error() -> None:
+    def failing_loader() -> tuple[SnapTarget, ...]:
         raise OSError("snap source unavailable")
 
-
-def test_cached_snap_provider_clears_targets_on_load_error() -> None:
-    provider = _FailingCachedProvider(cache_interval_s=0.0)
+    provider = CachedSnapProvider(loader=failing_loader, cache_interval_s=0.0)
     assert provider.list_targets() == ()
     assert provider.refresh() == ()

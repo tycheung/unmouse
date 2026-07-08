@@ -64,7 +64,7 @@ def test_overlay_rejects_fps_below_minimum() -> None:
 
 
 def test_apply_click_through_styles_sets_win32_flags(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("unmouse.overlay.tk_overlay.sys.platform", "win32")
+    monkeypatch.setattr("unmouse.overlay.tk_overlay.is_windows", lambda: True)
     recorded: list[int] = []
 
     fake_user32 = MagicMock()
@@ -81,7 +81,7 @@ def test_apply_click_through_styles_sets_win32_flags(monkeypatch: pytest.MonkeyP
 
 
 def test_create_indicator_backend_uses_fake_off_windows(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("unmouse.overlay.indicator.sys.platform", "linux")
+    monkeypatch.setattr("unmouse.overlay.indicator.is_windows", lambda: False)
     backend = create_indicator_backend(prefer_win32=True)
     assert isinstance(backend, NoopIndicatorBackend)
 

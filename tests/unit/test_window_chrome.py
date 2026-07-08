@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from unmouse.arbitrator.snap import SnapEngine, SnapRect, SnapTarget, StaticSnapProvider
-from unmouse.arbitrator.uia_provider import NullUiaTreeReader, UiaControlRect, UiaSnapProvider
+from unmouse.arbitrator.uia_provider import NullUiaTreeReader, UiaControlRect, create_uia_snap_provider
 from unmouse.arbitrator.window_chrome import (
     NullWindowChromeReader,
-    WindowChromeSnapProvider,
     WindowRect,
     build_heuristic_chrome_buttons,
     chrome_buttons_to_snap_targets,
@@ -44,7 +43,11 @@ def test_gaze_in_title_bar_band() -> None:
 def test_window_chrome_provider_caches_buttons() -> None:
     buttons = build_heuristic_chrome_buttons(_window())
     reader = NullWindowChromeReader(buttons=buttons)
-    provider = WindowChromeSnapProvider(reader=reader, cache_interval_s=10.0)
+    provider = create_window_chrome_provider(
+        reader=reader,
+        cache_interval_s=10.0,
+        prefer_win32=False,
+    )
     provider.list_targets()
     provider.list_targets()
     assert reader.calls == 1
@@ -53,9 +56,10 @@ def test_window_chrome_provider_caches_buttons() -> None:
 def test_chrome_snap_wins_over_uia_at_equal_distance() -> None:
     window = _window()
     chrome_buttons = build_heuristic_chrome_buttons(window)
-    chrome_provider = WindowChromeSnapProvider(
+    chrome_provider = create_window_chrome_provider(
         reader=NullWindowChromeReader(buttons=chrome_buttons),
         cache_interval_s=0.0,
+        prefer_win32=False,
     )
     uia_control = UiaControlRect(
         automation_id="save",
@@ -66,7 +70,11 @@ def test_chrome_snap_wins_over_uia_at_equal_distance() -> None:
         width=46.0,
         height=32.0,
     )
-    uia_provider = UiaSnapProvider(reader=NullUiaTreeReader((uia_control,)), cache_interval_s=0.0)
+    uia_provider = create_uia_snap_provider(
+        reader=NullUiaTreeReader((uia_control,)),
+        cache_interval_s=0.0,
+        prefer_uia=False,
+    )
     orchestrator = create_snap_orchestrator(
         chrome_provider=chrome_provider,
         extra_providers=(uia_provider,),
@@ -78,7 +86,7 @@ def test_chrome_snap_wins_over_uia_at_equal_distance() -> None:
 
 
 def test_create_window_chrome_provider_off_windows(monkeypatch) -> None:
-    monkeypatch.setattr("unmouse.arbitrator.window_chrome.sys.platform", "linux")
+    monkeypatch.setattr("unmouse.arbitrator.window_chrome.is_windows", lambda: False)
     provider = create_window_chrome_provider(prefer_win32=True)
     assert provider.list_targets() == ()
 

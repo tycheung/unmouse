@@ -31,6 +31,7 @@ from unmouse.launcher.wizard_common import (
     StareCalibrationRunner,
     WizardOverlayBackend,
     WizardTarget,
+    build_square_grid_positions,
     geometric_mean_gaze,
     run_stare_wizard,
 )
@@ -204,18 +205,16 @@ def build_polynomial_targets(
     *,
     inset: float = DEFAULT_TARGET_INSET,
 ) -> tuple[CalibrationTarget, ...]:
-    if screen_width <= 0 or screen_height <= 0:
-        msg = "screen dimensions must be positive"
-        raise ValueError(msg)
-    xs = _axis_positions(screen_width, inset)
-    ys = _axis_positions(screen_height, inset)
-    targets: list[CalibrationTarget] = []
-    index = 0
-    for row in range(GRID_SIZE):
-        for col in range(GRID_SIZE):
-            targets.append(CalibrationTarget(index=index, x=xs[col], y=ys[row]))
-            index += 1
-    return tuple(targets)
+    positions = build_square_grid_positions(
+        screen_width,
+        screen_height,
+        grid_size=GRID_SIZE,
+        inset=inset,
+    )
+    return tuple(
+        CalibrationTarget(index=index, x=x, y=y)
+        for index, (x, y) in enumerate(positions)
+    )
 
 
 def build_offset_targets(
@@ -320,9 +319,3 @@ def run_offset_wizard(
     )
     assert isinstance(outcome, OffsetWizardOutcome)
     return outcome
-
-
-def _axis_positions(span: float, inset: float) -> tuple[float, float, float]:
-    margin = span * inset
-    usable = span - (2 * margin)
-    return (margin, margin + usable / 2, span - margin)

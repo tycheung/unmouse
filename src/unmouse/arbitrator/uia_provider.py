@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any
 
 from unmouse.arbitrator.snap import CachedSnapProvider, SnapProvider, SnapRect, SnapTarget
+from unmouse.platform import is_windows
 
 DEFAULT_UIA_CACHE_INTERVAL_S = 0.5
 FOCUSABLE_CONTROL_TYPES = frozenset(
@@ -37,13 +37,14 @@ class UiaControlRect:
     height: float
 
 
-class UiaTreeReader(Protocol):
-    def enumerate_focusable(self) -> tuple[UiaControlRect, ...]: ...
+class UiaTreeReader:
+    def enumerate_focusable(self) -> tuple[UiaControlRect, ...]:
+        raise NotImplementedError
 
 
 @dataclass
 class NullUiaTreeReader:
-    controls: tuple[UiaControlRect, ...]
+    controls: tuple[UiaControlRect, ...] = ()
     calls: int = field(default=0, init=False)
 
     def enumerate_focusable(self) -> tuple[UiaControlRect, ...]:
@@ -56,7 +57,7 @@ class UiaAutomationTreeReader:
         self._max_depth = max_depth
 
     def enumerate_focusable(self) -> tuple[UiaControlRect, ...]:
-        if sys.platform != "win32":
+        if not is_windows():
             return ()
 
         import uiautomation as auto
@@ -73,35 +74,28 @@ class UiaAutomationTreeReader:
         return tuple(controls)
 
 
-class UiaSnapProvider(CachedSnapProvider):
-    def __init__(
-        self,
-        reader: UiaTreeReader | None = None,
-        *,
-        cache_interval_s: float = DEFAULT_UIA_CACHE_INTERVAL_S,
-    ) -> None:
-        super().__init__(cache_interval_s=cache_interval_s)
-        self._reader = reader or UiaAutomationTreeReader()
+def create_uia_snap_provider(
+    *,
+    cache_interval_s: float = DEFAULT_UIA_CACHE_INTERVAL_S,
+    prefer_uia: bool = True,
+    reader: UiaTreeReader | None = None,
+) -> SnapProvider:
+    if reader is not None:
+        resolved_reader = reader
+    elif prefer_uia and is_windows() and importlib.util.find_spec("uiautomation") is not None:
+        resolved_reader = UiaAutomationTreeReader()
+    else:
+        resolved_reader = NullUiaTreeReader()
 
-    def load_targets(self) -> tuple[SnapTarget, ...]:
-        controls = self._reader.enumerate_focusable()
+    def loader() -> tuple[SnapTarget, ...]:
+        controls = resolved_reader.enumerate_focusable()
         return tuple(
             target
             for control in controls
             if (target := control_to_snap_target(control)) is not None
         )
 
-
-def create_uia_snap_provider(
-    *,
-    cache_interval_s: float = DEFAULT_UIA_CACHE_INTERVAL_S,
-    prefer_uia: bool = True,
-) -> SnapProvider:
-    if prefer_uia and sys.platform == "win32":
-        if importlib.util.find_spec("uiautomation") is None:
-            return UiaSnapProvider(reader=_EmptyUiaTreeReader(), cache_interval_s=cache_interval_s)
-        return UiaSnapProvider(cache_interval_s=cache_interval_s)
-    return UiaSnapProvider(reader=_EmptyUiaTreeReader(), cache_interval_s=cache_interval_s)
+    return CachedSnapProvider(loader=loader, cache_interval_s=cache_interval_s)
 
 
 def control_to_snap_target(control: UiaControlRect) -> SnapTarget | None:
@@ -118,12 +112,6 @@ def control_to_snap_target(control: UiaControlRect) -> SnapTarget | None:
         ),
         priority=_priority_for_control_type(control.control_type),
     )
-
-
-@dataclass
-class _EmptyUiaTreeReader:
-    def enumerate_focusable(self) -> tuple[UiaControlRect, ...]:
-        return ()
 
 
 def _control_rect(control: Any) -> UiaControlRect | None:
