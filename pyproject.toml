@@ -12,13 +12,15 @@ pydantic-settings = "^2.2"
 numpy = "^1.26"
 opencv-python = "^4.9"
 mss = "^9.0"
-mediapipe = "^0.10"
+mediapipe = ">=0.10.14,<0.10.22"
 pyautogui = "^0.9"
 pywebview = "^5.0"
 uiautomation = { version = "^2.0", markers = "sys_platform == 'win32'" }
 pystray = "^0.19"
 keyboard = "^0.13"
 eyeGestures = "^3.2"
+scikit-learn = "^1.5"
+scipy = ">=1.11,<1.16"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

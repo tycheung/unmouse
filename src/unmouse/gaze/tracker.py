@@ -138,7 +138,35 @@ def save_gaze_model(settings: Settings, data: bytes) -> Path:
 def _build_engine(calibration_radius: int) -> EyeGesturesEngine:
     from eyeGestures import EyeGestures_v3
 
+    _make_calibrator_picklable()
     return cast(EyeGesturesEngine, EyeGestures_v3(calibration_radius=calibration_radius))
+
+
+def _make_calibrator_picklable() -> None:
+    """eyeGestures' Calibrator holds a threading.Lock and Threads, so its own
+    pickle-based saveModel/loadModel fail. Teach it to serialize only the fitted
+    state and rebuild the runtime objects on load."""
+    import threading
+
+    from eyeGestures.calibration_v2 import Calibrator
+
+    if getattr(Calibrator, "_unmouse_picklable", False):
+        return
+
+    runtime_fields = ("lock", "calcualtion_coroutine", "fit_coroutines")
+
+    def __getstate__(self: Any) -> dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if k not in runtime_fields}
+
+    def __setstate__(self: Any, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
+        self.lock = threading.Lock()
+        self.calcualtion_coroutine = threading.Thread(target=self._Calibrator__async_post_fit)
+        self.fit_coroutines = []
+
+    Calibrator.__getstate__ = __getstate__
+    Calibrator.__setstate__ = __setstate__
+    Calibrator._unmouse_picklable = True
 
 
 def _sample_from_event(event: Any) -> GazeSample | None:
