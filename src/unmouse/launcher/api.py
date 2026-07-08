@@ -150,9 +150,11 @@ class PanelApi:
             return action(False, "No update is available.")
         self._state.update_status = apply_update(self._state.update_status)
         self._set_status_message(self._state.update_status.message)
-        payload = action(not self._state.update_status.available, self._state.update_status.message)
-        payload["update"] = update_payload(self._state.update_status)
-        return payload
+        return action(
+            not self._state.update_status.available,
+            self._state.update_status.message,
+            update=update_payload(self._state.update_status),
+        )
 
     def start_calibrate(self) -> dict[str, object]:
         from unmouse.launcher.calibration_wizards import run_full_calibration

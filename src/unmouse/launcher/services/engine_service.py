@@ -76,12 +76,8 @@ class EngineService:
             self._tray = create_tray_backend(self._tray_handlers(), prefer_pystray=True)
 
     def get_status(self) -> dict[str, object]:
-        runtime = load_runtime(self._state.settings)
-        diagnostics = (
-            load_diagnostics_snapshot(self._state.settings)
-            if self._engine_runner.is_running()
-            else None
-        )
+        tracking, paused = self._tracking_and_paused()
+        diagnostics = load_diagnostics_snapshot(self._state.settings) if tracking else None
         return asdict(
             PanelStatus(
                 message=self._state.status.message,
@@ -89,8 +85,8 @@ class EngineService:
                 confidence=diagnostics.gaze_confidence
                 if diagnostics
                 else self._state.status.confidence,
-                tracking=self._engine_runner.is_running(),
-                paused=runtime.paused if self._engine_runner.is_running() else False,
+                tracking=tracking,
+                paused=paused,
                 gaze_mode=self._state.settings.gaze_mode.value,
                 last_calibrated=last_calibration_label(self._state.settings),
             ),
@@ -107,9 +103,7 @@ class EngineService:
             settings=self._state.settings,
             runtime=runtime,
         )
-        payload = action(True, message)
-        payload["paused"] = runtime.paused
-        return payload
+        return action(True, message, paused=runtime.paused)
 
     def toggle_gaze_mode(self) -> dict[str, object]:
         mode = toggle_gaze_mode(self._state.settings)
@@ -121,16 +115,12 @@ class EngineService:
             else "Cursor follow enabled."
         )
         self._state.status = self._runtime_panel_status(label, settings=self._state.settings)
-        payload = action(True, label)
-        payload["gaze_mode"] = mode.value
-        return payload
+        return action(True, label, gaze_mode=mode.value)
 
     def start_launch(self) -> dict[str, object]:
         if self._engine_runner.is_running():
             self._ensure_tray()
-            payload = action(True, "Engine already running.")
-            payload["tracking"] = True
-            return payload
+            return action(True, "Engine already running.", tracking=True)
         status = self._engine_runner.start()
         if not status.ok or not status.running:
             return action(False, status.message)
@@ -144,11 +134,7 @@ class EngineService:
             settings=self._state.settings,
             runtime=runtime,
         )
-        payload = action(True, status.message)
-        payload["tracking"] = True
-        payload["minimize"] = True
-        payload["pid"] = status.pid
-        return payload
+        return action(True, status.message, tracking=True, minimize=True, pid=status.pid)
 
     def stop_engine(self) -> dict[str, object]:
         self._stop_watchdog()
@@ -181,11 +167,7 @@ class EngineService:
     ) -> PanelStatus:
         resolved_settings = settings or self._state.settings
         self._state.settings = resolved_settings
-        tracking = self._engine_runner.is_running()
-        paused = False
-        if tracking:
-            resolved_runtime = runtime or load_runtime(resolved_settings)
-            paused = resolved_runtime.paused
+        tracking, paused = self._tracking_and_paused(runtime=runtime)
         return replace(
             self._state.status,
             message=message,
@@ -194,6 +176,12 @@ class EngineService:
             gaze_mode=resolved_settings.gaze_mode.value,
             last_calibrated=last_calibration_label(resolved_settings),
         )
+
+    def _tracking_and_paused(self, *, runtime: RuntimeState | None = None) -> tuple[bool, bool]:
+        if not self._engine_runner.is_running():
+            return False, False
+        resolved = runtime or load_runtime(self._state.settings)
+        return True, resolved.paused
 
     def _tray_handlers(self) -> TrayHandlers:
         return TrayHandlers(
