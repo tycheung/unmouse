@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import sys
-import time
 from dataclasses import dataclass
 from typing import Protocol
 
-from unmouse.arbitrator.snap import CompositeSnapOrchestrator, SnapProvider, SnapRect, SnapTarget
+from unmouse.arbitrator.snap import (
+    CachedSnapProvider,
+    CompositeSnapOrchestrator,
+    SnapProvider,
+    SnapRect,
+    SnapTarget,
+)
 
 DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
 DEFAULT_CHROME_BUTTON_WIDTH = 46.0
@@ -66,7 +71,7 @@ class Win32WindowChromeReader:
         )
 
 
-class WindowChromeSnapProvider:
+class WindowChromeSnapProvider(CachedSnapProvider):
     """SnapProvider for minimize, maximize, and close controls."""
 
     def __init__(
@@ -76,29 +81,13 @@ class WindowChromeSnapProvider:
         cache_interval_s: float = DEFAULT_CHROME_CACHE_INTERVAL_S,
         priority: int = CHROME_SNAP_PRIORITY,
     ) -> None:
+        super().__init__(cache_interval_s=cache_interval_s)
         self._reader = reader or _create_default_reader()
-        self._cache_interval_s = cache_interval_s
         self._priority = priority
-        self._cached_targets: tuple[SnapTarget, ...] = ()
-        self._cached_at = -float("inf")
 
-    def list_targets(self) -> tuple[SnapTarget, ...]:
-        now = time.monotonic()
-        if now - self._cached_at >= self._cache_interval_s:
-            self._refresh(now)
-        return self._cached_targets
-
-    def refresh(self) -> tuple[SnapTarget, ...]:
-        self._refresh(time.monotonic())
-        return self._cached_targets
-
-    def _refresh(self, now: float) -> None:
-        try:
-            buttons = self._reader.read_buttons()
-            self._cached_targets = chrome_buttons_to_snap_targets(buttons, priority=self._priority)
-        except OSError:
-            self._cached_targets = ()
-        self._cached_at = now
+    def load_targets(self) -> tuple[SnapTarget, ...]:
+        buttons = self._reader.read_buttons()
+        return chrome_buttons_to_snap_targets(buttons, priority=self._priority)
 
 
 def build_heuristic_chrome_buttons(

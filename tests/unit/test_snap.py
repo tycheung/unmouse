@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from unmouse.arbitrator.snap import (
+    CachedSnapProvider,
     CompositeSnapOrchestrator,
     SnapEngine,
     SnapRect,
@@ -70,3 +71,14 @@ def test_composite_orchestrator_merges_provider_targets() -> None:
     provider_b = StaticSnapProvider((_button("b", 50.0, 10.0),))
     orchestrator = CompositeSnapOrchestrator([provider_a, provider_b])
     assert len(orchestrator.list_targets()) == 2
+
+
+class _FailingCachedProvider(CachedSnapProvider):
+    def load_targets(self) -> tuple[SnapTarget, ...]:
+        raise OSError("snap source unavailable")
+
+
+def test_cached_snap_provider_clears_targets_on_load_error() -> None:
+    provider = _FailingCachedProvider(cache_interval_s=0.0)
+    assert provider.list_targets() == ()
+    assert provider.refresh() == ()

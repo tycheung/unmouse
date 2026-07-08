@@ -8,7 +8,6 @@ from typing import Literal
 
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
-from unmouse.launcher.enroll_ui import profile_has_gesture_templates
 from unmouse.launcher.results import ActionResult
 from unmouse.launcher.settings import LauncherFlags, load_launcher_flags, save_launcher_flags
 
@@ -66,7 +65,6 @@ class OnboardingController:
     _check_camera: Callable[[Settings], CameraCheckResult] | None = None
     _run_polynomial: Callable[[Settings], ActionResult] | None = None
     _run_offset: Callable[[Settings], ActionResult] | None = None
-    _run_gestures: Callable[[Settings], ActionResult] | None = None
 
     @classmethod
     def create(
@@ -76,14 +74,12 @@ class OnboardingController:
         check_camera: Callable[[Settings], CameraCheckResult] | None = None,
         run_polynomial: Callable[[Settings], ActionResult] | None = None,
         run_offset: Callable[[Settings], ActionResult] | None = None,
-        run_gestures: Callable[[Settings], ActionResult] | None = None,
     ) -> OnboardingController:
         return cls(
             settings=settings or Settings(),
             _check_camera=check_camera,
             _run_polynomial=run_polynomial,
             _run_offset=run_offset,
-            _run_gestures=run_gestures,
         )
 
     @property
@@ -141,9 +137,6 @@ class OnboardingController:
 
     def run_offset_step(self) -> dict[str, object]:
         return self._run_hook(self._run_offset, default_offset_step, "offset_complete")
-
-    def run_gestures_step(self) -> dict[str, object]:
-        return self._run_hook(self._run_gestures, default_gestures_step, "gestures_complete")
 
     def complete(self) -> dict[str, object]:
         save_launcher_flags(
@@ -254,12 +247,3 @@ def default_offset_step(settings: Settings) -> ActionResult:
 
     outcome = run_offset_wizard(settings)
     return ActionResult(outcome.success, outcome.message, step_complete=outcome.success)
-
-
-def default_gestures_step(settings: Settings) -> ActionResult:
-    if profile_has_gesture_templates(settings):
-        return ActionResult(True, "Gesture templates already saved.", step_complete=True)
-    return ActionResult(
-        False,
-        "Use Train Gestures in the control panel to capture your poses.",
-    )

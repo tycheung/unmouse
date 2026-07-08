@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
@@ -40,6 +41,38 @@ class SnapResult:
 
 class SnapProvider(Protocol):
     def list_targets(self) -> tuple[SnapTarget, ...]: ...
+
+
+class CachedSnapProvider:
+    """SnapProvider base that refreshes targets on a time-based cache interval."""
+
+    def __init__(self, *, cache_interval_s: float) -> None:
+        self._cache_interval_s = cache_interval_s
+        self._cached_targets: tuple[SnapTarget, ...] = ()
+        self._cached_at = -float("inf")
+
+    def list_targets(self) -> tuple[SnapTarget, ...]:
+        now = time.monotonic()
+        if now - self._cached_at >= self._cache_interval_s:
+            self._refresh(now)
+        return self._cached_targets
+
+    def refresh(self) -> tuple[SnapTarget, ...]:
+        now = time.monotonic()
+        self._refresh(now)
+        return self._cached_targets
+
+    def _refresh(self, now: float) -> None:
+        try:
+            self._cached_targets = self.load_targets()
+        except OSError:
+            self._cached_targets = ()
+        except RuntimeError:
+            self._cached_targets = ()
+        self._cached_at = now
+
+    def load_targets(self) -> tuple[SnapTarget, ...]:
+        raise NotImplementedError
 
 
 @dataclass

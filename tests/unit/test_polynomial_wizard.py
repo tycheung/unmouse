@@ -122,6 +122,6 @@ def test_wizard_save_roundtrip(tmp_path, monkeypatch) -> None:
 
 
 def test_create_wizard_overlay_uses_fake_off_windows(monkeypatch) -> None:
-    monkeypatch.setattr("unmouse.launcher.polynomial_wizard.sys.platform", "linux")
+    monkeypatch.setattr("unmouse.launcher.calibration_overlay.sys.platform", "linux")
     overlay = create_wizard_overlay(prefer_win32=True)
     assert isinstance(overlay, FakeWizardOverlayBackend)

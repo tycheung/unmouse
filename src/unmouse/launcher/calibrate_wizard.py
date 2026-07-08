@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-import numpy as np
-
-from unmouse.broker.video_broker import FrameSource, create_frame_source
+from unmouse.broker.video_broker import FrameSource
 from unmouse.config import Settings
 from unmouse.gaze.calibration import (
     CalibrationModel,
@@ -23,13 +20,14 @@ from unmouse.gaze.offset_profile import (
     offset_profile_path,
     save_offset_profile,
 )
-from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker
-from unmouse.launcher.polynomial_wizard import (
+from unmouse.gaze.tracker import GazeTracker
+from unmouse.launcher.wizard_common import (
     GazeSample,
+    StareCalibrationRunner,
     WizardOverlayBackend,
-    create_wizard_overlay,
-    filter_samples_for_point,
+    WizardTarget,
     geometric_mean_gaze,
+    run_stare_wizard,
 )
 
 NUM_OFFSET_TARGETS = NUM_SAMPLES
@@ -49,7 +47,7 @@ class OffsetWizardOutcome:
     mean_error_px: float = 0.0
 
 
-class OffsetWizardRunner:
+class OffsetWizardRunner(StareCalibrationRunner):
     """Collect sixteen stare samples and build an offset correction profile."""
 
     def __init__(
@@ -59,63 +57,25 @@ class OffsetWizardRunner:
         *,
         targets: Sequence[OffsetTarget] | None = None,
     ) -> None:
-        self._settings = settings
-        self._calibration = calibration
-        self._targets = tuple(
+        resolved = tuple(
             targets
             or build_offset_targets(settings.screen_width, settings.screen_height),
         )
-        if len(self._targets) != NUM_OFFSET_TARGETS:
+        if len(resolved) != NUM_OFFSET_TARGETS:
             msg = f"expected {NUM_OFFSET_TARGETS} calibration targets"
             raise ValueError(msg)
-        self._point_duration_s = settings.calibration_point_duration_s
-        self._discard_s = settings.calibration_discard_s
-        self._index = 0
+        super().__init__(
+            targets=resolved,
+            point_duration_s=settings.calibration_point_duration_s,
+            discard_s=settings.calibration_discard_s,
+        )
+        self._settings = settings
+        self._calibration = calibration
         self._measurements: list[tuple[float, float]] = []
-        self._samples: list[GazeSample] = []
-        self._point_started_s: float | None = None
-        self._outcome: OffsetWizardOutcome | None = None
-
-    @property
-    def done(self) -> bool:
-        return self._outcome is not None
 
     @property
     def outcome(self) -> OffsetWizardOutcome | None:
-        return self._outcome
-
-    @property
-    def current_target(self) -> OffsetTarget | None:
-        if self.done or self._index >= len(self._targets):
-            return None
-        return self._targets[self._index]
-
-    @property
-    def current_index(self) -> int:
-        return self._index
-
-    def begin_point(self, timestamp_s: float) -> OffsetTarget:
-        if self.done:
-            msg = "wizard already finished"
-            raise RuntimeError(msg)
-        target = self.current_target
-        if target is None:
-            msg = "no remaining calibration targets"
-            raise RuntimeError(msg)
-        self._point_started_s = timestamp_s
-        self._samples.clear()
-        return target
-
-    def add_sample(self, sample: GazeSample) -> bool:
-        if self._point_started_s is None:
-            msg = "call begin_point before add_sample"
-            raise RuntimeError(msg)
-        self._samples.append(sample)
-        elapsed = sample.timestamp_s - self._point_started_s
-        if elapsed < self._point_duration_s:
-            return False
-        self._complete_current_point()
-        return True
+        return self._outcome  # type: ignore[return-value]
 
     def finish_from_measurements(
         self,
@@ -125,24 +85,15 @@ class OffsetWizardRunner:
             msg = f"expected {NUM_OFFSET_TARGETS} gaze measurements"
             raise ValueError(msg)
         self._measurements = list(measurements)
-        return self._evaluate()
+        self._index = len(self._targets)
+        self._outcome = self.evaluate()
+        return self._outcome
 
-    def _complete_current_point(self) -> None:
-        assert self._point_started_s is not None
-        filtered = filter_samples_for_point(
-            self._samples,
-            point_started_s=self._point_started_s,
-            discard_s=self._discard_s,
-            point_duration_s=self._point_duration_s,
-        )
-        measured_x, measured_y = calibrated_mean_gaze(filtered, self._calibration)
+    def on_point_complete(self, samples: Sequence[GazeSample], _target: WizardTarget) -> None:
+        measured_x, measured_y = calibrated_mean_gaze(samples, self._calibration)
         self._measurements.append((measured_x, measured_y))
-        self._index += 1
-        self._point_started_s = None
-        if self._index >= NUM_OFFSET_TARGETS:
-            self._outcome = self._evaluate()
 
-    def _evaluate(self) -> OffsetWizardOutcome:
+    def evaluate(self) -> OffsetWizardOutcome:
         profile = build_profile_from_measurements(
             self._settings.screen_width,
             self._settings.screen_height,
@@ -206,11 +157,13 @@ def run_offset_wizard(
     tracker: GazeTracker | None = None,
     frame_source: FrameSource | None = None,
     overlay: WizardOverlayBackend | None = None,
-    sleep: Callable[[float], None] = time.sleep,
-    clock: Callable[[], float] = time.perf_counter,
+    sleep: Callable[[float], None] | None = None,
+    clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
 ) -> OffsetWizardOutcome:
     """Run the full sixteen-point offset sequence and save on success."""
+    import time
+
     missing = polynomial_prerequisite_message(settings)
     if missing is not None:
         return OffsetWizardOutcome(success=False, message=missing)
@@ -222,34 +175,17 @@ def run_offset_wizard(
         )
 
     runner = OffsetWizardRunner(settings, model)
-    gaze_tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)
-    source = frame_source or create_frame_source(settings)
-    ui = overlay or create_wizard_overlay(prefer_win32=prefer_win32_overlay)
-    try:
-        started = clock()
-        target = runner.begin_point(started)
-        ui.show_target(target.x, target.y, label=_target_label(target.index))
-        while not runner.done:
-            ok, frame = source.read()
-            now = clock()
-            if ok and frame is not None:
-                gaze = gaze_tracker.predict(np.asarray(frame, dtype=np.uint8))
-                if runner.add_sample(GazeSample(now, gaze.x, gaze.y, gaze.confidence)):
-                    if runner.done:
-                        break
-                    target = runner.begin_point(now)
-                    ui.show_target(target.x, target.y, label=_target_label(target.index))
-            sleep(0.01)
-    finally:
-        ui.hide()
-        source.release()
-
-    outcome = runner.outcome
-    if outcome is None:
-        msg = "wizard ended before collecting all offset calibration points"
-        raise RuntimeError(msg)
+    outcome = run_stare_wizard(
+        settings,
+        runner,
+        target_label=lambda target: f"Look here ({target.index + 1}/{NUM_OFFSET_TARGETS})",
+        tracker=tracker,
+        frame_source=frame_source,
+        overlay=overlay,
+        sleep=sleep or time.sleep,
+        clock=clock or time.perf_counter,
+        prefer_win32_overlay=prefer_win32_overlay,
+        incomplete_message="wizard ended before collecting all offset calibration points",
+    )
+    assert isinstance(outcome, OffsetWizardOutcome)
     return outcome
-
-
-def _target_label(index: int) -> str:
-    return f"Look here ({index + 1}/{NUM_OFFSET_TARGETS})"

@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from unmouse.arbitrator.snap import SnapProvider, SnapRect, SnapTarget
+from unmouse.arbitrator.snap import CachedSnapProvider, SnapProvider, SnapRect, SnapTarget
 
 DEFAULT_UIA_CACHE_INTERVAL_S = 0.5
 FOCUSABLE_CONTROL_TYPES = frozenset(
@@ -76,7 +75,7 @@ class UiaAutomationTreeReader:
         return tuple(controls)
 
 
-class UiaSnapProvider:
+class UiaSnapProvider(CachedSnapProvider):
     """SnapProvider that caches UIA focusable control bounds."""
 
     def __init__(
@@ -85,34 +84,16 @@ class UiaSnapProvider:
         *,
         cache_interval_s: float = DEFAULT_UIA_CACHE_INTERVAL_S,
     ) -> None:
+        super().__init__(cache_interval_s=cache_interval_s)
         self._reader = reader or UiaAutomationTreeReader()
-        self._cache_interval_s = cache_interval_s
-        self._cached_targets: tuple[SnapTarget, ...] = ()
-        self._cached_at = -float("inf")
 
-    def list_targets(self) -> tuple[SnapTarget, ...]:
-        now = time.monotonic()
-        if now - self._cached_at >= self._cache_interval_s:
-            self._refresh(now)
-        return self._cached_targets
-
-    def refresh(self) -> tuple[SnapTarget, ...]:
-        self._refresh(time.monotonic())
-        return self._cached_targets
-
-    def _refresh(self, now: float) -> None:
-        try:
-            controls = self._reader.enumerate_focusable()
-            self._cached_targets = tuple(
-                target
-                for control in controls
-                if (target := control_to_snap_target(control)) is not None
-            )
-        except OSError:
-            self._cached_targets = ()
-        except RuntimeError:
-            self._cached_targets = ()
-        self._cached_at = now
+    def load_targets(self) -> tuple[SnapTarget, ...]:
+        controls = self._reader.enumerate_focusable()
+        return tuple(
+            target
+            for control in controls
+            if (target := control_to_snap_target(control)) is not None
+        )
 
 
 def create_uia_snap_provider(
