@@ -2,16 +2,10 @@
 
 from __future__ import annotations
 
+from unmouse.launcher.api_helpers import action
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
-from unmouse.launcher.results import ActionResult
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus, PanelView
-
-
-def action(ok: bool, message: str, **extra: object) -> dict[str, object]:
-    payload = ActionResult(ok, message).to_dict()
-    payload.update(extra)
-    return payload
 
 
 class EnrollmentService:

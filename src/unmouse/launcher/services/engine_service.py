@@ -7,20 +7,13 @@ from dataclasses import asdict
 
 from unmouse.config import GazeMode
 from unmouse.diagnostics import load_diagnostics_snapshot
-from unmouse.launcher.api_helpers import last_calibration_label
+from unmouse.launcher.api_helpers import action, last_calibration_label
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
-from unmouse.launcher.results import ActionResult
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus
 from unmouse.launcher.settings import toggle_gaze_mode
 from unmouse.launcher.tray import TrayBackend, TrayHandlers, create_tray_backend
 from unmouse.persistence import load_persisted_settings
 from unmouse.runtime import load_runtime, set_paused, toggle_paused
-
-
-def action(ok: bool, message: str, **extra: object) -> dict[str, object]:
-    payload = ActionResult(ok, message).to_dict()
-    payload.update(extra)
-    return payload
 
 
 class EngineService:

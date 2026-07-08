@@ -7,10 +7,11 @@ import time
 import numpy as np
 
 from tests.conftest import load_landmark_fixture
+from tests.fakes.broker import MockFrameSource
 from unmouse.arbitrator.actions import FakeActionDriver
 from unmouse.arbitrator.controller import ActionController
 from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
-from unmouse.broker.video_broker import MockFrameSource, VideoBroker
+from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
 from unmouse.gaze.calibration import fit_calibration
 from unmouse.gaze.pipeline import GazePipeline

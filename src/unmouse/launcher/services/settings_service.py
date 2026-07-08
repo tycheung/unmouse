@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unmouse.launcher.results import ActionResult
+from unmouse.launcher.api_helpers import action
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus
 from unmouse.launcher.settings import (
     activate_profile,
@@ -13,12 +13,6 @@ from unmouse.launcher.settings import (
     update_panel_settings,
 )
 from unmouse.persistence import load_persisted_settings
-
-
-def action(ok: bool, message: str, **extra: object) -> dict[str, object]:
-    payload = ActionResult(ok, message).to_dict()
-    payload.update(extra)
-    return payload
 
 
 class SettingsService:

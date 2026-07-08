@@ -6,7 +6,8 @@ import time
 
 import numpy as np
 
-from unmouse.broker.video_broker import MockFrameSource, VideoBroker
+from tests.fakes.broker import MockFrameSource
+from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
 from unmouse.gestures.fsm import ClickFsm
 from unmouse.gestures.landmarks import MockHandLandmarkDetector

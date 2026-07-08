@@ -4,7 +4,8 @@ import time
 
 import numpy as np
 
-from unmouse.broker.video_broker import MockFrameSource, VideoBroker, drain_latest
+from tests.fakes.broker import MockFrameSource
+from unmouse.broker.video_broker import VideoBroker, drain_latest
 from unmouse.config import Settings
 from unmouse.gaze.pipeline import GazePipeline
 from unmouse.gaze.thread import GazeWorker
