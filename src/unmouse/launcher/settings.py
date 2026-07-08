@@ -10,24 +10,16 @@ from pathlib import Path
 from unmouse.config import GazeMode, Settings
 from unmouse.launcher.api_helpers import action
 from unmouse.persistence import (
-    _read_file,
-    _write_file,
+    LauncherFlags,
+    load_launcher_flags,
     load_persisted_settings,
+    save_launcher_flags,
     save_persisted_settings,
     settings_file_path,
 )
 
 PROFILE_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 RESERVED_PROFILE_NAMES = frozenset({".", ".."})
-
-
-@dataclass
-class LauncherFlags:
-    first_run_complete: bool = False
-
-    @classmethod
-    def from_dict(cls, data: dict[str, object]) -> LauncherFlags:
-        return cls(first_run_complete=bool(data.get("first_run_complete", False)))
 
 
 @dataclass(frozen=True)
@@ -48,18 +40,6 @@ class PanelSettingsSnapshot:
 
 def profiles_root(settings: Settings) -> Path:
     return settings.app_data_dir / "profiles"
-
-
-def load_launcher_flags(settings: Settings) -> LauncherFlags:
-    return LauncherFlags.from_dict(_read_file(settings_file_path(settings)))
-
-
-def save_launcher_flags(settings: Settings, flags: LauncherFlags) -> Path:
-    path = settings_file_path(settings)
-    merged = _read_file(path)
-    merged["first_run_complete"] = flags.first_run_complete
-    _write_file(path, merged)
-    return path
 
 
 def get_panel_settings(settings: Settings) -> dict[str, object]:

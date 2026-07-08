@@ -65,7 +65,7 @@ class OffsetWizardOutcome:
     mean_error_px: float = 0.0
 
 
-class PolynomialWizardRunner(StareCalibrationRunner):
+class PolynomialWizardRunner:
     def __init__(
         self,
         settings: Settings,
@@ -82,32 +82,51 @@ class PolynomialWizardRunner(StareCalibrationRunner):
         if len(resolved) != NUM_POLY_TARGETS:
             msg = f"expected {NUM_POLY_TARGETS} calibration targets"
             raise ValueError(msg)
-        super().__init__(
+        self._max_residual_px = max_residual_px or settings.calibration_max_residual_px
+        self._points: list[PointPair] = []
+        self._runner = StareCalibrationRunner(
             targets=resolved,
             point_duration_s=settings.calibration_point_duration_s,
             discard_s=settings.calibration_discard_s,
+            on_point_complete=self._record_point,
+            evaluate=self._evaluate,
         )
-        self._max_residual_px = max_residual_px or settings.calibration_max_residual_px
-        self._points: list[PointPair] = []
+
+    @property
+    def done(self) -> bool:
+        return self._runner.done
+
+    @property
+    def current_index(self) -> int:
+        return self._runner.current_index
 
     @property
     def outcome(self) -> PolynomialWizardOutcome | None:
-        return self._outcome  # type: ignore[return-value]
+        value = self._runner.outcome
+        return value if isinstance(value, PolynomialWizardOutcome) else None
+
+    def begin_point(self, timestamp_s: float) -> WizardTarget:
+        return self._runner.begin_point(timestamp_s)
+
+    def add_sample(self, sample: GazeSample) -> bool:
+        return self._runner.add_sample(sample)
 
     def finish_from_pairs(self, pairs: Sequence[PointPair]) -> PolynomialWizardOutcome:
         if len(pairs) != NUM_POLY_TARGETS:
             msg = f"expected {NUM_POLY_TARGETS} point pairs"
             raise ValueError(msg)
         self._points = list(pairs)
-        self._index = len(self._targets)
-        self._outcome = self.evaluate()
-        return self._outcome
+        self._runner._index = len(self._runner._targets)
+        self._runner._outcome = self._evaluate()
+        outcome = self.outcome
+        assert outcome is not None
+        return outcome
 
-    def on_point_complete(self, samples: Sequence[GazeSample], target: WizardTarget) -> None:
+    def _record_point(self, samples: Sequence[GazeSample], target: WizardTarget) -> None:
         raw_x, raw_y = geometric_mean_gaze(samples)
         self._points.append((raw_x, raw_y, target.x, target.y))
 
-    def evaluate(self) -> PolynomialWizardOutcome:
+    def _evaluate(self) -> PolynomialWizardOutcome:
         model = fit_calibration(self._points)
         residual = mean_residual_error(self._points, model)
         if residual > self._max_residual_px:
@@ -130,7 +149,7 @@ class PolynomialWizardRunner(StareCalibrationRunner):
         )
 
 
-class OffsetWizardRunner(StareCalibrationRunner):
+class OffsetWizardRunner:
     def __init__(
         self,
         settings: Settings,
@@ -145,18 +164,35 @@ class OffsetWizardRunner(StareCalibrationRunner):
         if len(resolved) != NUM_OFFSET_TARGETS:
             msg = f"expected {NUM_OFFSET_TARGETS} calibration targets"
             raise ValueError(msg)
-        super().__init__(
-            targets=resolved,
-            point_duration_s=settings.calibration_point_duration_s,
-            discard_s=settings.calibration_discard_s,
-        )
         self._settings = settings
         self._calibration = calibration
         self._measurements: list[tuple[float, float]] = []
+        self._runner = StareCalibrationRunner(
+            targets=resolved,
+            point_duration_s=settings.calibration_point_duration_s,
+            discard_s=settings.calibration_discard_s,
+            on_point_complete=self._record_measurement,
+            evaluate=self._evaluate,
+        )
+
+    @property
+    def done(self) -> bool:
+        return self._runner.done
+
+    @property
+    def current_index(self) -> int:
+        return self._runner.current_index
 
     @property
     def outcome(self) -> OffsetWizardOutcome | None:
-        return self._outcome  # type: ignore[return-value]
+        value = self._runner.outcome
+        return value if isinstance(value, OffsetWizardOutcome) else None
+
+    def begin_point(self, timestamp_s: float) -> WizardTarget:
+        return self._runner.begin_point(timestamp_s)
+
+    def add_sample(self, sample: GazeSample) -> bool:
+        return self._runner.add_sample(sample)
 
     def finish_from_measurements(
         self,
@@ -166,15 +202,17 @@ class OffsetWizardRunner(StareCalibrationRunner):
             msg = f"expected {NUM_OFFSET_TARGETS} gaze measurements"
             raise ValueError(msg)
         self._measurements = list(measurements)
-        self._index = len(self._targets)
-        self._outcome = self.evaluate()
-        return self._outcome
+        self._runner._index = len(self._runner._targets)
+        self._runner._outcome = self._evaluate()
+        outcome = self.outcome
+        assert outcome is not None
+        return outcome
 
-    def on_point_complete(self, samples: Sequence[GazeSample], _target: WizardTarget) -> None:
+    def _record_measurement(self, samples: Sequence[GazeSample], _target: WizardTarget) -> None:
         measured_x, measured_y = calibrated_mean_gaze(samples, self._calibration)
         self._measurements.append((measured_x, measured_y))
 
-    def evaluate(self) -> OffsetWizardOutcome:
+    def _evaluate(self) -> OffsetWizardOutcome:
         profile = build_profile_from_measurements(
             self._settings.screen_width,
             self._settings.screen_height,
@@ -185,7 +223,7 @@ class OffsetWizardRunner(StareCalibrationRunner):
                 (target.x - measured_x) ** 2 + (target.y - measured_y) ** 2
             ) ** 0.5
             for target, (measured_x, measured_y) in zip(
-                self._targets,
+                self._runner._targets,
                 self._measurements,
                 strict=True,
             )
@@ -249,6 +287,35 @@ def calibrated_mean_gaze(
     return geometric_mean_gaze(calibrated)
 
 
+def _run_stare_calibration(
+    settings: Settings,
+    runner: StareCalibrationRunner,
+    *,
+    target_count: int,
+    incomplete_message: str,
+    tracker: Any = None,
+    frame_source: FrameSource | None = None,
+    overlay: WizardOverlayBackend | None = None,
+    sleep: Callable[[float], None] | None = None,
+    clock: Callable[[], float] | None = None,
+    prefer_win32_overlay: bool = True,
+) -> object:
+    import time
+
+    return run_stare_wizard(
+        settings,
+        runner,
+        target_label=lambda target: f"Look here ({target.index + 1}/{target_count})",
+        tracker=tracker,
+        frame_source=frame_source,
+        overlay=overlay,
+        sleep=sleep or time.sleep,
+        clock=clock or time.perf_counter,
+        prefer_win32_overlay=prefer_win32_overlay,
+        incomplete_message=incomplete_message,
+    )
+
+
 def run_polynomial_wizard(
     settings: Settings,
     *,
@@ -260,18 +327,16 @@ def run_polynomial_wizard(
     max_residual_px: float | None = None,
     prefer_win32_overlay: bool = True,
 ) -> PolynomialWizardOutcome:
-    import time
-
-    runner = PolynomialWizardRunner(settings, max_residual_px=max_residual_px)
-    outcome = run_stare_wizard(
+    wizard = PolynomialWizardRunner(settings, max_residual_px=max_residual_px)
+    outcome = _run_stare_calibration(
         settings,
-        runner,
-        target_label=lambda target: f"Look here ({target.index + 1}/{NUM_POLY_TARGETS})",
+        wizard._runner,
+        target_count=NUM_POLY_TARGETS,
         tracker=tracker,
         frame_source=frame_source,
         overlay=overlay,
-        sleep=sleep or time.sleep,
-        clock=clock or time.perf_counter,
+        sleep=sleep,
+        clock=clock,
         prefer_win32_overlay=prefer_win32_overlay,
         incomplete_message="wizard ended before collecting all calibration points",
     )
@@ -292,8 +357,6 @@ def run_offset_wizard(
     clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
 ) -> OffsetWizardOutcome:
-    import time
-
     missing = polynomial_prerequisite_message(settings)
     if missing is not None:
         return OffsetWizardOutcome(success=False, message=missing)
@@ -304,16 +367,16 @@ def run_offset_wizard(
             message="Complete 9-point polynomial calibration before offset calibration.",
         )
 
-    runner = OffsetWizardRunner(settings, model)
-    outcome = run_stare_wizard(
+    wizard = OffsetWizardRunner(settings, model)
+    outcome = _run_stare_calibration(
         settings,
-        runner,
-        target_label=lambda target: f"Look here ({target.index + 1}/{NUM_OFFSET_TARGETS})",
+        wizard._runner,
+        target_count=NUM_OFFSET_TARGETS,
         tracker=tracker,
         frame_source=frame_source,
         overlay=overlay,
-        sleep=sleep or time.sleep,
-        clock=clock or time.perf_counter,
+        sleep=sleep,
+        clock=clock,
         prefer_win32_overlay=prefer_win32_overlay,
         incomplete_message="wizard ended before collecting all offset calibration points",
     )

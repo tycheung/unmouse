@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar, cast
+from typing import Any, Protocol, cast
 
 import numpy as np
 
@@ -52,9 +52,6 @@ class NoopWizardOverlayBackend:
             self.shown.clear()
 
 
-OutcomeT = TypeVar("OutcomeT")
-
-
 class StareCalibrationRunner:
     def __init__(
         self,
@@ -62,6 +59,8 @@ class StareCalibrationRunner:
         targets: Sequence[Any],
         point_duration_s: float,
         discard_s: float,
+        on_point_complete: Callable[[Sequence[GazeSample], WizardTarget], None],
+        evaluate: Callable[[], object],
     ) -> None:
         if not targets:
             msg = "at least one calibration target is required"
@@ -69,6 +68,8 @@ class StareCalibrationRunner:
         self._targets = tuple(targets)
         self._point_duration_s = point_duration_s
         self._discard_s = discard_s
+        self._on_point_complete = on_point_complete
+        self._evaluate = evaluate
         self._index = 0
         self._samples: list[GazeSample] = []
         self._point_started_s: float | None = None
@@ -123,17 +124,11 @@ class StareCalibrationRunner:
             discard_s=self._discard_s,
             point_duration_s=self._point_duration_s,
         )
-        self.on_point_complete(filtered, self._targets[self._index])
+        self._on_point_complete(filtered, cast(WizardTarget, self._targets[self._index]))
         self._index += 1
         self._point_started_s = None
         if self._index >= len(self._targets):
-            self._outcome = self.evaluate()
-
-    def on_point_complete(self, samples: Sequence[GazeSample], target: WizardTarget) -> None:
-        raise NotImplementedError
-
-    def evaluate(self) -> object:
-        raise NotImplementedError
+            self._outcome = self._evaluate()
 
 
 def axis_positions(span: float, inset: float) -> tuple[float, float, float]:

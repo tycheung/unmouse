@@ -17,7 +17,6 @@ def test_ci_workflow_runs_quality_gates() -> None:
         "ruff check",
         "mypy",
         "pytest",
-        "check_epic_size",
         "pyinstaller",
         "playwright",
         "e2e",

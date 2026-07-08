@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from unmouse.config import GazeMode, Settings, clear_settings_cache
@@ -10,30 +11,20 @@ from unmouse.config import GazeMode, Settings, clear_settings_cache
 SETTINGS_FILENAME = "settings.json"
 
 
+@dataclass
+class LauncherFlags:
+    first_run_complete: bool = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> LauncherFlags:
+        return cls(first_run_complete=bool(data.get("first_run_complete", False)))
+
+
 def settings_file_path(settings: Settings) -> Path:
     return settings.app_data_dir / SETTINGS_FILENAME
 
 
-def load_persisted_settings() -> Settings:
-    base = Settings()
-    path = settings_file_path(base)
-    if not path.is_file():
-        return base
-    data = _read_file(path)
-    return _settings_from_dict(base, data)
-
-
-def save_persisted_settings(settings: Settings) -> Path:
-    path = settings_file_path(settings)
-    merged = _read_file(path)
-    merged.update(_settings_to_dict(settings))
-    _write_file(path, merged)
-    settings.profile_dir.mkdir(parents=True, exist_ok=True)
-    clear_settings_cache()
-    return path
-
-
-def _read_file(path: Path) -> dict[str, object]:
+def read_settings_file(path: Path) -> dict[str, object]:
     if not path.is_file():
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -43,9 +34,40 @@ def _read_file(path: Path) -> dict[str, object]:
     return data
 
 
-def _write_file(path: Path, data: dict[str, object]) -> None:
+def write_settings_file(path: Path, data: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def load_launcher_flags(settings: Settings) -> LauncherFlags:
+    return LauncherFlags.from_dict(read_settings_file(settings_file_path(settings)))
+
+
+def save_launcher_flags(settings: Settings, flags: LauncherFlags) -> Path:
+    path = settings_file_path(settings)
+    merged = read_settings_file(path)
+    merged["first_run_complete"] = flags.first_run_complete
+    write_settings_file(path, merged)
+    return path
+
+
+def load_persisted_settings() -> Settings:
+    base = Settings()
+    path = settings_file_path(base)
+    if not path.is_file():
+        return base
+    data = read_settings_file(path)
+    return _settings_from_dict(base, data)
+
+
+def save_persisted_settings(settings: Settings) -> Path:
+    path = settings_file_path(settings)
+    merged = read_settings_file(path)
+    merged.update(_settings_to_dict(settings))
+    write_settings_file(path, merged)
+    settings.profile_dir.mkdir(parents=True, exist_ok=True)
+    clear_settings_cache()
+    return path
 
 
 def _settings_to_dict(settings: Settings) -> dict[str, object]:
