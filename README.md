@@ -80,8 +80,8 @@ Engine (main.py)
 
 Backends
   └─ Core backends are required: eyeGestures (gaze), MediaPipe (hands), PyAutoGUI (pointer)
-  └─ Windows-only enhancements degrade gracefully: uiautomation, pystray, Tk/Win32 overlays
-  └─ Unit tests inject fakes explicitly; no-op/null doubles live in the test suite
+  └─ Windows-only enhancements degrade to no-op fallbacks off Windows: uiautomation, pystray, Tk/Win32 overlays
+  └─ Test-only doubles live in tests/fakes and are injected explicitly
 ```
 
 ## Project layout

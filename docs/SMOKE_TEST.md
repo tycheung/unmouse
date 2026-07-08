@@ -29,6 +29,7 @@ Run on a **Windows 10/11** machine with a webcam. Prefer a second pass on a clea
 ## Settings & profiles
 
 - [ ] Open Settings, adjust calibration points / fixation threshold / snap radius, Save
+- [ ] Saving while tracking restarts the engine so new settings apply
 - [ ] Create, rename, activate, and delete a test profile
 - [ ] Gaze mode toggle persists (`cursor_follow` vs `gaze_only`)
 
