@@ -8,6 +8,17 @@ from unmouse.utils.json_io import read_json_object_or_empty, write_json_object
 
 SETTINGS_FILENAME = "settings.json"
 
+PERSISTED_SETTING_FIELDS = (
+    "profile_name",
+    "kalman_measurement_noise",
+    "saccade_threshold_px",
+    "snap_radius_px",
+    "scroll_speed_multiplier",
+    "camera_index",
+    "gaze_mode",
+    "pause_hotkey",
+)
+
 
 @dataclass
 class LauncherFlags:
@@ -62,32 +73,16 @@ def save_persisted_settings(settings: Settings) -> Path:
 
 
 def _settings_to_dict(settings: Settings) -> dict[str, object]:
-    return {
-        "profile_name": settings.profile_name,
-        "kalman_measurement_noise": settings.kalman_measurement_noise,
-        "saccade_threshold_px": settings.saccade_threshold_px,
-        "snap_radius_px": settings.snap_radius_px,
-        "scroll_speed_multiplier": settings.scroll_speed_multiplier,
-        "camera_index": settings.camera_index,
-        "gaze_mode": settings.gaze_mode.value,
-        "pause_hotkey": settings.pause_hotkey,
-    }
+    data: dict[str, object] = {}
+    for field in PERSISTED_SETTING_FIELDS:
+        value = getattr(settings, field)
+        data[field] = value.value if isinstance(value, GazeMode) else value
+    return data
 
 
 def _settings_from_dict(base: Settings, data: dict[str, object]) -> Settings:
     payload = base.model_dump()
-    for key in (
-        "profile_name",
-        "kalman_measurement_noise",
-        "saccade_threshold_px",
-        "snap_radius_px",
-        "scroll_speed_multiplier",
-        "camera_index",
-    ):
-        if key in data:
-            payload[key] = data[key]
-    if "gaze_mode" in data:
-        payload["gaze_mode"] = GazeMode(str(data["gaze_mode"]))
-    if "pause_hotkey" in data:
-        payload["pause_hotkey"] = str(data["pause_hotkey"])
+    for field in PERSISTED_SETTING_FIELDS:
+        if field in data:
+            payload[field] = data[field]
     return Settings.model_validate(payload)

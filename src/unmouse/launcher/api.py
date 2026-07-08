@@ -58,6 +58,15 @@ class PanelApi:
     def _set_status_message(self, message: str) -> None:
         self._state.status = PanelStatus(message=message)
 
+    def _forward_with_status(
+        self,
+        result: dict[str, object],
+        default_message: str,
+    ) -> dict[str, object]:
+        if result.get("ok"):
+            self._set_status_message(str(result.get("message", default_message)))
+        return result
+
     def _show_view(self, view: PanelView) -> dict[str, str]:
         self._enrollment_service.close()
         self._state.view = view
@@ -88,16 +97,13 @@ class PanelApi:
         return self._onboarding.skip_current_step(confirmed=confirmed)
 
     def onboarding_check_camera(self) -> dict[str, object]:
-        result = self._onboarding.check_camera()
-        if result.get("ok"):
-            self._set_status_message(str(result.get("message", "Camera OK")))
-        return result
+        return self._forward_with_status(self._onboarding.check_camera(), "Camera OK")
 
     def onboarding_run_polynomial(self) -> dict[str, object]:
-        result = self._onboarding.run_polynomial_step()
-        if result.get("ok"):
-            self._set_status_message(str(result.get("message", "Calibration saved")))
-        return result
+        return self._forward_with_status(
+            self._onboarding.run_polynomial_step(),
+            "Calibration saved",
+        )
 
     def onboarding_run_offset(self) -> dict[str, object]:
         return self._onboarding.run_offset_step()

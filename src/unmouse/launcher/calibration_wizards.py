@@ -41,13 +41,6 @@ DEFAULT_TARGET_INSET = 0.05
 
 
 @dataclass(frozen=True)
-class CalibrationTarget:
-    index: int
-    x: float
-    y: float
-
-
-@dataclass(frozen=True)
 class PolynomialWizardOutcome:
     success: bool
     model: CalibrationModel | None
@@ -97,7 +90,7 @@ def polynomial_outcome_from_pairs(
 def offset_outcome_from_measurements(
     settings: Settings,
     *,
-    targets: Sequence[CalibrationTarget],
+    targets: Sequence[WizardTarget],
     measurements: Sequence[tuple[float, float]],
 ) -> OffsetWizardOutcome:
     if len(measurements) != NUM_OFFSET_TARGETS:
@@ -122,23 +115,34 @@ def offset_outcome_from_measurements(
     )
 
 
+def _create_stare_runner(
+    settings: Settings,
+    targets: Sequence[WizardTarget],
+    *,
+    expected_count: int,
+    on_point_complete: Callable[[Sequence[GazeSample], WizardTarget], None],
+    evaluate: Callable[[], object],
+) -> StareCalibrationRunner:
+    resolved = tuple(targets)
+    if len(resolved) != expected_count:
+        msg = f"expected {expected_count} calibration targets"
+        raise ValueError(msg)
+    return StareCalibrationRunner(
+        targets=resolved,
+        point_duration_s=settings.calibration_point_duration_s,
+        discard_s=settings.calibration_discard_s,
+        on_point_complete=on_point_complete,
+        evaluate=evaluate,
+    )
+
+
 def create_polynomial_stare_runner(
     settings: Settings,
     *,
-    targets: Sequence[CalibrationTarget] | None = None,
+    targets: Sequence[WizardTarget] | None = None,
     max_residual_px: float | None = None,
 ) -> StareCalibrationRunner:
-    resolved = tuple(
-        targets
-        or build_polynomial_targets(
-            settings.screen_width,
-            settings.screen_height,
-        ),
-    )
-    if len(resolved) != NUM_POLY_TARGETS:
-        msg = f"expected {NUM_POLY_TARGETS} calibration targets"
-        raise ValueError(msg)
-
+    resolved = targets or build_polynomial_targets(settings.screen_width, settings.screen_height)
     max_residual = max_residual_px or settings.calibration_max_residual_px
     points: list[PointPair] = []
 
@@ -146,15 +150,12 @@ def create_polynomial_stare_runner(
         raw_x, raw_y = geometric_mean_gaze(samples)
         points.append((raw_x, raw_y, target.x, target.y))
 
-    def evaluate() -> PolynomialWizardOutcome:
-        return polynomial_outcome_from_pairs(points, max_residual_px=max_residual)
-
-    return StareCalibrationRunner(
-        targets=resolved,
-        point_duration_s=settings.calibration_point_duration_s,
-        discard_s=settings.calibration_discard_s,
+    return _create_stare_runner(
+        settings,
+        resolved,
+        expected_count=NUM_POLY_TARGETS,
         on_point_complete=on_point_complete,
-        evaluate=evaluate,
+        evaluate=lambda: polynomial_outcome_from_pairs(points, max_residual_px=max_residual),
     )
 
 
@@ -162,35 +163,24 @@ def create_offset_stare_runner(
     settings: Settings,
     calibration: CalibrationModel,
     *,
-    targets: Sequence[CalibrationTarget] | None = None,
+    targets: Sequence[WizardTarget] | None = None,
 ) -> StareCalibrationRunner:
-    resolved = tuple(
-        targets
-        or build_offset_targets(settings.screen_width, settings.screen_height),
-    )
-    if len(resolved) != NUM_OFFSET_TARGETS:
-        msg = f"expected {NUM_OFFSET_TARGETS} calibration targets"
-        raise ValueError(msg)
-
+    resolved = targets or build_offset_targets(settings.screen_width, settings.screen_height)
     measurements: list[tuple[float, float]] = []
 
     def on_point_complete(samples: Sequence[GazeSample], _target: WizardTarget) -> None:
-        measured_x, measured_y = calibrated_mean_gaze(samples, calibration)
-        measurements.append((measured_x, measured_y))
+        measurements.append(calibrated_mean_gaze(samples, calibration))
 
-    def evaluate() -> OffsetWizardOutcome:
-        return offset_outcome_from_measurements(
+    return _create_stare_runner(
+        settings,
+        resolved,
+        expected_count=NUM_OFFSET_TARGETS,
+        on_point_complete=on_point_complete,
+        evaluate=lambda: offset_outcome_from_measurements(
             settings,
             targets=resolved,
             measurements=measurements,
-        )
-
-    return StareCalibrationRunner(
-        targets=resolved,
-        point_duration_s=settings.calibration_point_duration_s,
-        discard_s=settings.calibration_discard_s,
-        on_point_complete=on_point_complete,
-        evaluate=evaluate,
+        ),
     )
 
 
@@ -199,7 +189,7 @@ def build_polynomial_targets(
     screen_height: float,
     *,
     inset: float = DEFAULT_TARGET_INSET,
-) -> tuple[CalibrationTarget, ...]:
+) -> tuple[WizardTarget, ...]:
     positions = build_square_grid_positions(
         screen_width,
         screen_height,
@@ -207,7 +197,7 @@ def build_polynomial_targets(
         inset=inset,
     )
     return tuple(
-        CalibrationTarget(index=index, x=x, y=y)
+        WizardTarget(index=index, x=x, y=y)
         for index, (x, y) in enumerate(positions)
     )
 
@@ -215,10 +205,10 @@ def build_polynomial_targets(
 def build_offset_targets(
     screen_width: float,
     screen_height: float,
-) -> tuple[CalibrationTarget, ...]:
+) -> tuple[WizardTarget, ...]:
     positions = build_calibration_targets(screen_width, screen_height)
     return tuple(
-        CalibrationTarget(index=index, x=x, y=y)
+        WizardTarget(index=index, x=x, y=y)
         for index, (x, y) in enumerate(positions)
     )
 

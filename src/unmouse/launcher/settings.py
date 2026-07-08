@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import shutil
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -43,20 +44,9 @@ def get_panel_settings(settings: Settings) -> dict[str, object]:
 
 def update_panel_settings(settings: Settings, updates: dict[str, object]) -> dict[str, object]:
     current = _current_settings(settings).model_copy(deep=True)
-    if "kalman_measurement_noise" in updates:
-        current.kalman_measurement_noise = _as_float(updates["kalman_measurement_noise"])
-    if "saccade_threshold_px" in updates:
-        current.saccade_threshold_px = _as_float(updates["saccade_threshold_px"])
-    if "snap_radius_px" in updates:
-        current.snap_radius_px = _as_float(updates["snap_radius_px"])
-    if "scroll_speed_multiplier" in updates:
-        current.scroll_speed_multiplier = _as_float(updates["scroll_speed_multiplier"])
-    if "camera_index" in updates:
-        current.camera_index = _as_int(updates["camera_index"])
-    if "gaze_mode" in updates:
-        current.gaze_mode = GazeMode(str(updates["gaze_mode"]))
-    if "pause_hotkey" in updates:
-        current.pause_hotkey = str(updates["pause_hotkey"]).strip().lower()
+    for field, coerce in _PANEL_FIELD_COERCERS.items():
+        if field in updates:
+            setattr(current, field, coerce(updates[field]))
     save_persisted_settings(current)
     return get_panel_settings(current)
 
@@ -209,3 +199,14 @@ def _as_int(value: object) -> int:
     if isinstance(value, float):
         return int(value)
     return int(str(value))
+
+
+_PANEL_FIELD_COERCERS: dict[str, Callable[[object], object]] = {
+    "kalman_measurement_noise": _as_float,
+    "saccade_threshold_px": _as_float,
+    "snap_radius_px": _as_float,
+    "scroll_speed_multiplier": _as_float,
+    "camera_index": _as_int,
+    "gaze_mode": lambda value: GazeMode(str(value)),
+    "pause_hotkey": lambda value: str(value).strip().lower(),
+}

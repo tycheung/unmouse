@@ -20,7 +20,8 @@ class GazeSample:
     confidence: float = 1.0
 
 
-class WizardTarget(Protocol):
+@dataclass(frozen=True)
+class WizardTarget:
     index: int
     x: float
     y: float
