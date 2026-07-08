@@ -18,8 +18,6 @@ class ActionDriver(Protocol):
 
 @dataclass
 class FakeActionDriver:
-    """In-memory action driver for tests and offline development."""
-
     moves: list[tuple[int, int]] = field(default_factory=list)
     clicks: list[tuple[int, int, ClickButton]] = field(default_factory=list)
     scrolls: list[tuple[int, int, int]] = field(default_factory=list)
@@ -43,8 +41,6 @@ class FakeActionDriver:
 
 
 class PyAutoGUIActionDriver:
-    """PyAutoGUI-backed driver with failsafe disabled by default."""
-
     def __init__(self, *, failsafe: bool = False, pause: float = 0.0) -> None:
         import pyautogui  # type: ignore[import-untyped]
 

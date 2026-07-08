@@ -82,8 +82,6 @@ class FakeHotkeyListener:
 
 
 class EngineRuntimeController:
-    """Poll persisted flags and manage the pause hotkey in the engine."""
-
     def __init__(
         self,
         settings: Settings,

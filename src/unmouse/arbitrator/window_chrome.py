@@ -49,8 +49,6 @@ class MockWindowChromeReader:
 
 
 class Win32WindowChromeReader:
-    """Resolve foreground window bounds and derive title-bar button geometry."""
-
     def __init__(
         self,
         *,
@@ -72,8 +70,6 @@ class Win32WindowChromeReader:
 
 
 class WindowChromeSnapProvider(CachedSnapProvider):
-    """SnapProvider for minimize, maximize, and close controls."""
-
     def __init__(
         self,
         reader: WindowChromeReader | None = None,
@@ -96,7 +92,6 @@ def build_heuristic_chrome_buttons(
     button_width: float = DEFAULT_CHROME_BUTTON_WIDTH,
     title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
 ) -> tuple[ChromeButton, ...]:
-    """Build right-aligned minimize/maximize/close boxes for a window rect."""
     buttons: list[ChromeButton] = []
     for index, role in enumerate(("close", "maximize", "minimize")):
         x = window.right - (index + 1) * button_width
@@ -171,7 +166,6 @@ def create_snap_orchestrator(
     chrome_provider: SnapProvider | None = None,
     extra_providers: tuple[SnapProvider, ...] = (),
 ) -> CompositeSnapOrchestrator:
-    """Compose chrome-first snap providers for the action arbitrator."""
     providers: list[SnapProvider] = []
     if chrome_provider is not None:
         providers.append(chrome_provider)

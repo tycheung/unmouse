@@ -44,8 +44,6 @@ class SnapProvider(Protocol):
 
 
 class CachedSnapProvider:
-    """SnapProvider base that refreshes targets on a time-based cache interval."""
-
     def __init__(self, *, cache_interval_s: float) -> None:
         self._cache_interval_s = cache_interval_s
         self._cached_targets: tuple[SnapTarget, ...] = ()
@@ -84,8 +82,6 @@ class StaticSnapProvider:
 
 
 class CompositeSnapOrchestrator:
-    """Merge targets from multiple snap providers."""
-
     def __init__(self, providers: Sequence[SnapProvider]) -> None:
         self._providers = tuple(providers)
 
@@ -97,8 +93,6 @@ class CompositeSnapOrchestrator:
 
 
 class SnapEngine:
-    """Apply nearest-center snapping with sticky release hysteresis."""
-
     def __init__(
         self,
         *,
@@ -178,7 +172,6 @@ def nearest_snap_target(
     targets: Sequence[SnapTarget],
     snap_radius_px: float,
 ) -> tuple[SnapTarget, float] | None:
-    """Return the nearest target center within the snap radius."""
     best: SnapTarget | None = None
     best_distance = float("inf")
     for target in targets:

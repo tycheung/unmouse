@@ -64,7 +64,6 @@ def run_engine_cli() -> None:
 
 
 def run() -> None:
-    """Default user entry: open the control panel launcher."""
     from unmouse.launcher.panel import run as run_panel
 
     run_panel()

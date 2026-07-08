@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     import tkinter as tk
 
-    from unmouse.overlay.indicator import IndicatorBackend, IndicatorState
+    from unmouse.overlay.indicator import IndicatorState
 
 TRANSPARENT_CHROMA = "#FF00FF"
 MIN_OVERLAY_FPS = 30.0
@@ -155,8 +155,6 @@ class TkWin32IndicatorBackend:
         root.after(int(1000 / MIN_OVERLAY_FPS), lambda: self._schedule_poll(root, canvas))
 
     def _drain_commands(self, root: tk.Tk, canvas: tk.Canvas) -> None:
-        from unmouse.overlay.indicator import IndicatorState
-
         while True:
             try:
                 state = self._commands.get_nowait()

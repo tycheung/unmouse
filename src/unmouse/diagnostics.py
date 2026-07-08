@@ -70,8 +70,6 @@ def save_diagnostics_snapshot(settings: Settings, snapshot: DiagnosticsSnapshot)
 
 
 class DiagnosticsService:
-    """Track broker FPS and publish debug snapshots when enabled."""
-
     def __init__(
         self,
         state: SystemState,

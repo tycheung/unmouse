@@ -28,8 +28,6 @@ INDEX_TIP = 8
 
 
 class GestureWorker:
-    """Consume broker frames, classify gestures, and drive click/scroll FSMs."""
-
     def __init__(
         self,
         state: SystemState,

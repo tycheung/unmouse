@@ -18,7 +18,6 @@ def log_file_path(settings: Settings) -> Path:
 
 
 def setup_logging(settings: Settings, *, name: str = "unmouse") -> logging.Logger:
-    """Configure root logging once with a rotating file under app data."""
     logs_dir = settings.logs_dir
     logs_dir.mkdir(parents=True, exist_ok=True)
     level = logging.DEBUG if settings.debug else logging.INFO

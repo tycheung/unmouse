@@ -44,14 +44,14 @@ User data is stored under `%APPDATA%/unmouse/` (profiles, calibration, logs, set
 ```powershell
 poetry run ruff check src tests
 poetry run mypy src
-poetry run pytest
+poetry run pytest --ignore=tests/e2e
 poetry run python scripts/check_epic_size.py
 .\scripts\run_e2e.ps1          # Playwright panel + launch smoke (after playwright install)
 ```
 
 CI runs the same checks on `windows-latest`, a PyInstaller smoke build, and Playwright E2E tests (see `.github/workflows/ci.yml`).
 
-Coverage floor is **85%** (`pyproject.toml` / pytest addopts).
+Coverage floor is **85%** (`pyproject.toml` / pytest addopts). Unit and meta tests use `--ignore=tests/e2e`; E2E runs with `--no-cov`.
 
 ## Build release executable
 
@@ -71,37 +71,40 @@ poetry run python scripts/generate_icon.py
 
 ```
 Control panel (pywebview + Alpine.js)
-  └─ PanelApi → engine / settings / enrollment services
+  └─ PanelApi → engine / enrollment services, settings.py
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
   └─ Video broker, gaze pipeline, gesture FSMs, arbitrator, indicator overlay
 
 Shared
-  └─ persistence.py   settings.json load/save (launcher + engine)
-  └─ runtime.py       pause / gaze-mode flags
-  └─ broker/camera.py OpenCV camera helper
+  └─ persistence.py      settings.json load/save (launcher + engine)
+  └─ runtime.py          pause / gaze-mode flags
+  └─ broker/camera.py    OpenCV camera helper
+  └─ overlay/tk_overlay  Tk thread + Win32 click-through (calibration + indicator)
 ```
 
 ## Project layout
 
 ```
-assets/ui/          Control panel HTML/CSS/Alpine.js (+ panel.js)
-assets/gestures/    Default gesture templates
-src/unmouse/        Application package
-  main.py           Engine orchestrator and --engine CLI entry
-  persistence.py    Shared settings persistence
-  launcher/         Panel shell, onboarding, wizards, tray, services/
-  broker/           Video fan-out and camera helpers
-  gaze/             Tracking pipeline
-  gestures/         MediaPipe + MLE classifier
-  arbitrator/       Snap, actions, controller
-tests/              Unit, integration, and E2E (Playwright) tests
-  fakes/            Shared test doubles (MockFrameSource, etc.)
-unmouse.spec        PyInstaller spec
-scripts/            build_exe.ps1, run_e2e.ps1, generate_icon.py, check_epic_size.py
-docs/SMOKE_TEST.md  Manual release checklist
-docs/E2E_TEST.md    Automated Playwright + launch smoke tests
+assets/ui/              Control panel HTML/CSS/Alpine.js (+ panel.js)
+assets/gestures/        Default gesture templates
+src/unmouse/            Application package
+  main.py               Engine orchestrator and --engine CLI entry
+  persistence.py        Shared settings persistence
+  launcher/             Panel shell, calibration_wizards, onboarding, tray
+    services/           Engine and enrollment lifecycle helpers
+  overlay/              Gaze indicator + shared Tk overlay helpers
+  broker/               Video fan-out and camera helpers
+  gaze/                 Tracking pipeline
+  gestures/             MediaPipe + MLE classifier
+  arbitrator/           Snap, actions, controller
+tests/                  Unit, integration, and E2E (Playwright) tests
+  fakes/                Shared test doubles (MockFrameSource, etc.)
+unmouse.spec            PyInstaller spec
+scripts/                build_exe.ps1, run_e2e.ps1, generate_icon.py, check_epic_size.py
+docs/SMOKE_TEST.md      Manual release checklist
+docs/E2E_TEST.md        Automated Playwright + launch smoke tests
 ```
 
 ## Release testing

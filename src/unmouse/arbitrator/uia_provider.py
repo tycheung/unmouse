@@ -52,8 +52,6 @@ class MockUiaTreeReader:
 
 
 class UiaAutomationTreeReader:
-    """Enumerate focusable controls from the foreground window via uiautomation."""
-
     def __init__(self, *, max_depth: int = 8) -> None:
         self._max_depth = max_depth
 
@@ -76,8 +74,6 @@ class UiaAutomationTreeReader:
 
 
 class UiaSnapProvider(CachedSnapProvider):
-    """SnapProvider that caches UIA focusable control bounds."""
-
     def __init__(
         self,
         reader: UiaTreeReader | None = None,

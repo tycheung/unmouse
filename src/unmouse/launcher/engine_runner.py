@@ -23,7 +23,6 @@ class EngineProcessStatus:
 
 
 def build_engine_command(*, executable: str | None = None) -> list[str]:
-    """Return argv for spawning the tracking engine entry point."""
     exe = executable or sys.executable
     if getattr(sys, "frozen", False):
         return [exe, "--engine"]
@@ -31,8 +30,6 @@ def build_engine_command(*, executable: str | None = None) -> list[str]:
 
 
 class EngineRunner:
-    """Spawn and stop the `--engine` subprocess from the launcher."""
-
     def __init__(
         self,
         *,
@@ -129,8 +126,6 @@ class WatchdogEvent:
 
 
 class EngineWatchdog:
-    """Poll the engine subprocess and restart or notify when it exits unexpectedly."""
-
     def __init__(
         self,
         runner: EngineRunner,

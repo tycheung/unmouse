@@ -23,8 +23,6 @@ CONTROLLER_TARGET_HZ = 30.0
 
 
 class ActionController:
-    """Apply snapping and OS actions from shared runtime state."""
-
     def __init__(
         self,
         state: SystemState,
@@ -77,7 +75,6 @@ class ActionController:
             self._thread.join(timeout=timeout)
 
     def tick(self, *, timestamp_s: float | None = None) -> tuple[float, float]:
-        """Run one controller iteration and return post-snap gaze coordinates."""
         now = timestamp_s if timestamp_s is not None else time.perf_counter()
         gaze = self._state.get_gaze()
         targets = self._snap_orchestrator.list_targets()
