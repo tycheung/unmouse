@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Literal
 
 from unmouse.config import GazeMode, Settings
@@ -186,10 +186,9 @@ class EngineService:
         if tracking:
             resolved_runtime = runtime or load_runtime(resolved_settings)
             paused = resolved_runtime.paused
-        return PanelStatus(
+        return replace(
+            self._state.status,
             message=message,
-            fps=self._state.status.fps,
-            confidence=self._state.status.confidence,
             tracking=tracking,
             paused=paused,
             gaze_mode=resolved_settings.gaze_mode.value,

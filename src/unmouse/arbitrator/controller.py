@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
+from dataclasses import replace
 from queue import Empty
 
 from unmouse.arbitrator.actions import ActionDriver, create_action_driver
@@ -113,16 +114,7 @@ class ActionController:
 
     def _indicator_state(self) -> IndicatorState:
         styled = indicator_state_from_system(self._state, sampler=self._sampler)
-        return IndicatorState(
-            x=self._last_x,
-            y=self._last_y,
-            visible=styled.visible,
-            fill_color=styled.fill_color,
-            stroke_color=styled.stroke_color,
-            stroke_width=styled.stroke_width,
-            diameter=styled.diameter,
-            scroll_chevron=styled.scroll_chevron,
-        )
+        return replace(styled, x=self._last_x, y=self._last_y)
 
     def _run(self) -> None:
         run_at_interval(self._state.is_running, self.tick, self._interval_s)
