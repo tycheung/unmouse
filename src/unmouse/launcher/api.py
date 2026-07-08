@@ -436,22 +436,29 @@ class PanelApi:
         return True, resolved.paused
 
     def _tray_handlers(self) -> TrayHandlers:
+        settings = self._state.settings
+
+        def show_panel() -> None:
+            if self._on_show_panel is not None:
+                self._on_show_panel()
+            self.set_status("Panel restored.")
+
+        def quit_app() -> None:
+            self.shutdown()
+            if self._on_quit_app is not None:
+                self._on_quit_app()
+
         return TrayHandlers(
-            on_show=self._handle_tray_show,
-            on_stop=self._handle_tray_stop,
-            on_quit=self._handle_tray_quit,
-            on_pause_toggle=self._handle_tray_pause_toggle,
-            on_gaze_toggle=self._handle_tray_gaze_toggle,
-            pause_label=self._pause_menu_label,
-            gaze_checked=self._gaze_only_checked,
+            on_show=show_panel,
+            on_stop=self.stop_engine,
+            on_quit=quit_app,
+            on_pause_toggle=self.toggle_pause,
+            on_gaze_toggle=self.toggle_gaze_mode,
+            pause_label=lambda: (
+                "Resume Tracking" if load_runtime(settings).paused else "Pause Tracking"
+            ),
+            gaze_checked=lambda: settings.gaze_mode is GazeMode.GAZE_ONLY,
         )
-
-    def _pause_menu_label(self) -> str:
-        runtime = load_runtime(self._state.settings)
-        return "Resume Tracking" if runtime.paused else "Pause Tracking"
-
-    def _gaze_only_checked(self) -> bool:
-        return self._state.settings.gaze_mode is GazeMode.GAZE_ONLY
 
     def _refresh_tray_menu(self) -> None:
         if self._tray is not None:
@@ -461,25 +468,6 @@ class PanelApi:
         if self._tray is None:
             self._tray = create_tray_backend(self._tray_handlers(), prefer_pystray=False)
         self._tray.ensure_running()
-
-    def _handle_tray_show(self) -> None:
-        if self._on_show_panel is not None:
-            self._on_show_panel()
-        self.set_status("Panel restored.")
-
-    def _handle_tray_stop(self) -> None:
-        self.stop_engine()
-
-    def _handle_tray_pause_toggle(self) -> None:
-        self.toggle_pause()
-
-    def _handle_tray_gaze_toggle(self) -> None:
-        self.toggle_gaze_mode()
-
-    def _handle_tray_quit(self) -> None:
-        self.shutdown()
-        if self._on_quit_app is not None:
-            self._on_quit_app()
 
     def _start_watchdog(self) -> None:
         if self._watchdog is None:
