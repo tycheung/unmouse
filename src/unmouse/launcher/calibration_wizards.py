@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
 
 from unmouse.broker.video_broker import FrameSource
 from unmouse.config import Settings
@@ -26,6 +25,7 @@ from unmouse.gaze.offset_profile import (
 from unmouse.gaze.tracker import GazeTracker
 from unmouse.launcher.wizard_common import (
     GazeSample,
+    OutcomeT,
     StareCalibrationRunner,
     WizardOverlayBackend,
     WizardTarget,
@@ -124,8 +124,8 @@ def _create_stare_runner(
     *,
     expected_count: int,
     on_point_complete: Callable[[Sequence[GazeSample], WizardTarget], None],
-    evaluate: Callable[[], object],
-) -> StareCalibrationRunner:
+    evaluate: Callable[[], OutcomeT],
+) -> StareCalibrationRunner[OutcomeT]:
     resolved = tuple(targets)
     if len(resolved) != expected_count:
         msg = f"expected {expected_count} calibration targets"
@@ -144,7 +144,7 @@ def create_polynomial_stare_runner(
     *,
     targets: Sequence[WizardTarget] | None = None,
     max_residual_px: float | None = None,
-) -> StareCalibrationRunner:
+) -> StareCalibrationRunner[PolynomialWizardOutcome]:
     resolved = targets or build_polynomial_targets(settings.screen_width, settings.screen_height)
     max_residual = max_residual_px or settings.calibration_max_residual_px
     points: list[PointPair] = []
@@ -167,7 +167,7 @@ def create_offset_stare_runner(
     calibration: CalibrationModel,
     *,
     targets: Sequence[WizardTarget] | None = None,
-) -> StareCalibrationRunner:
+) -> StareCalibrationRunner[OffsetWizardOutcome]:
     resolved = targets or build_offset_targets(settings.screen_width, settings.screen_height)
     measurements: list[tuple[float, float]] = []
 
@@ -240,9 +240,9 @@ def _look_here_label(target_count: int) -> Callable[[WizardTarget], str]:
 def run_polynomial_wizard(
     settings: Settings,
     *,
-    tracker: Any = None,
-    frame_source: Any = None,
-    overlay: Any = None,
+    tracker: GazeTracker | None = None,
+    frame_source: FrameSource | None = None,
+    overlay: WizardOverlayBackend | None = None,
     sleep: Callable[[float], None] | None = None,
     clock: Callable[[], float] | None = None,
     max_residual_px: float | None = None,
@@ -260,7 +260,6 @@ def run_polynomial_wizard(
         prefer_win32_overlay=prefer_win32_overlay,
         incomplete_message="wizard ended before collecting all calibration points",
     )
-    assert isinstance(outcome, PolynomialWizardOutcome)
     if outcome.success and outcome.model is not None:
         save_calibration(calibration_path(settings), outcome.model)
     return outcome
@@ -293,7 +292,6 @@ def run_offset_wizard(
         prefer_win32_overlay=prefer_win32_overlay,
         incomplete_message="wizard ended before collecting all offset calibration points",
     )
-    assert isinstance(outcome, OffsetWizardOutcome)
     return outcome
 
 

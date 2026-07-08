@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Generic, Protocol, TypeVar
 
 import numpy as np
 
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 TARGET_DOT_DIAMETER = 24
 TARGET_DOT_COLOR = "#FFFFFF"
+
+OutcomeT = TypeVar("OutcomeT")
 
 
 @dataclass(frozen=True)
@@ -91,15 +93,15 @@ def create_calibration_overlay(*, prefer_win32: bool = True) -> WizardOverlayBac
     return NoopWizardOverlayBackend()
 
 
-class StareCalibrationRunner:
+class StareCalibrationRunner(Generic[OutcomeT]):
     def __init__(
         self,
         *,
-        targets: Sequence[Any],
+        targets: Sequence[WizardTarget],
         point_duration_s: float,
         discard_s: float,
         on_point_complete: Callable[[Sequence[GazeSample], WizardTarget], None],
-        evaluate: Callable[[], object],
+        evaluate: Callable[[], OutcomeT],
     ) -> None:
         if not targets:
             msg = "at least one calibration target is required"
@@ -112,7 +114,7 @@ class StareCalibrationRunner:
         self._index = 0
         self._samples: list[GazeSample] = []
         self._point_started_s: float | None = None
-        self._outcome: object | None = None
+        self._outcome: OutcomeT | None = None
 
     @property
     def done(self) -> bool:
@@ -126,10 +128,10 @@ class StareCalibrationRunner:
     def current_target(self) -> WizardTarget | None:
         if self.done or self._index >= len(self._targets):
             return None
-        return cast(WizardTarget, self._targets[self._index])
+        return self._targets[self._index]
 
     @property
-    def outcome(self) -> object | None:
+    def outcome(self) -> OutcomeT | None:
         return self._outcome
 
     def begin_point(self, timestamp_s: float) -> WizardTarget:
@@ -163,7 +165,7 @@ class StareCalibrationRunner:
             discard_s=self._discard_s,
             point_duration_s=self._point_duration_s,
         )
-        self._on_point_complete(filtered, cast(WizardTarget, self._targets[self._index]))
+        self._on_point_complete(filtered, self._targets[self._index])
         self._index += 1
         self._point_started_s = None
         if self._index >= len(self._targets):
@@ -226,7 +228,7 @@ def geometric_mean_gaze(samples: Sequence[GazeSample]) -> tuple[float, float]:
 
 def run_stare_wizard(
     settings: Settings,
-    runner: StareCalibrationRunner,
+    runner: StareCalibrationRunner[OutcomeT],
     *,
     target_label: Callable[[WizardTarget], str],
     tracker: GazeTracker | None = None,
@@ -236,7 +238,7 @@ def run_stare_wizard(
     clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
     incomplete_message: str,
-) -> object:
+) -> OutcomeT:
     wait = sleep or time.sleep
     now_s = clock or time.perf_counter
     gaze_tracker = tracker or create_gaze_tracker()
