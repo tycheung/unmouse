@@ -16,17 +16,13 @@ from unmouse.gaze.calibration import (
     save_calibration,
 )
 from unmouse.launcher.wizard_common import (
-    FakeWizardOverlayBackend as FakeWizardOverlayBackend,
-)
-from unmouse.launcher.wizard_common import (
+    FakeWizardOverlayBackend,  # noqa: F401
     GazeSample,
     StareCalibrationRunner,
     WizardTarget,
+    filter_samples_for_point,  # noqa: F401
     geometric_mean_gaze,
     run_stare_wizard,
-)
-from unmouse.launcher.wizard_common import (
-    filter_samples_for_point as filter_samples_for_point,
 )
 
 NUM_POLY_TARGETS = 9
@@ -51,8 +47,6 @@ class PolynomialWizardOutcome:
 
 
 class PolynomialWizardRunner(StareCalibrationRunner):
-    """Collect nine stare samples and fit a polynomial calibration model."""
-
     def __init__(
         self,
         settings: Settings,
@@ -146,7 +140,6 @@ def run_polynomial_wizard(
     max_residual_px: float | None = None,
     prefer_win32_overlay: bool = True,
 ) -> PolynomialWizardOutcome:
-    """Run the full nine-point calibration sequence and save on success."""
     import time
 
     runner = PolynomialWizardRunner(settings, max_residual_px=max_residual_px)

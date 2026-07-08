@@ -14,8 +14,6 @@ if TYPE_CHECKING:
 
 
 class TkFullscreenOverlay(ABC):
-    """Background Tk thread with a fullscreen click-through root window."""
-
     def __init__(self, *, thread_name: str) -> None:
         self._commands: queue.Queue[Any | None] = queue.Queue()
         self._ready = threading.Event()

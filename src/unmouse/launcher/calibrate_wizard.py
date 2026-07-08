@@ -48,8 +48,6 @@ class OffsetWizardOutcome:
 
 
 class OffsetWizardRunner(StareCalibrationRunner):
-    """Collect sixteen stare samples and build an offset correction profile."""
-
     def __init__(
         self,
         settings: Settings,
@@ -161,7 +159,6 @@ def run_offset_wizard(
     clock: Callable[[], float] | None = None,
     prefer_win32_overlay: bool = True,
 ) -> OffsetWizardOutcome:
-    """Run the full sixteen-point offset sequence and save on success."""
     import time
 
     missing = polynomial_prerequisite_message(settings)

@@ -20,8 +20,6 @@ __all__ = ["PanelApi", "PanelStatus", "PanelView", "last_calibration_label"]
 
 
 class PanelApi:
-    """Methods exposed to Alpine.js through pywebview's js_api."""
-
     def __init__(
         self,
         settings: Settings | None = None,
@@ -109,6 +107,15 @@ class PanelApi:
 
     def check_for_updates(self) -> dict[str, object]:
         self._state.update_status = check_updates()
+        self._state.status = PanelStatus(
+            message=self._state.update_status.message,
+            fps=self._state.status.fps,
+            confidence=self._state.status.confidence,
+            tracking=self._state.status.tracking,
+            paused=self._state.status.paused,
+            gaze_mode=self._state.status.gaze_mode,
+            last_calibrated=self._state.status.last_calibrated,
+        )
         return update_payload(self._state.update_status)
 
     def apply_update(self) -> dict[str, object]:

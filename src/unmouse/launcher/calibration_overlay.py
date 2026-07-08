@@ -20,8 +20,6 @@ class FakeCalibrationOverlay(FakeWizardOverlayBackend):
 
 
 class TkCalibrationOverlay(TkFullscreenOverlay):
-    """Render a labeled calibration dot on a fullscreen transparent window."""
-
     def __init__(self, *, dot_diameter: int = TARGET_DOT_DIAMETER) -> None:
         super().__init__(thread_name="calibration-overlay")
         self._diameter = dot_diameter

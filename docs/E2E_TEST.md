@@ -50,6 +50,8 @@ poetry run pytest tests/e2e -m e2e
 
 `python -m unmouse --smoke` (and `MGGIST.exe --smoke`) verify imports, UI assets, and version without opening a window. CI runs this after PyInstaller builds the exe.
 
+Engine entry point: `unmouse.main:run_engine_cli` (also `poetry run unmouse-engine`).
+
 ## CI
 
 GitHub Actions installs Chromium, builds `MGGIST.exe`, then runs `pytest tests/e2e -m e2e`.

@@ -56,8 +56,6 @@ OutcomeT = TypeVar("OutcomeT")
 
 
 class StareCalibrationRunner:
-    """Collect timed gaze samples for each calibration target."""
-
     def __init__(
         self,
         *,
@@ -180,7 +178,6 @@ def run_stare_wizard(
     prefer_win32_overlay: bool = True,
     incomplete_message: str,
 ) -> object:
-    """Drive a stare runner until all targets are collected."""
     from unmouse.launcher.calibration_overlay import create_calibration_overlay
 
     gaze_tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)

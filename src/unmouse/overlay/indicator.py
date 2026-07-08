@@ -63,8 +63,6 @@ class LuminanceSampler(Protocol):
 
 @dataclass
 class FakeLuminanceSampler:
-    """Returns a fixed luminance for tests."""
-
     value: float = DEFAULT_FALLBACK_LUMINANCE
 
     def sample(self, x: float, y: float) -> float:
@@ -73,8 +71,6 @@ class FakeLuminanceSampler:
 
 @dataclass
 class MssLuminanceSampler:
-    """Sample screen luminance under the gaze point via mss."""
-
     patch_size: int = LUMINANCE_PATCH_SIZE
     _sct: Any = field(default=None, init=False, repr=False)
 
@@ -158,7 +154,6 @@ class GazeIndicatorOverlay:
         self._backend.stop()
 
     def tick(self) -> None:
-        """Render a single frame (useful for tests)."""
         self._backend.update(self._state_provider())
 
     def _run(self) -> None:
@@ -172,8 +167,6 @@ class GazeIndicatorOverlay:
 
 
 class TkWin32IndicatorBackend:
-    """Tkinter-hosted indicator window made click-through via Win32 extended styles."""
-
     def __init__(self, *, diameter: int = DEFAULT_INDICATOR_DIAMETER) -> None:
         self._diameter = diameter
         self._commands: queue.Queue[IndicatorState | None] = queue.Queue()
@@ -352,7 +345,6 @@ def indicator_state_from_system(
 
 
 def apply_click_through_styles(hwnd: int) -> None:
-    """Apply layered, topmost, click-through styles to a window handle."""
     if sys.platform != "win32":
         return
 

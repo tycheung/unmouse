@@ -67,7 +67,6 @@ class GestureWorker:
         *,
         timestamp_s: float | None = None,
     ) -> None:
-        """Process one frame synchronously (useful for tests)."""
         now = timestamp_s if timestamp_s is not None else time.perf_counter()
         self._process_detection(self._detector.detect(frame), timestamp_s=now)
 

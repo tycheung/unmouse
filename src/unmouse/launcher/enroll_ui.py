@@ -71,8 +71,6 @@ def profile_has_gesture_templates(settings: Settings) -> bool:
 
 
 class GestureEnrollmentSession:
-    """Shared camera session for preview polling and 1 s gesture capture."""
-
     def __init__(
         self,
         settings: Settings,
