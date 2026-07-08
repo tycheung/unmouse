@@ -58,7 +58,7 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
 
 
 def run_engine_cli() -> None:
-    from unmouse.launcher.settings import load_persisted_settings
+    from unmouse.persistence import load_persisted_settings
 
     run_engine(load_persisted_settings())
 

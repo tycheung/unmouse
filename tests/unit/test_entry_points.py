@@ -38,7 +38,7 @@ def test_smoke_check_prints_version(capsys) -> None:
 
 def test_engine_entry_delegates_to_run_engine() -> None:
     with patch("unmouse.main.run_engine") as run_engine:
-        with patch("unmouse.launcher.settings.load_persisted_settings") as load_settings:
+        with patch("unmouse.persistence.load_persisted_settings") as load_settings:
             settings = load_settings.return_value
             run_engine_cli()
     run_engine.assert_called_once_with(settings)

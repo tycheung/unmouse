@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import Literal
 
+from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.gaze.offset_profile import load_offset_profile, offset_profile_path
 from unmouse.launcher.results import ActionResult
@@ -197,10 +198,9 @@ class OnboardingController:
 def default_camera_check(settings: Settings) -> CameraCheckResult:
     import time
 
-    import cv2
-
-    capture = cv2.VideoCapture(settings.camera_index)
-    if not capture.isOpened():
+    try:
+        capture = open_camera(settings.camera_index)
+    except RuntimeError:
         return CameraCheckResult(
             ok=False,
             message=f"Unable to open camera {settings.camera_index}.",

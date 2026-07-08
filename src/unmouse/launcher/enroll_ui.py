@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
+from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.gestures.angles import compute_joint_angle_vector
 from unmouse.gestures.enrollment import (
@@ -96,10 +97,7 @@ class GestureEnrollmentSession:
     def open(self) -> None:
         if self._capture is not None:
             return
-        capture = cv2.VideoCapture(self._settings.camera_index)
-        if not capture.isOpened():
-            msg = f"Unable to open camera {self._settings.camera_index}."
-            raise RuntimeError(msg)
+        capture = open_camera(self._settings.camera_index)
         self._capture = capture
 
     def close(self) -> None:

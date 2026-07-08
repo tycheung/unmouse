@@ -16,13 +16,17 @@ from unmouse.gaze.calibration import (
     save_calibration,
 )
 from unmouse.launcher.wizard_common import (
-    FakeWizardOverlayBackend,
+    FakeWizardOverlayBackend as FakeWizardOverlayBackend,
+)
+from unmouse.launcher.wizard_common import (
     GazeSample,
     StareCalibrationRunner,
     WizardTarget,
-    filter_samples_for_point,
     geometric_mean_gaze,
     run_stare_wizard,
+)
+from unmouse.launcher.wizard_common import (
+    filter_samples_for_point as filter_samples_for_point,
 )
 
 NUM_POLY_TARGETS = 9

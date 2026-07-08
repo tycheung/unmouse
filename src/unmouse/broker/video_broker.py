@@ -12,6 +12,7 @@ from typing import Protocol
 import numpy as np
 import numpy.typing as npt
 
+from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.state import SystemState
 
@@ -114,12 +115,11 @@ def create_frame_source(settings: Settings) -> FrameSource:
 
 class _OpenCVFrameSource:
     def __init__(self, settings: Settings) -> None:
-        import cv2
-
-        self._cv2 = cv2
-        self._cap = cv2.VideoCapture(settings.camera_index)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, settings.camera_width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, settings.camera_height)
+        self._cap = open_camera(
+            settings.camera_index,
+            width=settings.camera_width,
+            height=settings.camera_height,
+        )
 
     def read(self) -> tuple[bool, npt.NDArray[np.uint8] | None]:
         ok, frame = self._cap.read()

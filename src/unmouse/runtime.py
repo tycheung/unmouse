@@ -59,7 +59,7 @@ def toggle_paused(settings: Settings) -> RuntimeState:
 
 
 def sync_engine_controls(settings: Settings) -> None:
-    from unmouse.launcher.settings import load_persisted_settings
+    from unmouse.persistence import load_persisted_settings
 
     settings.paused = load_runtime(settings).paused
     persisted = load_persisted_settings()

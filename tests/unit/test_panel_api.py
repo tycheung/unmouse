@@ -186,7 +186,9 @@ def test_panel_api_set_status_message() -> None:
 
 def test_panel_api_show_enrollment_opens_session() -> None:
     api = _api_without_onboarding_prompt()
-    with patch("unmouse.launcher.api.GestureEnrollmentSession") as session_cls:
+    with patch(
+        "unmouse.launcher.services.enrollment_service.GestureEnrollmentSession",
+    ) as session_cls:
         session_cls.return_value.get_state.return_value = {
             "active": True,
             "done": False,
@@ -201,7 +203,9 @@ def test_panel_api_show_enrollment_opens_session() -> None:
 
 def test_panel_api_enrollment_capture_marks_onboarding_complete() -> None:
     api = _api_without_onboarding_prompt()
-    with patch("unmouse.launcher.api.GestureEnrollmentSession") as session_cls:
+    with patch(
+        "unmouse.launcher.services.enrollment_service.GestureEnrollmentSession",
+    ) as session_cls:
         session_cls.return_value.get_state.return_value = {"active": True, "done": True}
         session_cls.return_value.capture_current_gesture.return_value = ActionResult(
             ok=True,

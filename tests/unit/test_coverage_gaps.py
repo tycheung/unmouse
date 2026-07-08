@@ -135,15 +135,16 @@ def test_capture_angle_samples_with_mock_camera(open_palm_landmarks) -> None:
 
 
 def test_capture_angle_samples_requires_open_camera() -> None:
-    capture = MagicMock()
-    capture.isOpened.return_value = False
     detector = MagicMock()
-    with patch("cv2.VideoCapture", return_value=capture):
+    with patch(
+        "unmouse.broker.camera.open_camera",
+        side_effect=RuntimeError("Unable to open camera 0."),
+    ):
         with patch(
             "unmouse.gestures.landmarks.MediaPipeHandDetector",
             return_value=detector,
         ):
-            with pytest.raises(RuntimeError, match="unable to open camera"):
+            with pytest.raises(RuntimeError, match="Unable to open camera"):
                 capture_angle_samples(duration_s=0.01, warmup_s=0.0, target_fps=30.0)
     detector.close.assert_called_once()
 

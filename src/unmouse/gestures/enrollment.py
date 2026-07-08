@@ -143,16 +143,15 @@ def capture_angle_samples(
 ) -> npt.NDArray[np.float64]:
     import time
 
-    import cv2
-
+    from unmouse.broker.camera import open_camera
     from unmouse.gestures.landmarks import MediaPipeHandDetector
 
     detector = MediaPipeHandDetector()
-    capture = cv2.VideoCapture(camera_index)
-    if not capture.isOpened():
+    try:
+        capture = open_camera(camera_index)
+    except RuntimeError as exc:
         detector.close()
-        msg = f"unable to open camera index {camera_index}"
-        raise RuntimeError(msg)
+        raise RuntimeError(str(exc)) from exc
 
     samples: list[npt.NDArray[np.float64]] = []
     frame_interval = 1.0 / target_fps

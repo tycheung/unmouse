@@ -8,7 +8,7 @@ from pathlib import Path
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.onboarding import OnboardingController
-from unmouse.launcher.settings import load_persisted_settings
+from unmouse.persistence import load_persisted_settings
 from unmouse.utils.logging import setup_logging
 from unmouse.utils.paths import resource_path
 
