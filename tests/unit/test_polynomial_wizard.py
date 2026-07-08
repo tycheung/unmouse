@@ -4,16 +4,15 @@ from __future__ import annotations
 
 from unmouse.config import Settings
 from unmouse.gaze.calibration import calibration_path, load_calibration, save_calibration
+from unmouse.launcher.calibration_overlay import create_calibration_overlay
 from unmouse.launcher.polynomial_wizard import (
     NUM_POLY_TARGETS,
-    FakeWizardOverlayBackend,
     GazeSample,
     PolynomialWizardRunner,
     build_polynomial_targets,
-    create_wizard_overlay,
-    filter_samples_for_point,
     geometric_mean_gaze,
 )
+from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, filter_samples_for_point
 
 
 def test_build_polynomial_targets_returns_nine_grid_points() -> None:
@@ -121,7 +120,7 @@ def test_wizard_save_roundtrip(tmp_path, monkeypatch) -> None:
     assert loaded.x_coeffs == outcome.model.x_coeffs
 
 
-def test_create_wizard_overlay_uses_fake_off_windows(monkeypatch) -> None:
+def test_create_calibration_overlay_uses_fake_off_windows(monkeypatch) -> None:
     monkeypatch.setattr("unmouse.launcher.calibration_overlay.sys.platform", "linux")
-    overlay = create_wizard_overlay(prefer_win32=True)
+    overlay = create_calibration_overlay(prefer_win32=True)
     assert isinstance(overlay, FakeWizardOverlayBackend)

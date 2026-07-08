@@ -16,11 +16,9 @@ from unmouse.gaze.calibration import (
     save_calibration,
 )
 from unmouse.launcher.wizard_common import (
-    FakeWizardOverlayBackend,  # noqa: F401
     GazeSample,
     StareCalibrationRunner,
     WizardTarget,
-    filter_samples_for_point,  # noqa: F401
     geometric_mean_gaze,
     run_stare_wizard,
 )
@@ -165,9 +163,3 @@ def _axis_positions(span: float, inset: float) -> tuple[float, float, float]:
     margin = span * inset
     usable = span - (2 * margin)
     return (margin, margin + usable / 2, span - margin)
-
-
-def create_wizard_overlay(*, prefer_win32: bool = True) -> object:
-    from unmouse.launcher.calibration_overlay import create_calibration_overlay
-
-    return create_calibration_overlay(prefer_win32=prefer_win32)

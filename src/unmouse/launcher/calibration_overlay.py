@@ -15,10 +15,6 @@ TARGET_DOT_DIAMETER = 24
 TARGET_DOT_COLOR = "#FFFFFF"
 
 
-class FakeCalibrationOverlay(FakeWizardOverlayBackend):
-    pass
-
-
 class TkCalibrationOverlay(TkFullscreenOverlay):
     def __init__(self, *, dot_diameter: int = TARGET_DOT_DIAMETER) -> None:
         super().__init__(thread_name="calibration-overlay")
@@ -48,4 +44,4 @@ class TkCalibrationOverlay(TkFullscreenOverlay):
 def create_calibration_overlay(*, prefer_win32: bool = True) -> WizardOverlayBackend:
     if prefer_win32 and sys.platform == "win32":
         return TkCalibrationOverlay()
-    return FakeCalibrationOverlay()
+    return FakeWizardOverlayBackend()

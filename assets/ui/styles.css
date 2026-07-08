@@ -102,7 +102,7 @@ button.primary:hover:not(:disabled) {
   border-color: var(--accent-hover);
 }
 
-.placeholder-view {
+.onboarding-view {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -110,12 +110,12 @@ button.primary:hover:not(:disabled) {
   padding: 8px 0;
 }
 
-.placeholder-view h2 {
+.onboarding-view h2 {
   margin: 0;
   font-size: 1rem;
 }
 
-.placeholder-view p {
+.onboarding-view p {
   margin: 0;
   color: var(--muted);
   line-height: 1.45;

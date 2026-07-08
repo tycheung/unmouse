@@ -79,7 +79,7 @@
           <button type="button" class="back-link" @click="leaveEnrollment()">← Back</button>
         </div>
       </section>
-      <section class="placeholder-view" x-show="view === 'onboarding'" x-cloak>
+      <section class="onboarding-view" x-show="view === 'onboarding'" x-cloak>
         <div class="onboarding-progress" x-text="'Step ' + (onboarding.step_index + 1) + '/' + onboarding.step_count"></div>
         <h2 x-text="onboarding.title"></h2>
         <p x-text="onboarding.description"></p>
