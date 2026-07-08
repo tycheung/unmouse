@@ -160,11 +160,6 @@ def toggle_gaze_mode(settings: Settings) -> GazeMode:
     return next_mode
 
 
-def panel_save_settings(settings: Settings, updates: dict[str, object]) -> dict[str, object]:
-    snapshot = update_panel_settings(settings, updates)
-    return {"ok": True, "message": "Settings saved.", "settings": snapshot}
-
-
 def _validate_profile_name(name: str) -> str:
     cleaned = name.strip()
     if not cleaned or cleaned in RESERVED_PROFILE_NAMES:

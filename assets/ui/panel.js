@@ -193,12 +193,16 @@ function panelApp() {
         this.statusMessage = r.message ?? "Settings saved";
       });
     },
+    applyProfileResult(r) {
+      if (r.profiles) this.settingsForm.profiles = r.profiles;
+      if (r.profile_name) this.settingsForm.profile_name = r.profile_name;
+      if (!r.ok) this.errorMessage = r.message ?? "";
+      return r.ok;
+    },
     async createProfile() {
       await this.run(async () => {
         const r = await window.pywebview.api.create_profile(this.newProfileName);
-        if (r.profiles) this.settingsForm.profiles = r.profiles;
-        if (!r.ok) this.errorMessage = r.message ?? "";
-        else {
+        if (this.applyProfileResult(r)) {
           this.newProfileName = "";
           this.statusMessage = r.message ?? "";
         }
@@ -209,27 +213,20 @@ function panelApp() {
       if (!next) return;
       await this.run(async () => {
         const r = await window.pywebview.api.rename_profile(this.settingsForm.profile_name, next);
-        if (r.profiles) this.settingsForm.profiles = r.profiles;
-        if (r.profile_name) this.settingsForm.profile_name = r.profile_name;
-        if (!r.ok) this.errorMessage = r.message ?? "";
-        else this.statusMessage = r.message ?? "";
+        if (this.applyProfileResult(r)) this.statusMessage = r.message ?? "";
       });
     },
     async deleteProfile() {
       if (!confirm("Delete profile " + this.settingsForm.profile_name + "?")) return;
       await this.run(async () => {
         const r = await window.pywebview.api.delete_profile(this.settingsForm.profile_name);
-        if (r.profiles) this.settingsForm.profiles = r.profiles;
-        if (!r.ok) this.errorMessage = r.message ?? "";
-        else this.statusMessage = r.message ?? "";
+        if (this.applyProfileResult(r)) this.statusMessage = r.message ?? "";
       });
     },
     async activateProfile() {
       await this.run(async () => {
         const r = await window.pywebview.api.activate_profile(this.settingsForm.profile_name);
-        if (r.profiles) this.settingsForm.profiles = r.profiles;
-        if (r.profile_name) this.settingsForm.profile_name = r.profile_name;
-        if (!r.ok) this.errorMessage = r.message ?? "";
+        this.applyProfileResult(r);
       });
     },
     async checkUpdates() {
