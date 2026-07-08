@@ -5,8 +5,13 @@ import time
 from dataclasses import replace
 
 from unmouse.arbitrator.actions import ActionDriver, create_action_driver
-from unmouse.arbitrator.snap import CompositeSnapOrchestrator, SnapEngine, SnapProvider
-from unmouse.arbitrator.window_chrome import create_snap_orchestrator, create_window_chrome_provider
+from unmouse.arbitrator.snap import (
+    CompositeSnapOrchestrator,
+    SnapEngine,
+    SnapProvider,
+    create_snap_orchestrator,
+)
+from unmouse.arbitrator.window_chrome import create_window_chrome_provider
 from unmouse.config import GazeMode, Settings
 from unmouse.overlay.indicator import (
     GazeIndicatorOverlay,

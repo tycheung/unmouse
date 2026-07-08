@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from unmouse.arbitrator.snap import SnapEngine, SnapRect, SnapTarget, StaticSnapProvider
+from unmouse.arbitrator.snap import (
+    SnapEngine,
+    SnapRect,
+    SnapTarget,
+    StaticSnapProvider,
+    create_snap_orchestrator,
+)
 from unmouse.arbitrator.uia_provider import (
     NullUiaTreeReader,
     UiaControlRect,
@@ -8,16 +14,14 @@ from unmouse.arbitrator.uia_provider import (
 )
 from unmouse.arbitrator.window_chrome import (
     NullWindowChromeReader,
-    WindowRect,
     build_heuristic_chrome_buttons,
     chrome_buttons_to_snap_targets,
-    create_snap_orchestrator,
     create_window_chrome_provider,
 )
 
 
-def _window() -> WindowRect:
-    return WindowRect(left=100.0, top=50.0, right=1100.0, bottom=800.0)
+def _window() -> SnapRect:
+    return SnapRect(x=100.0, y=50.0, width=1000.0, height=750.0)
 
 
 def test_build_heuristic_chrome_buttons_aligns_right() -> None:

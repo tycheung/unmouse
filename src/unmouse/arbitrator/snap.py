@@ -83,6 +83,18 @@ class CompositeSnapOrchestrator:
         return tuple(merged)
 
 
+def create_snap_orchestrator(
+    *,
+    chrome_provider: SnapProvider | None = None,
+    extra_providers: tuple[SnapProvider, ...] = (),
+) -> CompositeSnapOrchestrator:
+    providers: list[SnapProvider] = []
+    if chrome_provider is not None:
+        providers.append(chrome_provider)
+    providers.extend(extra_providers)
+    return CompositeSnapOrchestrator(providers)
+
+
 class SnapEngine:
     def __init__(
         self,

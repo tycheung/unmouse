@@ -7,7 +7,6 @@ from typing import Protocol
 
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
-    CompositeSnapOrchestrator,
     SnapProvider,
     SnapRect,
     SnapTarget,
@@ -18,14 +17,6 @@ DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
 DEFAULT_CHROME_BUTTON_WIDTH = 46.0
 DEFAULT_TITLE_BAR_HEIGHT = 32.0
 CHROME_SNAP_PRIORITY = 10
-
-
-@dataclass(frozen=True)
-class WindowRect:
-    left: float
-    top: float
-    right: float
-    bottom: float
 
 
 @dataclass(frozen=True)
@@ -89,15 +80,16 @@ def create_window_chrome_provider(
 
 
 def build_heuristic_chrome_buttons(
-    window: WindowRect,
+    window: SnapRect,
     *,
     button_width: float = DEFAULT_CHROME_BUTTON_WIDTH,
     title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
 ) -> tuple[ChromeButton, ...]:
     buttons: list[ChromeButton] = []
+    window_right = window.x + window.width
     for index, role in enumerate(("close", "maximize", "minimize")):
-        x = window.right - (index + 1) * button_width
-        bounds = SnapRect(x=x, y=window.top, width=button_width, height=title_bar_height)
+        x = window_right - (index + 1) * button_width
+        bounds = SnapRect(x=x, y=window.y, width=button_width, height=title_bar_height)
         buttons.append(ChromeButton(role=role, bounds=bounds))
     return tuple(buttons)
 
@@ -117,7 +109,7 @@ def chrome_buttons_to_snap_targets(
     )
 
 
-def read_foreground_window_rect() -> WindowRect | None:
+def read_foreground_window_rect() -> SnapRect | None:
     if not is_windows():
         return None
 
@@ -130,21 +122,9 @@ def read_foreground_window_rect() -> WindowRect | None:
     if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
         return None
 
-    return WindowRect(
-        left=float(rect.left),
-        top=float(rect.top),
-        right=float(rect.right),
-        bottom=float(rect.bottom),
+    return SnapRect(
+        x=float(rect.left),
+        y=float(rect.top),
+        width=float(rect.right - rect.left),
+        height=float(rect.bottom - rect.top),
     )
-
-
-def create_snap_orchestrator(
-    *,
-    chrome_provider: SnapProvider | None = None,
-    extra_providers: tuple[SnapProvider, ...] = (),
-) -> CompositeSnapOrchestrator:
-    providers: list[SnapProvider] = []
-    if chrome_provider is not None:
-        providers.append(chrome_provider)
-    providers.extend(extra_providers)
-    return CompositeSnapOrchestrator(providers)
