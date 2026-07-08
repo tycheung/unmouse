@@ -33,7 +33,6 @@ pytest-playwright = "^0.6"
 [tool.poetry.scripts]
 unmouse = "unmouse.launcher.panel:run"
 unmouse-engine = "unmouse.main:run_engine_cli"
-unmouse-panel = "unmouse.launcher.panel:run"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

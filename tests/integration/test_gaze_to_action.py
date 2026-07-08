@@ -8,7 +8,7 @@ import numpy as np
 
 from tests.conftest import load_landmark_fixture
 from tests.fakes.broker import MockFrameSource
-from unmouse.arbitrator.actions import FakeActionDriver
+from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.arbitrator.controller import ActionController
 from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
 from unmouse.broker.video_broker import VideoBroker
@@ -16,7 +16,7 @@ from unmouse.config import Settings
 from unmouse.gaze.calibration import fit_calibration
 from unmouse.gaze.pipeline import GazePipeline
 from unmouse.gaze.thread import GazeWorker
-from unmouse.gaze.tracker import MockGazeTracker
+from unmouse.gaze.tracker import NullGazeTracker
 from unmouse.gestures.fsm import ClickFsm
 from unmouse.gestures.landmarks import HandLandmarks, LandmarkDetectionResult
 from unmouse.gestures.scroll_fsm import ScrollFsm
@@ -66,10 +66,10 @@ def test_gaze_worker_feeds_controller_cursor_moves() -> None:
     gaze_worker = GazeWorker(
         state,
         settings,
-        tracker=MockGazeTracker(x=450.0, y=275.0, confidence=0.92),
+        tracker=NullGazeTracker(x=450.0, y=275.0, confidence=0.92),
         pipeline=GazePipeline(settings),
     )
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     controller = ActionController(
         state,
         settings,
@@ -112,10 +112,10 @@ def test_gaze_to_action_applies_calibration_before_controller() -> None:
     gaze_worker = GazeWorker(
         state,
         settings,
-        tracker=MockGazeTracker(x=1.0, y=1.0, confidence=0.95),
+        tracker=NullGazeTracker(x=1.0, y=1.0, confidence=0.95),
         pipeline=pipeline,
     )
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     controller = ActionController(
         state,
         settings,
@@ -151,7 +151,7 @@ def test_gaze_to_action_snaps_cursor_to_target() -> None:
     settings = Settings(screen_width=800, screen_height=600, snap_radius_px=80.0)
     state = create_system_state(settings)
     state.set_gaze(103.0, 97.0, 0.95)
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     snap_target = SnapTarget(
         target_id="save",
         bounds=SnapRect(x=90.0, y=90.0, width=20.0, height=20.0),
@@ -189,7 +189,7 @@ def test_gaze_to_action_executes_gesture_click_at_gaze_point() -> None:
         click_fsm=ClickFsm(),
         scroll_fsm=ScrollFsm(activation_delay_s=0.0),
     )
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     controller = ActionController(
         state,
         settings,

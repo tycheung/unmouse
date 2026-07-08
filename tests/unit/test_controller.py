@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unmouse.arbitrator.actions import FakeActionDriver
+from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.arbitrator.controller import ActionController
 from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
 from unmouse.config import GazeMode, Settings
@@ -15,7 +15,7 @@ def test_controller_moves_cursor_to_snapped_target() -> None:
     settings = Settings(screen_width=800, screen_height=600, snap_radius_px=80.0)
     state = create_system_state(settings)
     state.set_gaze(102.0, 98.0, 0.9)
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     provider = StaticSnapProvider(
         (
             SnapTarget(
@@ -45,7 +45,7 @@ def test_controller_respects_gaze_only_mode() -> None:
     )
     state = create_system_state(settings)
     state.set_gaze(400.0, 300.0, 0.9)
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     controller = ActionController(
         state,
         settings,
@@ -64,7 +64,7 @@ def test_controller_respects_gaze_only_mode() -> None:
 def test_controller_executes_queued_click_and_scroll() -> None:
     settings = Settings(screen_width=800, screen_height=600)
     state = create_system_state(settings)
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     controller = ActionController(
         state,
         settings,

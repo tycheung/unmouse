@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from unmouse.arbitrator.actions import FakeActionDriver, PyAutoGUIActionDriver, create_action_driver
+from unmouse.arbitrator.actions import NoopActionDriver, PyAutoGUIActionDriver, create_action_driver
 
 
 def test_fake_action_driver_records_operations() -> None:
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     driver.move_to(10.4, 20.6)
     driver.click(10.4, 20.6, button="right")
     driver.scroll(30.0, 40.0, -2.6)
@@ -19,7 +19,7 @@ def test_fake_action_driver_records_operations() -> None:
 
 
 def test_fake_action_driver_clear_resets_history() -> None:
-    driver = FakeActionDriver()
+    driver = NoopActionDriver()
     driver.move_to(1.0, 2.0)
     driver.clear()
     assert driver.moves == []
@@ -53,4 +53,4 @@ def test_create_action_driver_falls_back_to_fake_when_pyautogui_missing() -> Non
         side_effect=ImportError("missing"),
     ):
         driver = create_action_driver()
-    assert isinstance(driver, FakeActionDriver)
+    assert isinstance(driver, NoopActionDriver)

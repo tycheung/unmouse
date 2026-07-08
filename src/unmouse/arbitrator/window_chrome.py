@@ -39,7 +39,7 @@ class WindowChromeReader(Protocol):
 
 
 @dataclass
-class MockWindowChromeReader:
+class NullWindowChromeReader:
     buttons: tuple[ChromeButton, ...]
     calls: int = 0
 
@@ -156,7 +156,7 @@ def create_window_chrome_provider(
     if prefer_win32 and sys.platform == "win32":
         return WindowChromeSnapProvider(cache_interval_s=cache_interval_s)
     return WindowChromeSnapProvider(
-        reader=MockWindowChromeReader(buttons=()),
+        reader=NullWindowChromeReader(buttons=()),
         cache_interval_s=cache_interval_s,
     )
 
@@ -176,4 +176,4 @@ def create_snap_orchestrator(
 def _create_default_reader() -> WindowChromeReader:
     if sys.platform == "win32":
         return Win32WindowChromeReader()
-    return MockWindowChromeReader(buttons=())
+    return NullWindowChromeReader(buttons=())

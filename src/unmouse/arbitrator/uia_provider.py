@@ -42,7 +42,7 @@ class UiaTreeReader(Protocol):
 
 
 @dataclass
-class MockUiaTreeReader:
+class NullUiaTreeReader:
     controls: tuple[UiaControlRect, ...]
     calls: int = field(default=0, init=False)
 

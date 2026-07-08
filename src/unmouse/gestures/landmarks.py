@@ -74,7 +74,7 @@ class MediaPipeHandDetector:
         self._hands.close()
 
 
-class MockHandLandmarkDetector:
+class NullHandLandmarkDetector:
     """Deterministic detector for tests and offline development."""
 
     def __init__(self, hands: Sequence[HandLandmarks] | None = None) -> None:
@@ -118,7 +118,7 @@ def create_hand_detector(prefer_mediapipe: bool = True) -> HandLandmarkDetector:
             return MediaPipeHandDetector()
         except ImportError:
             pass
-    return MockHandLandmarkDetector()
+    return NullHandLandmarkDetector()
 
 
 def _handedness_labels(results: Any) -> list[str]:

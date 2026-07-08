@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from unmouse.launcher.tray import (
-    FakeTrayBackend,
+    NoopTrayBackend,
     TrayHandlers,
     create_tray_backend,
     create_tray_icon_image,
@@ -17,7 +17,7 @@ def test_fake_tray_lifecycle() -> None:
         on_stop=lambda: calls.append("stop"),
         on_quit=lambda: calls.append("quit"),
     )
-    tray = FakeTrayBackend(handlers)
+    tray = NoopTrayBackend(handlers)
     tray.ensure_running()
     handlers.on_show()
     handlers.on_stop()
@@ -28,12 +28,12 @@ def test_fake_tray_lifecycle() -> None:
 
 def test_create_tray_backend_uses_fake_when_disabled() -> None:
     handlers = TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None)
-    assert isinstance(create_tray_backend(handlers, prefer_pystray=False), FakeTrayBackend)
+    assert isinstance(create_tray_backend(handlers, prefer_pystray=False), NoopTrayBackend)
 
 
 def test_fake_tray_notify_records_message() -> None:
     handlers = TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None)
-    tray = FakeTrayBackend(handlers)
+    tray = NoopTrayBackend(handlers)
     tray.notify("Engine crashed", title="unmouse")
     assert tray.notifications == ["Engine crashed"]
 

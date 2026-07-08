@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,8 +13,8 @@ from unmouse.overlay.indicator import (
     LIGHT_FILL,
     RIGHT_CLICK_FILL,
     THIN_STROKE,
-    FakeIndicatorBackend,
-    FakeLuminanceSampler,
+    NoopIndicatorBackend,
+    NoopLuminanceSampler,
     GazeIndicatorOverlay,
     IndicatorAppearance,
     IndicatorState,
@@ -33,7 +34,7 @@ from unmouse.state import SystemState
 
 
 def test_fake_backend_records_updates() -> None:
-    backend = FakeIndicatorBackend()
+    backend = NoopIndicatorBackend()
     state = IndicatorState(x=100.0, y=200.0)
     backend.start()
     backend.update(state)
@@ -43,7 +44,7 @@ def test_fake_backend_records_updates() -> None:
 
 
 def test_overlay_tick_updates_backend() -> None:
-    backend = FakeIndicatorBackend()
+    backend = NoopIndicatorBackend()
     provider_calls = 0
 
     def provider() -> IndicatorState:
@@ -82,7 +83,7 @@ def test_apply_click_through_styles_sets_win32_flags(monkeypatch: pytest.MonkeyP
 def test_create_indicator_backend_uses_fake_off_windows(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("unmouse.overlay.indicator.sys.platform", "linux")
     backend = create_indicator_backend(prefer_win32=True)
-    assert isinstance(backend, FakeIndicatorBackend)
+    assert isinstance(backend, NoopIndicatorBackend)
 
 
 def test_window_origin_centers_indicator() -> None:
@@ -108,7 +109,7 @@ def test_compose_click_mode_boldens_indicator() -> None:
         10.0,
         20.0,
         appearance=IndicatorAppearance(click_mode=True),
-        sampler=FakeLuminanceSampler(0.2),
+        sampler=NoopLuminanceSampler(0.2),
     )
     assert state.stroke_width == BOLD_STROKE
     assert state.diameter > 20
@@ -120,7 +121,7 @@ def test_compose_scroll_mode_adds_chevron() -> None:
         0.0,
         0.0,
         appearance=IndicatorAppearance(scroll_active=True, scroll_up=False),
-        sampler=FakeLuminanceSampler(0.8),
+        sampler=NoopLuminanceSampler(0.8),
     )
     assert state.stroke_width == THIN_STROKE
     assert state.scroll_chevron == "down"
@@ -133,6 +134,21 @@ def test_average_luminance_from_bgra() -> None:
 
 def test_indicator_state_from_system() -> None:
     system = SystemState(gaze_x=50.0, gaze_y=60.0, click_mode=True, right_click_intent=True)
-    state = indicator_state_from_system(system, sampler=FakeLuminanceSampler(0.2))
+    state = indicator_state_from_system(system, sampler=NoopLuminanceSampler(0.2))
     assert state.x == 50.0
     assert state.fill_color == RIGHT_CLICK_FILL
+
+
+def test_gaze_indicator_overlay_background_loop() -> None:
+    backend = NoopIndicatorBackend()
+    overlay = GazeIndicatorOverlay(
+        backend=backend,
+        target_fps=30.0,
+        state_provider=lambda: IndicatorState(x=1.0, y=2.0),
+    )
+    overlay.start()
+    deadline = time.time() + 1.0
+    while time.time() < deadline and not backend.updates:
+        time.sleep(0.01)
+    overlay.stop()
+    assert backend.updates

@@ -10,7 +10,7 @@ from tests.fakes.broker import MockFrameSource
 from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
 from unmouse.gestures.fsm import ClickFsm
-from unmouse.gestures.landmarks import MockHandLandmarkDetector
+from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.gestures.scroll_fsm import ScrollFsm
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state
@@ -22,7 +22,7 @@ def test_gesture_worker_increments_missed_hand_frames() -> None:
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[]),
+        detector=NullHandLandmarkDetector(hands=[]),
         library={},
     )
     frame = np.zeros((24, 32, 3), dtype=np.uint8)
@@ -37,7 +37,7 @@ def test_gesture_worker_resets_missed_frames_when_hand_present(open_palm_landmar
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[open_palm_landmarks]),
+        detector=NullHandLandmarkDetector(hands=[open_palm_landmarks]),
         library={},
     )
     worker.process_frame(np.zeros((24, 32, 3), dtype=np.uint8), timestamp_s=0.0)
@@ -50,7 +50,7 @@ def test_gesture_worker_updates_click_mode_from_fsm(open_palm_landmarks) -> None
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[open_palm_landmarks]),
+        detector=NullHandLandmarkDetector(hands=[open_palm_landmarks]),
         library={},
         click_fsm=ClickFsm(v_sign_loss_debounce_s=0.3),
         scroll_fsm=ScrollFsm(activation_delay_s=0.0),
@@ -77,7 +77,7 @@ def test_gesture_worker_consumes_broker_queue() -> None:
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[]),
+        detector=NullHandLandmarkDetector(hands=[]),
         library={},
     )
     broker.start()

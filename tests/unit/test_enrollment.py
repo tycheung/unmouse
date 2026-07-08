@@ -5,11 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
+from unittest.mock import MagicMock, patch
 
 from unmouse.gestures.angles import FEATURE_DIM, compute_joint_angle_vector
 from unmouse.gestures.enrollment import (
     DEFAULT_GESTURE_NAMES,
     build_default_template,
+    capture_angle_samples,
     enroll_from_samples,
     generate_default_templates,
     samples_from_landmarks,
@@ -58,3 +61,56 @@ def test_generate_default_templates_writes_all_gestures(tmp_path: Path) -> None:
         vector = compute_joint_angle_vector(synthetic_landmarks(gesture))
         result = classify(vector, library, absolute_min=-1000.0, margin_min=1.0)
         assert result.gesture == gesture
+
+
+def test_capture_angle_samples_with_mock_camera(open_palm_landmarks) -> None:
+    frames = [np.zeros((8, 8, 3), dtype=np.uint8) for _ in range(4)]
+
+    class FakeCapture:
+        def isOpened(self) -> bool:
+            return True
+
+        def read(self) -> tuple[bool, np.ndarray]:
+            if frames:
+                return True, frames.pop(0)
+            return False, np.zeros((8, 8, 3), dtype=np.uint8)
+
+        def release(self) -> None:
+            return None
+
+    class FakeDetector:
+        def detect(self, frame: np.ndarray) -> object:
+            from unmouse.gestures.landmarks import LandmarkDetectionResult
+
+            _ = frame
+            return LandmarkDetectionResult(hands=(open_palm_landmarks,))
+
+        def close(self) -> None:
+            return None
+
+    with patch("cv2.VideoCapture", return_value=FakeCapture()):
+        with patch(
+            "unmouse.gestures.landmarks.MediaPipeHandDetector",
+            return_value=FakeDetector(),
+        ):
+            samples = capture_angle_samples(
+                duration_s=0.05,
+                warmup_s=0.0,
+                target_fps=100.0,
+            )
+    assert samples.shape[0] >= 1
+
+
+def test_capture_angle_samples_requires_open_camera() -> None:
+    detector = MagicMock()
+    with patch(
+        "unmouse.broker.camera.open_camera",
+        side_effect=RuntimeError("Unable to open camera 0."),
+    ):
+        with patch(
+            "unmouse.gestures.landmarks.MediaPipeHandDetector",
+            return_value=detector,
+        ):
+            with pytest.raises(RuntimeError, match="Unable to open camera"):
+                capture_angle_samples(duration_s=0.01, warmup_s=0.0, target_fps=30.0)
+    detector.close.assert_called_once()

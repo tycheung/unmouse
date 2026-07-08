@@ -11,8 +11,8 @@ from unmouse.broker.video_broker import VideoBroker, drain_latest
 from unmouse.config import Settings
 from unmouse.gaze.pipeline import GazePipeline
 from unmouse.gaze.thread import GazeWorker
-from unmouse.gaze.tracker import MockGazeTracker
-from unmouse.gestures.landmarks import MockHandLandmarkDetector
+from unmouse.gaze.tracker import NullGazeTracker
+from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state
 
@@ -48,13 +48,13 @@ def test_broker_consumers_run_without_races() -> None:
     gaze_worker = GazeWorker(
         state,
         settings,
-        tracker=MockGazeTracker(x=222.0, y=333.0, confidence=0.87),
+        tracker=NullGazeTracker(x=222.0, y=333.0, confidence=0.87),
         pipeline=GazePipeline(settings),
     )
     gesture_worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[]),
+        detector=NullHandLandmarkDetector(hands=[]),
         library={},
     )
     broker.start()
@@ -107,13 +107,13 @@ def test_broker_shutdown_joins_all_workers() -> None:
     gaze_worker = GazeWorker(
         state,
         settings,
-        tracker=MockGazeTracker(x=100.0, y=100.0),
+        tracker=NullGazeTracker(x=100.0, y=100.0),
         pipeline=GazePipeline(settings),
     )
     gesture_worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[]),
+        detector=NullHandLandmarkDetector(hands=[]),
         library={},
     )
 

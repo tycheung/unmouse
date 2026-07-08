@@ -9,7 +9,7 @@ from unmouse.gestures.landmarks import (
     HandLandmarks,
     LandmarkDetectionResult,
     MediaPipeHandDetector,
-    MockHandLandmarkDetector,
+    NullHandLandmarkDetector,
     draw_hand_skeleton,
 )
 
@@ -26,7 +26,7 @@ def test_hand_landmarks_requires_twenty_one_points() -> None:
 
 def test_mock_detector_returns_configured_hands() -> None:
     hand = _sample_hand()
-    detector = MockHandLandmarkDetector([hand])
+    detector = NullHandLandmarkDetector([hand])
     frame = np.zeros((48, 64, 3), dtype=np.uint8)
     result = detector.detect(frame)
     assert result.hands == (hand,)
@@ -85,3 +85,31 @@ def test_mediapipe_detector_parses_results() -> None:
     assert result.hands[0].handedness == "Left"
     assert result.hands[0].points[0] == (0.1, 0.2, 0.3)
     mock_hands.process.assert_called_once()
+
+
+def test_draw_hand_skeleton_returns_copy(test_frame, open_palm_landmarks) -> None:
+    mock_drawing = MagicMock()
+    mock_drawing.DrawingSpec = MagicMock()
+    mock_hands = MagicMock()
+    mock_hands.HAND_CONNECTIONS = object()
+    fake_mp = MagicMock()
+    fake_mp.solutions.hands = mock_hands
+    fake_mp.solutions.drawing_utils = mock_drawing
+    fake_mp.framework.formats.landmark_pb2.NormalizedLandmarkList.return_value = MagicMock(
+        landmark=MagicMock(add=MagicMock(return_value=MagicMock()))
+    )
+    with patch.dict("sys.modules", {"mediapipe": fake_mp}):
+        output = draw_hand_skeleton(test_frame, (open_palm_landmarks,))
+    assert output.shape == test_frame.shape
+    assert output is not test_frame
+
+
+def test_create_hand_detector_falls_back_without_mediapipe(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "unmouse.gestures.landmarks.MediaPipeHandDetector",
+        MagicMock(side_effect=ImportError("missing")),
+    )
+    from unmouse.gestures.landmarks import create_hand_detector
+
+    detector = create_hand_detector(prefer_mediapipe=True)
+    assert isinstance(detector, NullHandLandmarkDetector)

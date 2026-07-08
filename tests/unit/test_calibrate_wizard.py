@@ -21,7 +21,7 @@ from unmouse.launcher.calibration_wizards import (
     polynomial_prerequisite_message,
     run_offset_wizard,
 )
-from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, GazeSample
+from unmouse.launcher.wizard_common import NoopWizardOverlayBackend, GazeSample
 
 
 def _save_identity_polynomial(settings: Settings) -> None:
@@ -57,7 +57,7 @@ def test_run_offset_wizard_requires_polynomial(tmp_path, monkeypatch) -> None:
     settings = Settings(screen_width=800, screen_height=600, profile_name="lab")
     outcome = run_offset_wizard(
         settings,
-        overlay=FakeWizardOverlayBackend(),
+        overlay=NoopWizardOverlayBackend(),
     )
     assert outcome.success is False
     assert "polynomial" in outcome.message.lower()
@@ -140,13 +140,13 @@ def test_run_offset_wizard_completes_with_mocked_io(tmp_path, monkeypatch) -> No
     def fake_sleep(_seconds: float) -> None:
         clock["now"] += 0.05
 
-    from unmouse.gaze.tracker import MockGazeTracker
+    from unmouse.gaze.tracker import NullGazeTracker
 
     outcome = run_offset_wizard(
         settings,
-        tracker=MockGazeTracker(x=0.5, y=0.5, confidence=1.0),
+        tracker=NullGazeTracker(x=0.5, y=0.5, confidence=1.0),
         frame_source=FakeSource(),
-        overlay=FakeWizardOverlayBackend(),
+        overlay=NoopWizardOverlayBackend(),
         sleep=fake_sleep,
         clock=fake_clock,
     )

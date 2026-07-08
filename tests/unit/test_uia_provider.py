@@ -8,7 +8,7 @@ import pytest
 
 from unmouse.arbitrator.snap import SnapEngine
 from unmouse.arbitrator.uia_provider import (
-    MockUiaTreeReader,
+    NullUiaTreeReader,
     UiaControlRect,
     UiaSnapProvider,
     control_to_snap_target,
@@ -49,7 +49,7 @@ def test_control_to_snap_target_rejects_empty_rect() -> None:
 
 
 def test_uia_provider_maps_controls_to_snap_targets() -> None:
-    reader = MockUiaTreeReader(
+    reader = NullUiaTreeReader(
         (_control(), _control(automation_id="cancel", name="Cancel", x=220.0)),
     )
     provider = UiaSnapProvider(reader=reader, cache_interval_s=10.0)
@@ -59,7 +59,7 @@ def test_uia_provider_maps_controls_to_snap_targets() -> None:
 
 
 def test_uia_provider_caches_enumeration() -> None:
-    reader = MockUiaTreeReader((_control(),))
+    reader = NullUiaTreeReader((_control(),))
     provider = UiaSnapProvider(reader=reader, cache_interval_s=10.0)
     provider.list_targets()
     provider.list_targets()
@@ -74,7 +74,7 @@ def test_uia_provider_gracefully_handles_reader_errors() -> None:
 
 
 def test_uia_provider_snaps_gaze_to_mocked_button() -> None:
-    reader = MockUiaTreeReader((_control(x=100.0, y=50.0, width=80.0, height=24.0),))
+    reader = NullUiaTreeReader((_control(x=100.0, y=50.0, width=80.0, height=24.0),))
     provider = UiaSnapProvider(reader=reader, cache_interval_s=0.0)
     engine = SnapEngine(snap_radius_px=50.0)
     result = engine.snap(145.0, 60.0, provider.list_targets(), timestamp_s=0.0)

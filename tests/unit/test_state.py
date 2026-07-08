@@ -3,7 +3,9 @@
 import threading
 
 from unmouse.config import Settings
-from unmouse.state import create_system_state
+from unmouse.gestures.fsm import ClickEvent
+from unmouse.gestures.scroll_fsm import ScrollTick
+from unmouse.state import SystemState, create_system_state
 
 
 def test_create_system_state_centers_gaze() -> None:
@@ -52,3 +54,23 @@ def test_frame_queues_created() -> None:
     assert state.gesture_frame_queue is not None
     assert state.gaze_frame_queue.maxsize == 3
     assert state.gesture_frame_queue is not state.gaze_frame_queue
+
+
+def test_click_queue_replaces_oldest_when_full() -> None:
+    state = create_system_state(Settings(broker_queue_size=1))
+    assert state.click_event_queue is not None
+    state.enqueue_click_event(ClickEvent(button="left", x=1.0, y=2.0))
+    state.enqueue_click_event(ClickEvent(button="right", x=3.0, y=4.0))
+    event = state.click_event_queue.get_nowait()
+    assert event.button == "right"
+
+
+def test_enqueue_click_event_ignores_missing_queue() -> None:
+    state = SystemState(gaze_x=0.0, gaze_y=0.0, click_event_queue=None)
+    state.enqueue_click_event(ClickEvent(button="left", x=0.0, y=0.0))
+
+
+def test_scroll_tick_updates_direction() -> None:
+    state = create_system_state(Settings())
+    state.enqueue_scroll_tick(ScrollTick(x=1.0, y=2.0, delta=-4.0))
+    assert state.scroll_up is False

@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from unmouse.launcher.wizard_common import FakeWizardOverlayBackend, WizardOverlayBackend
+from unmouse.launcher.wizard_common import NoopWizardOverlayBackend, WizardOverlayBackend
 from unmouse.overlay.tk_overlay import TkFullscreenOverlay
 
 if TYPE_CHECKING:
@@ -44,4 +44,4 @@ class TkCalibrationOverlay(TkFullscreenOverlay):
 def create_calibration_overlay(*, prefer_win32: bool = True) -> WizardOverlayBackend:
     if prefer_win32 and sys.platform == "win32":
         return TkCalibrationOverlay()
-    return FakeWizardOverlayBackend()
+    return NoopWizardOverlayBackend()

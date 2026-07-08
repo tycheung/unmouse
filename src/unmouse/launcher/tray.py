@@ -36,7 +36,7 @@ class TrayBackend(Protocol):
 
 
 @dataclass
-class FakeTrayBackend:
+class NoopTrayBackend:
     handlers: TrayHandlers
     running: bool = False
     notifications: list[str] | None = None
@@ -129,7 +129,7 @@ class TrayController:
 def create_tray_backend(handlers: TrayHandlers, *, prefer_pystray: bool = True) -> TrayBackend:
     if prefer_pystray and importlib.util.find_spec("pystray") is not None:
         return TrayController(handlers)
-    return FakeTrayBackend(handlers)
+    return NoopTrayBackend(handlers)
 
 
 def create_tray_icon_image(size: int = 64) -> object:

@@ -16,7 +16,7 @@ from unmouse.gestures.enrollment import (
     samples_from_landmarks,
     synthetic_landmarks,
 )
-from unmouse.gestures.landmarks import MockHandLandmarkDetector
+from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.launcher.enroll_ui import (
     GestureEnrollmentSession,
     profile_has_gesture_templates,
@@ -53,7 +53,7 @@ def test_profile_has_gesture_templates(tmp_path, monkeypatch) -> None:
 def test_enrollment_session_state_and_capture(tmp_path, monkeypatch, open_palm_landmarks) -> None:
     settings = _settings(tmp_path, monkeypatch)
     frame = np.zeros((120, 160, 3), dtype=np.uint8)
-    detector = MockHandLandmarkDetector((open_palm_landmarks,))
+    detector = NullHandLandmarkDetector((open_palm_landmarks,))
     clock = {"now": 0.0}
 
     def fake_clock() -> float:
@@ -89,7 +89,7 @@ def test_enrollment_session_state_and_capture(tmp_path, monkeypatch, open_palm_l
 def test_enrollment_preview_encodes_jpeg(tmp_path, monkeypatch, open_palm_landmarks) -> None:
     settings = _settings(tmp_path, monkeypatch)
     frame = np.zeros((80, 80, 3), dtype=np.uint8)
-    detector = MockHandLandmarkDetector((open_palm_landmarks,))
+    detector = NullHandLandmarkDetector((open_palm_landmarks,))
     session = GestureEnrollmentSession(settings, detector=detector)
     session._capture = FakeCapture(frame)
     preview = session.grab_preview()
@@ -100,7 +100,7 @@ def test_enrollment_preview_encodes_jpeg(tmp_path, monkeypatch, open_palm_landma
 def test_enrollment_capture_requires_hand_samples(tmp_path, monkeypatch) -> None:
     settings = _settings(tmp_path, monkeypatch)
     frame = np.zeros((80, 80, 3), dtype=np.uint8)
-    detector = MockHandLandmarkDetector(())
+    detector = NullHandLandmarkDetector(())
     clock = {"now": 0.0}
     session = GestureEnrollmentSession(
         settings,
@@ -119,7 +119,7 @@ def test_enrollment_open_raises_when_camera_unavailable(tmp_path, monkeypatch) -
     capture = MagicMock()
     capture.isOpened.return_value = False
     monkeypatch.setattr("unmouse.launcher.enroll_ui.cv2.VideoCapture", lambda _i: capture)
-    session = GestureEnrollmentSession(settings, detector=MockHandLandmarkDetector())
+    session = GestureEnrollmentSession(settings, detector=NullHandLandmarkDetector())
     with pytest.raises(RuntimeError, match="Unable to open camera"):
         session.open()
 

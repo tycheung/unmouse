@@ -143,7 +143,7 @@ class DiagnosticsOverlayBackend:
 
 
 @dataclass
-class FakeDiagnosticsOverlay:
+class NoopDiagnosticsOverlay:
     lines: list[str] | None = None
     visible: bool = False
 

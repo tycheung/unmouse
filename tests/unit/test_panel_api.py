@@ -11,7 +11,7 @@ from unmouse.launcher.calibration_wizards import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.results import ActionResult
-from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
+from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
 from unmouse.launcher.update import UpdateStatus
 
 
@@ -71,7 +71,7 @@ def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
 
 def test_panel_api_launch_starts_engine_and_minimizes() -> None:
     runner = EngineRunner()
-    tray = FakeTrayBackend(
+    tray = NoopTrayBackend(
         TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
     )
     minimized = {"called": False}
@@ -113,7 +113,7 @@ def test_panel_api_stop_engine_updates_status() -> None:
         settings=Settings(screen_width=800, screen_height=600),
         onboarding=MagicMock(spec=OnboardingController),
         engine_runner=runner,
-        tray=FakeTrayBackend(
+        tray=NoopTrayBackend(
             TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
         ),
     )
@@ -159,7 +159,7 @@ def test_panel_api_toggle_pause_updates_runtime(tmp_path, monkeypatch) -> None:
         settings=Settings(screen_width=800, screen_height=600),
         onboarding=MagicMock(spec=OnboardingController),
         engine_runner=runner,
-        tray=FakeTrayBackend(handlers),
+        tray=NoopTrayBackend(handlers),
     )
     api._onboarding.should_show_on_startup.return_value = False
     with patch.object(runner, "_popen", return_value=FakeProcess()):
@@ -222,7 +222,7 @@ def test_panel_api_watchdog_diagnostics_and_crash(tmp_path, monkeypatch) -> None
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600)
     runner = EngineRunner()
-    tray = FakeTrayBackend(
+    tray = NoopTrayBackend(
         TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
     )
     watchdog = MagicMock(spec=EngineWatchdog)

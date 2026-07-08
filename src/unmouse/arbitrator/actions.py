@@ -17,7 +17,7 @@ class ActionDriver(Protocol):
 
 
 @dataclass
-class FakeActionDriver:
+class NoopActionDriver:
     moves: list[tuple[int, int]] = field(default_factory=list)
     clicks: list[tuple[int, int, ClickButton]] = field(default_factory=list)
     scrolls: list[tuple[int, int, int]] = field(default_factory=list)
@@ -69,7 +69,7 @@ def create_action_driver(*, failsafe: bool = False, prefer_pyautogui: bool = Tru
             return PyAutoGUIActionDriver(failsafe=failsafe)
         except ImportError:
             pass
-    return FakeActionDriver()
+    return NoopActionDriver()
 
 
 def _to_point(x: float, y: float) -> tuple[int, int]:

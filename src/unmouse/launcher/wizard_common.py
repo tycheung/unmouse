@@ -35,7 +35,7 @@ class WizardOverlayBackend(Protocol):
 
 
 @dataclass
-class FakeWizardOverlayBackend:
+class NoopWizardOverlayBackend:
     shown: list[tuple[float, float, str]] | None = None
 
     def __post_init__(self) -> None:

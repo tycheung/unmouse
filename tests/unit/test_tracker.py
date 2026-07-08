@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from unmouse.gaze.tracker import GazeResult, MockGazeTracker, create_gaze_tracker
+from unmouse.gaze.tracker import GazeResult, NullGazeTracker, create_gaze_tracker
 
 
 def test_mock_tracker_returns_configured_result() -> None:
-    tracker = MockGazeTracker(x=123.0, y=456.0, confidence=0.8, head_yaw_deg=5.0)
+    tracker = NullGazeTracker(x=123.0, y=456.0, confidence=0.8, head_yaw_deg=5.0)
     frame = np.zeros((10, 10, 3), dtype=np.uint8)
     result = tracker.predict(frame)
     assert result == GazeResult(x=123.0, y=456.0, confidence=0.8, head_yaw_deg=5.0)

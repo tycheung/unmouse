@@ -22,7 +22,7 @@ class GazeTracker(Protocol):
     def predict(self, frame: npt.NDArray[np.uint8]) -> GazeResult: ...
 
 
-class MockGazeTracker:
+class NullGazeTracker:
     def __init__(
         self,
         x: float,
@@ -66,4 +66,4 @@ def create_gaze_tracker(prefer_eyegestures: bool = True) -> GazeTracker:
             return EyeGesturesTracker()
         except RuntimeError:
             pass
-    return MockGazeTracker(x=960.0, y=540.0)
+    return NullGazeTracker(x=960.0, y=540.0)

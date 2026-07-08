@@ -51,7 +51,7 @@ class LuminanceSampler(Protocol):
 
 
 @dataclass
-class FakeLuminanceSampler:
+class NoopLuminanceSampler:
     value: float = DEFAULT_FALLBACK_LUMINANCE
 
     def sample(self, x: float, y: float) -> float:
@@ -92,7 +92,7 @@ class IndicatorBackend(Protocol):
 
 
 @dataclass
-class FakeIndicatorBackend:
+class NoopIndicatorBackend:
     updates: list[IndicatorState] = field(default_factory=list)
     active: bool = False
 
@@ -245,4 +245,4 @@ def indicator_state_from_system(
 def create_indicator_backend(*, prefer_win32: bool = True) -> IndicatorBackend:
     if prefer_win32 and sys.platform == "win32":
         return TkWin32IndicatorBackend(diameter=DEFAULT_INDICATOR_DIAMETER)
-    return FakeIndicatorBackend()
+    return NoopIndicatorBackend()

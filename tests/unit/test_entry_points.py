@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import unmouse.__main__ as main_module
-from unmouse.main import run_engine_cli
+from unmouse.main import run, run_engine_cli
 
 
 def test_main_runs_launcher_by_default() -> None:
@@ -34,6 +34,12 @@ def test_smoke_check_prints_version(capsys) -> None:
     output = capsys.readouterr().out
     assert "smoke ok" in output
     assert "1.0.0" in output
+
+
+def test_run_opens_control_panel() -> None:
+    with patch("unmouse.launcher.panel.run") as panel_run:
+        run()
+    panel_run.assert_called_once()
 
 
 def test_engine_entry_delegates_to_run_engine() -> None:

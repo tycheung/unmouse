@@ -18,7 +18,7 @@ from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.launcher.results import ActionResult
 from unmouse.launcher.settings import LauncherFlags, save_launcher_flags
-from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
+from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXE_PATH = REPO_ROOT / "dist" / "unmouse.exe"
@@ -117,7 +117,7 @@ def build_panel_api(
     engine_runner = EngineRunner()
     if mock_engine:
         engine_runner = EngineRunner(popen=lambda *_a, **_k: FakeEngineProcess())
-    tray = FakeTrayBackend(
+    tray = NoopTrayBackend(
         TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
     )
     return PanelApi(

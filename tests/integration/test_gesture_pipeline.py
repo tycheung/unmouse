@@ -15,7 +15,7 @@ from unmouse.gestures.fsm import ClickFsm
 from unmouse.gestures.landmarks import (
     HandLandmarks,
     LandmarkDetectionResult,
-    MockHandLandmarkDetector,
+    NullHandLandmarkDetector,
 )
 from unmouse.gestures.mle import classify, load_gesture_library
 from unmouse.gestures.scroll_fsm import ScrollFsm
@@ -87,7 +87,7 @@ def test_pipeline_v_sign_arms_click_mode(settings: Settings, gesture_library) ->
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[load_landmark_fixture("v_sign")]),
+        detector=NullHandLandmarkDetector(hands=[load_landmark_fixture("v_sign")]),
         library=gesture_library,
         click_fsm=ClickFsm(),
         scroll_fsm=ScrollFsm(activation_delay_s=0.0),
@@ -127,7 +127,7 @@ def test_pipeline_thumbs_up_emits_scroll_tick(settings: Settings, gesture_librar
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[load_landmark_fixture("thumbs_up")]),
+        detector=NullHandLandmarkDetector(hands=[load_landmark_fixture("thumbs_up")]),
         library=gesture_library,
         click_fsm=ClickFsm(),
         scroll_fsm=ScrollFsm(activation_delay_s=0.0),
@@ -147,7 +147,7 @@ def test_pipeline_no_hand_increments_missed_frames(settings: Settings, gesture_l
     worker = GestureWorker(
         state,
         settings,
-        detector=MockHandLandmarkDetector(hands=[]),
+        detector=NullHandLandmarkDetector(hands=[]),
         library=gesture_library,
     )
     worker.process_frame(np.zeros((24, 32, 3), dtype=np.uint8), timestamp_s=0.0)

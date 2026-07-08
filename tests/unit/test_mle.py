@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from unmouse.gestures.mle import (
     ClassificationResult,
+    GestureTemplate,
     build_template,
     classify,
+    fit_gaussian,
     load_gesture_library,
     load_template,
     log_likelihood,
@@ -111,3 +114,32 @@ def test_load_gesture_library_reads_directory(tmp_path) -> None:
         absolute_min=-50.0,
         margin_min=1.0,
     ).gesture == "v_sign"
+
+
+def test_fit_gaussian_rejects_invalid_samples() -> None:
+    with pytest.raises(ValueError, match="2D array"):
+        fit_gaussian(np.array([1.0, 2.0]))
+    with pytest.raises(ValueError, match="at least one feature"):
+        fit_gaussian(np.zeros((3, 0)))
+
+
+def test_gesture_template_validation_errors() -> None:
+    mu = np.zeros(4, dtype=np.float64)
+    with pytest.raises(ValueError, match="inv_variances"):
+        GestureTemplate(name="bad", mu=mu, log_det=0.0, diagonal=True, inv_variances=None)
+    with pytest.raises(ValueError, match="precision"):
+        GestureTemplate(name="bad", mu=mu, log_det=0.0, diagonal=False, precision=None)
+
+
+def test_load_template_invalid_json(tmp_path) -> None:
+    path = tmp_path / "bad.json"
+    path.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="object"):
+        load_template(path)
+
+
+def test_classify_rejects_mismatched_feature_size() -> None:
+    samples = np.random.default_rng(0).normal(size=(8, 4))
+    template = build_template("a", samples, force_diagonal=True)
+    result = classify(np.zeros(8), {"a": template}, absolute_min=-1000.0, margin_min=0.0)
+    assert result.gesture is None

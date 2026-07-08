@@ -48,10 +48,6 @@ class CalibrationTarget:
     y: float
 
 
-PolynomialTarget = CalibrationTarget
-OffsetTarget = CalibrationTarget
-
-
 @dataclass(frozen=True)
 class PolynomialWizardOutcome:
     success: bool

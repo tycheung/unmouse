@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from unmouse.arbitrator.snap import SnapEngine, SnapRect, SnapTarget, StaticSnapProvider
-from unmouse.arbitrator.uia_provider import MockUiaTreeReader, UiaControlRect, UiaSnapProvider
+from unmouse.arbitrator.uia_provider import NullUiaTreeReader, UiaControlRect, UiaSnapProvider
 from unmouse.arbitrator.window_chrome import (
-    MockWindowChromeReader,
+    NullWindowChromeReader,
     WindowChromeSnapProvider,
     WindowRect,
     build_heuristic_chrome_buttons,
@@ -43,7 +43,7 @@ def test_gaze_in_title_bar_band() -> None:
 
 def test_window_chrome_provider_caches_buttons() -> None:
     buttons = build_heuristic_chrome_buttons(_window())
-    reader = MockWindowChromeReader(buttons=buttons)
+    reader = NullWindowChromeReader(buttons=buttons)
     provider = WindowChromeSnapProvider(reader=reader, cache_interval_s=10.0)
     provider.list_targets()
     provider.list_targets()
@@ -54,7 +54,7 @@ def test_chrome_snap_wins_over_uia_at_equal_distance() -> None:
     window = _window()
     chrome_buttons = build_heuristic_chrome_buttons(window)
     chrome_provider = WindowChromeSnapProvider(
-        reader=MockWindowChromeReader(buttons=chrome_buttons),
+        reader=NullWindowChromeReader(buttons=chrome_buttons),
         cache_interval_s=0.0,
     )
     uia_control = UiaControlRect(
@@ -66,7 +66,7 @@ def test_chrome_snap_wins_over_uia_at_equal_distance() -> None:
         width=46.0,
         height=32.0,
     )
-    uia_provider = UiaSnapProvider(reader=MockUiaTreeReader((uia_control,)), cache_interval_s=0.0)
+    uia_provider = UiaSnapProvider(reader=NullUiaTreeReader((uia_control,)), cache_interval_s=0.0)
     orchestrator = create_snap_orchestrator(
         chrome_provider=chrome_provider,
         extra_providers=(uia_provider,),

@@ -5,7 +5,7 @@ from unittest.mock import patch
 from unmouse.config import Settings
 from unmouse.diagnostics import (
     DiagnosticsService,
-    FakeDiagnosticsOverlay,
+    NoopDiagnosticsOverlay,
     collect_snapshot,
     load_diagnostics_snapshot,
     save_diagnostics_snapshot,
@@ -22,6 +22,13 @@ def test_run_engine_exits_when_stopped() -> None:
         run_engine(settings, state)
 
 
+def test_run_engine_handles_keyboard_interrupt(settings: Settings) -> None:
+    state = create_system_state(settings)
+    with patch("unmouse.main.time.sleep", side_effect=KeyboardInterrupt):
+        run_engine(settings, state)
+    assert state.is_running() is False
+
+
 def test_diagnostics_snapshot_round_trip(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600)
@@ -36,7 +43,7 @@ def test_diagnostics_service_publishes_when_debug_enabled(tmp_path, monkeypatch)
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600, debug=True)
     state = create_system_state(settings)
-    overlay = FakeDiagnosticsOverlay()
+    overlay = NoopDiagnosticsOverlay()
     service = DiagnosticsService(
         state,
         settings,
