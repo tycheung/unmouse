@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.config import Settings
 from unmouse.gestures.enrollment import (
     DEFAULT_GESTURE_NAMES,
@@ -14,7 +15,6 @@ from unmouse.gestures.enrollment import (
     samples_from_landmarks,
     synthetic_landmarks,
 )
-from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.launcher.enroll_ui import (
     GestureEnrollmentSession,
     profile_has_gesture_templates,

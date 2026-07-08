@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from unmouse.arbitrator.actions import NoopActionDriver, PyAutoGUIActionDriver, create_action_driver
+from tests.fakes.arbitrator import NoopActionDriver
+from unmouse.arbitrator.actions import PyAutoGUIActionDriver, create_action_driver
 
 
 def test_fake_action_driver_records_operations() -> None:

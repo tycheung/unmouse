@@ -6,15 +6,12 @@ import numpy as np
 import pytest
 
 from tests.conftest import load_landmark_fixture
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.config import Settings
 from unmouse.gestures.angles import compute_feature_vector
 from unmouse.gestures.enrollment import default_gestures_dir, synthetic_landmarks
 from unmouse.gestures.fsm import ClickFsm
-from unmouse.gestures.landmarks import (
-    HandLandmarks,
-    LandmarkDetectionResult,
-    NullHandLandmarkDetector,
-)
+from unmouse.gestures.landmarks import HandLandmarks, LandmarkDetectionResult
 from unmouse.gestures.mle import classify, load_gesture_library
 from unmouse.gestures.scroll_fsm import ScrollFsm
 from unmouse.gestures.thread import GestureWorker

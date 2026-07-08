@@ -5,10 +5,10 @@ import time
 import numpy as np
 
 from tests.fakes.broker import MockFrameSource
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
 from unmouse.gestures.fsm import ClickFsm
-from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.gestures.scroll_fsm import ScrollFsm
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state

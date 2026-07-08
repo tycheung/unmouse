@@ -6,11 +6,11 @@ import numpy as np
 
 from tests.fakes.broker import MockFrameSource
 from tests.fakes.gaze import FakeGazeTracker
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.broker.video_broker import VideoBroker, drain_latest
 from unmouse.config import Settings
 from unmouse.gaze.thread import GazeWorker
 from unmouse.gaze.tracker import GazeSample
-from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.gestures.thread import GestureWorker
 from unmouse.state import create_system_state
 

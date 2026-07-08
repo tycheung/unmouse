@@ -1,8 +1,9 @@
 from contextlib import ExitStack
 from unittest.mock import patch
 
+from tests.fakes.arbitrator import NoopActionDriver
 from tests.fakes.gaze import FakeGazeTracker
-from unmouse.arbitrator.actions import NoopActionDriver
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.config import Settings
 from unmouse.diagnostics import (
     DiagnosticsService,
@@ -10,7 +11,6 @@ from unmouse.diagnostics import (
     load_diagnostics_snapshot,
     save_diagnostics_snapshot,
 )
-from unmouse.gestures.landmarks import NullHandLandmarkDetector
 from unmouse.main import run_engine
 from unmouse.state import create_system_state
 

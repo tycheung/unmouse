@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from tests.fakes.arbitrator import StaticSnapProvider
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
     CompositeSnapOrchestrator,
     SnapEngine,
     SnapRect,
     SnapTarget,
-    StaticSnapProvider,
     nearest_snap_target,
 )
 

@@ -64,14 +64,6 @@ class CachedSnapProvider:
         self._cached_at = now
 
 
-@dataclass
-class StaticSnapProvider:
-    targets: tuple[SnapTarget, ...]
-
-    def list_targets(self) -> tuple[SnapTarget, ...]:
-        return self.targets
-
-
 class CompositeSnapOrchestrator:
     def __init__(self, providers: Sequence[SnapProvider]) -> None:
         self._providers = tuple(providers)

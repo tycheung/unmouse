@@ -5,11 +5,11 @@ import time
 import numpy as np
 
 from tests.conftest import load_landmark_fixture
+from tests.fakes.arbitrator import NoopActionDriver, StaticSnapProvider
 from tests.fakes.broker import MockFrameSource
 from tests.fakes.gaze import FakeGazeTracker
-from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.arbitrator.controller import ActionController
-from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
+from unmouse.arbitrator.snap import SnapRect, SnapTarget
 from unmouse.broker.video_broker import VideoBroker
 from unmouse.config import Settings
 from unmouse.gaze.thread import GazeWorker

@@ -3,11 +3,11 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from tests.fakes.landmarks import NullHandLandmarkDetector
 from unmouse.gestures.landmarks import (
     HandLandmarks,
     LandmarkDetectionResult,
     MediaPipeHandDetector,
-    NullHandLandmarkDetector,
     draw_hand_skeleton,
 )
 

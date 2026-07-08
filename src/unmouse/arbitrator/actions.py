@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
 ClickButton = Literal["left", "right", "middle"]
@@ -12,30 +11,6 @@ class ActionDriver(Protocol):
     def click(self, x: float, y: float, button: ClickButton = "left") -> None: ...
 
     def scroll(self, x: float, y: float, delta: float) -> None: ...
-
-
-@dataclass
-class NoopActionDriver:
-    moves: list[tuple[int, int]] = field(default_factory=list)
-    clicks: list[tuple[int, int, ClickButton]] = field(default_factory=list)
-    scrolls: list[tuple[int, int, int]] = field(default_factory=list)
-
-    def move_to(self, x: float, y: float) -> None:
-        self.moves.append(_to_point(x, y))
-
-    def click(self, x: float, y: float, button: ClickButton = "left") -> None:
-        self.clicks.append((*_to_point(x, y), button))
-
-    def scroll(self, x: float, y: float, delta: float) -> None:
-        clicks = int(round(delta))
-        if clicks == 0:
-            return
-        self.scrolls.append((*_to_point(x, y), clicks))
-
-    def clear(self) -> None:
-        self.moves.clear()
-        self.clicks.clear()
-        self.scrolls.clear()
 
 
 class PyAutoGUIActionDriver:

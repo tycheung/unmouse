@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from unmouse.arbitrator.actions import NoopActionDriver
+from tests.fakes.arbitrator import NoopActionDriver, StaticSnapProvider
 from unmouse.arbitrator.controller import ActionController
-from unmouse.arbitrator.snap import SnapRect, SnapTarget, StaticSnapProvider
+from unmouse.arbitrator.snap import SnapRect, SnapTarget
 from unmouse.config import GazeMode, Settings
 from unmouse.gestures.fsm import ClickEvent
 from unmouse.gestures.scroll_fsm import ScrollTick

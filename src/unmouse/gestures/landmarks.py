@@ -77,15 +77,6 @@ class MediaPipeHandDetector:
         self._hands.close()
 
 
-class NullHandLandmarkDetector:
-    def __init__(self, hands: Sequence[HandLandmarks] | None = None) -> None:
-        self._hands = tuple(hands or ())
-
-    def detect(self, frame: npt.NDArray[np.uint8]) -> LandmarkDetectionResult:
-        _ = frame
-        return LandmarkDetectionResult(hands=self._hands)
-
-
 def draw_hand_skeleton(
     frame: npt.NDArray[np.uint8],
     hands: Sequence[HandLandmarks],
