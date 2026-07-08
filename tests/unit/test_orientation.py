@@ -5,12 +5,7 @@ import numpy.typing as npt
 import pytest
 
 from unmouse.gestures.landmarks import NUM_HAND_LANDMARKS, HandLandmarks
-from unmouse.gestures.orientation import (
-    ClickIntent,
-    compute_palm_normal,
-    detect_click_intent,
-    detect_right_click_orientation,
-)
+from unmouse.gestures.orientation import detect_right_click_orientation, palm_normal
 
 
 def _landmarks(points: npt.NDArray[np.float64]) -> HandLandmarks:
@@ -66,19 +61,16 @@ def _ambiguous_points() -> npt.NDArray[np.float64]:
 
 def test_palm_facing_selects_right_click() -> None:
     hand = _landmarks(_palm_facing_camera_points())
-    assert detect_click_intent(hand) == ClickIntent.RIGHT
     assert detect_right_click_orientation(hand) is True
 
 
 def test_dorsal_facing_selects_left_click() -> None:
     hand = _landmarks(_dorsal_facing_camera_points())
-    assert detect_click_intent(hand) == ClickIntent.LEFT
     assert detect_right_click_orientation(hand) is False
 
 
 def test_ambiguous_orientation_defaults_to_left_click() -> None:
     hand = _landmarks(_ambiguous_points())
-    assert detect_click_intent(hand) == ClickIntent.LEFT
     assert detect_right_click_orientation(hand) is False
 
 
@@ -90,6 +82,6 @@ def test_left_hand_mirrors_palm_normal() -> None:
         points=tuple((float(x), float(y), float(z)) for x, y, z in left_points),
         handedness="Left",
     )
-    right_normal = compute_palm_normal(right)
-    left_normal = compute_palm_normal(left)
+    right_normal = palm_normal(right)
+    left_normal = palm_normal(left)
     assert left_normal[0] == pytest.approx(-right_normal[0], abs=1e-6)

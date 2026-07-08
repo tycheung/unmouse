@@ -83,3 +83,15 @@ def test_hold_timer_resets_if_gesture_released_before_activation() -> None:
     fsm.process(_frame(0.2, thumbs_up_active=False))
     waiting = fsm.process(_frame(0.6, thumbs_up_active=True))
     assert waiting.scroll_active is False
+
+
+def test_speed_scale_multiplies_tick_delta() -> None:
+    baseline = ScrollFsm(activation_delay_s=0.5)
+    scaled = ScrollFsm(activation_delay_s=0.5, speed_scale=2.0)
+    baseline.process(_frame(0.0, thumbs_up_active=True))
+    scaled.process(_frame(0.0, thumbs_up_active=True))
+    base_tick = baseline.process(_frame(0.5, thumbs_up_active=True)).scroll_tick
+    scaled_tick = scaled.process(_frame(0.5, thumbs_up_active=True)).scroll_tick
+    assert base_tick is not None
+    assert scaled_tick is not None
+    assert scaled_tick.delta == base_tick.delta * 2.0

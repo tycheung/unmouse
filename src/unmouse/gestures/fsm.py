@@ -54,15 +54,6 @@ class ClickFsm:
     def from_settings(cls, settings: Settings) -> ClickFsm:
         return cls(v_sign_loss_debounce_s=settings.v_sign_loss_debounce_ms / 1000.0)
 
-    @property
-    def state(self) -> ClickState:
-        return self._state
-
-    def reset(self) -> None:
-        self._state = ClickState.IDLE
-        self._right_click_intent = False
-        self._v_sign_lost_at = None
-
     def process(self, frame: ClickFrameInput) -> ClickFrameOutput:
         click_event: ClickEvent | None = None
 

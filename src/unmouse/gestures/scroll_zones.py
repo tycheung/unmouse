@@ -18,22 +18,21 @@ DEFAULT_LOG_K = 9.0
 @dataclass(frozen=True)
 class ScrollZone:
     index: int
-    center_deg: float
     tier: float
     lower_deg: float
     upper_deg: float
 
 
 SCROLL_ZONES: tuple[ScrollZone, ...] = (
-    ScrollZone(0, 80.0, 1.00, 70.0, 90.0),
-    ScrollZone(1, 60.0, 0.65, 50.0, 70.0),
-    ScrollZone(2, 40.0, 0.40, 30.0, 50.0),
-    ScrollZone(3, 20.0, 0.15, 10.0, 30.0),
-    ScrollZone(4, 0.0, 0.0, -10.0, 10.0),
-    ScrollZone(5, -20.0, -0.15, -30.0, -10.0),
-    ScrollZone(6, -40.0, -0.40, -50.0, -30.0),
-    ScrollZone(7, -60.0, -0.65, -70.0, -50.0),
-    ScrollZone(8, -80.0, -1.00, -90.0, -70.0),
+    ScrollZone(0, 1.00, 70.0, 90.0),
+    ScrollZone(1, 0.65, 50.0, 70.0),
+    ScrollZone(2, 0.40, 30.0, 50.0),
+    ScrollZone(3, 0.15, 10.0, 30.0),
+    ScrollZone(4, 0.0, -10.0, 10.0),
+    ScrollZone(5, -0.15, -30.0, -10.0),
+    ScrollZone(6, -0.40, -50.0, -30.0),
+    ScrollZone(7, -0.65, -70.0, -50.0),
+    ScrollZone(8, -1.00, -90.0, -70.0),
 )
 
 

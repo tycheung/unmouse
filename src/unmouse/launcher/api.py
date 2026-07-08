@@ -221,16 +221,8 @@ class PanelApi:
     def activate_profile(self, name: str) -> dict[str, object]:
         return self._profile_action(activate_profile, name, reload_on_ok=True)
 
-    def show_onboarding(self) -> dict[str, str]:
-        return self._show_view("onboarding")
-
     def show_enrollment(self, return_view: PanelView = "main") -> dict[str, object]:
         return self._open_enrollment(return_view=return_view)
-
-    def get_enrollment_state(self) -> dict[str, object]:
-        if self._state.enrollment is None:
-            return {"active": False, "done": False, "message": "Enrollment is not active."}
-        return self._state.enrollment.get_state()
 
     def get_enrollment_preview(self) -> dict[str, object]:
         if self._state.enrollment is None:
@@ -277,6 +269,3 @@ class PanelApi:
 
     def show_main(self) -> dict[str, str]:
         return self._show_view("main")
-
-    def set_status_message(self, message: str) -> dict[str, object]:
-        return self._engine.set_status_message(message)

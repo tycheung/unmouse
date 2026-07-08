@@ -45,6 +45,7 @@ class ScrollFsm:
         release_debounce_s: float = DEFAULT_SCROLL_RELEASE_DEBOUNCE_S,
         v_max: float = DEFAULT_V_MAX,
         log_k: float = DEFAULT_LOG_K,
+        speed_scale: float = 1.0,
     ) -> None:
         if activation_delay_s < 0 or release_debounce_s < 0:
             msg = "scroll timing values must be non-negative"
@@ -53,6 +54,7 @@ class ScrollFsm:
         self._release_debounce_s = release_debounce_s
         self._v_max = v_max
         self._log_k = log_k
+        self._speed_scale = speed_scale
         self._state = ScrollState.IDLE
         self._hold_started_at: float | None = None
         self._released_at: float | None = None
@@ -62,16 +64,8 @@ class ScrollFsm:
         return cls(
             activation_delay_s=settings.scroll_activation_delay_ms / 1000.0,
             release_debounce_s=settings.scroll_release_debounce_ms / 1000.0,
+            speed_scale=settings.scroll_speed_multiplier,
         )
-
-    @property
-    def state(self) -> ScrollState:
-        return self._state
-
-    def reset(self) -> None:
-        self._state = ScrollState.IDLE
-        self._hold_started_at = None
-        self._released_at = None
 
     def process(self, frame: ScrollFrameInput) -> ScrollFrameOutput:
         if frame.thumbs_up_active:
@@ -103,4 +97,4 @@ class ScrollFsm:
         speed = scroll_speed(frame.thumb_angle_deg, v_max=self._v_max, k=self._log_k)
         if speed == 0.0:
             return None
-        return ScrollTick(x=frame.gaze_x, y=frame.gaze_y, delta=speed)
+        return ScrollTick(x=frame.gaze_x, y=frame.gaze_y, delta=speed * self._speed_scale)

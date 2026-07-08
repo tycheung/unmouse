@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
-
 import numpy as np
 import numpy.typing as npt
 
@@ -19,50 +17,6 @@ DEFAULT_DORSAL_KNUCKLE_MIN = 0.015
 DEFAULT_PALM_DEPTH_MIN = 0.01
 
 
-class ClickIntent(str, Enum):
-    LEFT = "left"
-    RIGHT = "right"
-
-
-def compute_palm_normal(hand: HandLandmarks) -> npt.NDArray[np.float64]:
-    """Unit normal for the palm plane derived from wrist and MCP landmarks."""
-    points = landmarks_to_array(hand)
-    wrist = points[WRIST]
-    index_mcp = points[INDEX_MCP]
-    pinky_mcp = points[PINKY_MCP]
-    normal = np.cross(index_mcp - wrist, pinky_mcp - wrist)
-    norm = float(np.linalg.norm(normal))
-    if norm < 1e-8:
-        return np.zeros(3, dtype=np.float64)
-    normal = normal / norm
-    if hand.handedness == "Left":
-        normal = -normal
-    return np.asarray(normal, dtype=np.float64)
-
-
-def palm_normal_dot_camera(hand: HandLandmarks) -> float:
-    """Signed alignment of the palm normal with the camera-forward axis."""
-    return float(np.dot(compute_palm_normal(hand), CAMERA_FORWARD))
-
-
-def detect_click_intent(
-    hand: HandLandmarks,
-    *,
-    normal_threshold: float = DEFAULT_NORMAL_THRESHOLD,
-    dorsal_knuckle_min: float = DEFAULT_DORSAL_KNUCKLE_MIN,
-    palm_depth_min: float = DEFAULT_PALM_DEPTH_MIN,
-) -> ClickIntent:
-    """Map dorsal vs palm orientation to left or right click intent."""
-    alignment = palm_normal_dot_camera(hand)
-    if _dorsal_knuckle_heuristic(hand, dorsal_knuckle_min):
-        return ClickIntent.LEFT
-    if _palm_facing_heuristic(hand, palm_depth_min) or alignment > normal_threshold:
-        return ClickIntent.RIGHT
-    if alignment < -normal_threshold:
-        return ClickIntent.LEFT
-    return ClickIntent.LEFT
-
-
 def detect_right_click_orientation(
     hand: HandLandmarks,
     *,
@@ -70,16 +24,24 @@ def detect_right_click_orientation(
     dorsal_knuckle_min: float = DEFAULT_DORSAL_KNUCKLE_MIN,
     palm_depth_min: float = DEFAULT_PALM_DEPTH_MIN,
 ) -> bool:
-    """Return True when palm-facing orientation selects a right click."""
-    return (
-        detect_click_intent(
-            hand,
-            normal_threshold=normal_threshold,
-            dorsal_knuckle_min=dorsal_knuckle_min,
-            palm_depth_min=palm_depth_min,
-        )
-        == ClickIntent.RIGHT
-    )
+    """Return True when a palm-facing orientation selects a right click."""
+    if _dorsal_knuckle_heuristic(hand, dorsal_knuckle_min):
+        return False
+    alignment = float(np.dot(palm_normal(hand), CAMERA_FORWARD))
+    return _palm_facing_heuristic(hand, palm_depth_min) or alignment > normal_threshold
+
+
+def palm_normal(hand: HandLandmarks) -> npt.NDArray[np.float64]:
+    """Unit normal for the palm plane derived from wrist and MCP landmarks."""
+    points = landmarks_to_array(hand)
+    normal = np.cross(points[INDEX_MCP] - points[WRIST], points[PINKY_MCP] - points[WRIST])
+    norm = float(np.linalg.norm(normal))
+    if norm < 1e-8:
+        return np.zeros(3, dtype=np.float64)
+    normal = normal / norm
+    if hand.handedness == "Left":
+        normal = -normal
+    return np.asarray(normal, dtype=np.float64)
 
 
 def _dorsal_knuckle_heuristic(hand: HandLandmarks, min_score: float) -> bool:

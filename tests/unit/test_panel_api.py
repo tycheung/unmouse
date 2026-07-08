@@ -168,15 +168,7 @@ def test_panel_api_view_navigation() -> None:
     assert api.get_view()["view"] == "main"
     assert api.show_settings()["view"] == "settings"
     assert api.get_view()["view"] == "settings"
-    assert api.show_onboarding()["view"] == "onboarding"
     assert api.show_main()["view"] == "main"
-
-
-def test_panel_api_set_status_message() -> None:
-    api = _api_without_onboarding_prompt()
-    updated = api.set_status_message("Calibrating")
-    assert updated["message"] == "Calibrating"
-    assert api.get_status()["message"] == "Calibrating"
 
 
 def test_panel_api_show_enrollment_opens_session() -> None:

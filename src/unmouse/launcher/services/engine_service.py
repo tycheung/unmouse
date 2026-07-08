@@ -151,13 +151,6 @@ class EngineService:
         if self._tray is not None:
             self._tray.stop()
 
-    def set_status_message(self, message: str) -> dict[str, object]:
-        self._state.status = self._runtime_panel_status(
-            message,
-            settings=self._state.settings,
-        )
-        return asdict(self._state.status)
-
     def _runtime_panel_status(
         self,
         message: str,
