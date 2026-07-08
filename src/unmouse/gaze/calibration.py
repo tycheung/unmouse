@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
 
 from unmouse.config import Settings
+from unmouse.utils.json_io import read_json_object_or_none, write_json_object
 
 PointPair = tuple[float, float, float, float]
 
@@ -21,8 +22,10 @@ class CalibrationModel:
         return {"x_coeffs": list(self.x_coeffs), "y_coeffs": list(self.y_coeffs)}
 
     @classmethod
-    def from_dict(cls, data: dict[str, list[float]]) -> CalibrationModel:
-        return cls(x_coeffs=tuple(data["x_coeffs"]), y_coeffs=tuple(data["y_coeffs"]))
+    def from_dict(cls, data: dict[str, object]) -> CalibrationModel:
+        x_coeffs = cast("list[float]", data["x_coeffs"])
+        y_coeffs = cast("list[float]", data["y_coeffs"])
+        return cls(x_coeffs=tuple(x_coeffs), y_coeffs=tuple(y_coeffs))
 
 
 def _design_matrix(
@@ -74,14 +77,13 @@ def mean_residual_error(points: list[PointPair], model: CalibrationModel) -> flo
 
 
 def save_calibration(path: Path, model: CalibrationModel) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(model.to_dict(), indent=2), encoding="utf-8")
+    write_json_object(path, model.to_dict())
 
 
 def load_calibration(path: Path) -> CalibrationModel | None:
-    if not path.is_file():
+    data = read_json_object_or_none(path, error_message="calibration JSON must be an object")
+    if data is None:
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
     return CalibrationModel.from_dict(data)
 
 

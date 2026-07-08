@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, cast
 
 from unmouse.arbitrator.snap import (
     CachedSnapProvider,
@@ -13,6 +13,7 @@ from unmouse.arbitrator.snap import (
     SnapTarget,
 )
 from unmouse.platform import is_windows
+from unmouse.utils.backend_selection import prefer_or_fallback
 
 DEFAULT_CHROME_CACHE_INTERVAL_S = 0.5
 DEFAULT_CHROME_BUTTON_WIDTH = 46.0
@@ -76,12 +77,12 @@ def create_window_chrome_provider(
     reader: WindowChromeReader | None = None,
     priority: int = CHROME_SNAP_PRIORITY,
 ) -> SnapProvider:
-    if reader is not None:
-        resolved_reader = reader
-    elif prefer_win32 and is_windows():
-        resolved_reader = _create_default_reader()
-    else:
-        resolved_reader = NullWindowChromeReader(buttons=())
+    resolved_reader = reader or prefer_or_fallback(
+        prefer=prefer_win32 and is_windows(),
+        make_preferred=lambda: cast(WindowChromeReader, Win32WindowChromeReader()),
+        make_fallback=lambda: cast(WindowChromeReader, NullWindowChromeReader(buttons=())),
+        exceptions=None,
+    )
 
     def loader() -> tuple[SnapTarget, ...]:
         return chrome_buttons_to_snap_targets(resolved_reader.read_buttons(), priority=priority)
@@ -158,9 +159,3 @@ def create_snap_orchestrator(
         providers.append(chrome_provider)
     providers.extend(extra_providers)
     return CompositeSnapOrchestrator(providers)
-
-
-def _create_default_reader() -> WindowChromeReader:
-    if is_windows():
-        return Win32WindowChromeReader()
-    return NullWindowChromeReader(buttons=())

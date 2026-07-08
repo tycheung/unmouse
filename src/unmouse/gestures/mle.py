@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -8,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+
+from unmouse.utils.json_io import read_json_object_or_none, write_json_object
 
 DEFAULT_RIDGE_LAMBDA = 1e-4
 
@@ -240,17 +241,13 @@ def classify(
 
 
 def save_template(path: Path, template: GestureTemplate) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(template.to_dict(), indent=2), encoding="utf-8")
+    write_json_object(path, template.to_dict())
 
 
 def load_template(path: Path) -> GestureTemplate | None:
-    if not path.is_file():
+    data = read_json_object_or_none(path, error_message="template JSON must be an object")
+    if data is None:
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = "template JSON must be an object"
-        raise ValueError(msg)
     return GestureTemplate.from_dict(data)
 
 

@@ -7,9 +7,11 @@ import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Protocol
 
 from unmouse.config import Settings
 from unmouse.state import SystemState
+from unmouse.utils.json_io import write_json_object
 
 DIAGNOSTICS_FILENAME = "diagnostics.json"
 LOGGER = logging.getLogger("unmouse.diagnostics")
@@ -57,8 +59,7 @@ def collect_snapshot(state: SystemState, *, broker_fps: float) -> DiagnosticsSna
 
 def save_diagnostics_snapshot(settings: Settings, snapshot: DiagnosticsSnapshot) -> Path:
     path = diagnostics_file_path(settings)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(snapshot.to_dict(), indent=2), encoding="utf-8")
+    write_json_object(path, snapshot.to_dict())
     return path
 
 
@@ -127,7 +128,7 @@ def format_snapshot(snapshot: DiagnosticsSnapshot) -> str:
     )
 
 
-class DiagnosticsOverlayBackend:
+class DiagnosticsOverlayBackend(Protocol):
     def show(self) -> None: ...
 
     def hide(self) -> None: ...

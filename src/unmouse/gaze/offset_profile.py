@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -8,6 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from unmouse.config import Settings
+from unmouse.utils.json_io import read_json_object_or_none, write_json_object
 
 GRID_COLS = 4
 GRID_ROWS = 3
@@ -227,17 +227,13 @@ def vertex_delta_grid(profile: OffsetProfile) -> npt.NDArray[np.float64]:
 
 
 def save_offset_profile(path: Path, profile: OffsetProfile) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(profile.to_dict(), indent=2), encoding="utf-8")
+    write_json_object(path, profile.to_dict())
 
 
 def load_offset_profile(path: Path) -> OffsetProfile | None:
-    if not path.is_file():
+    data = read_json_object_or_none(path, error_message="offset profile JSON must be an object")
+    if data is None:
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = "offset profile JSON must be an object"
-        raise ValueError(msg)
     return OffsetProfile.from_dict(data)
 
 

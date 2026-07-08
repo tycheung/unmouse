@@ -35,6 +35,17 @@ def apply_click_through_styles(hwnd: int) -> None:
     user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | CLICK_THROUGH_STYLES)
 
 
+def _new_transparent_root() -> tk.Tk:
+    import tkinter as tk
+
+    root = tk.Tk()
+    root.overrideredirect(True)
+    root.attributes("-topmost", True)
+    root.configure(bg=TRANSPARENT_CHROMA)
+    root.attributes("-transparentcolor", TRANSPARENT_CHROMA)
+    return root
+
+
 class _TkCommandHost:
     def __init__(self, *, thread_name: str, poll_ms: int) -> None:
         self._commands: queue.Queue[Any | None] = queue.Queue()
@@ -92,11 +103,7 @@ class TkFullscreenOverlay(ABC):
     def _run(self) -> None:
         import tkinter as tk
 
-        root = tk.Tk()
-        root.overrideredirect(True)
-        root.attributes("-topmost", True)
-        root.configure(bg=TRANSPARENT_CHROMA)
-        root.attributes("-transparentcolor", TRANSPARENT_CHROMA)
+        root = _new_transparent_root()
         screen_w = root.winfo_screenwidth()
         screen_h = root.winfo_screenheight()
         root.geometry(f"{screen_w}x{screen_h}+0+0")
@@ -150,11 +157,7 @@ class TkWin32IndicatorBackend:
     def _run(self) -> None:
         import tkinter as tk
 
-        root = tk.Tk()
-        root.overrideredirect(True)
-        root.attributes("-topmost", True)
-        root.configure(bg=TRANSPARENT_CHROMA)
-        root.attributes("-transparentcolor", TRANSPARENT_CHROMA)
+        root = _new_transparent_root()
 
         canvas = tk.Canvas(
             root,
