@@ -9,7 +9,6 @@ def read_json_object(path: Path, *, error_message: str) -> dict[str, object]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(error_message)
-    # `json.loads` returns `dict[str, Any]`; treat values as `object`.
     return {str(k): v for k, v in data.items()}
 
 
