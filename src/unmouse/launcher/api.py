@@ -10,12 +10,12 @@ from unmouse.launcher.services.engine_service import EngineService
 from unmouse.launcher.services.enrollment_service import EnrollmentService
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus, PanelView
 from unmouse.launcher.settings import (
+    activate_profile,
+    create_profile,
+    delete_profile,
     get_panel_settings,
-    panel_activate_profile,
-    panel_create_profile,
-    panel_delete_profile,
-    panel_rename_profile,
     panel_save_settings,
+    rename_profile,
 )
 from unmouse.launcher.tray import TrayBackend
 from unmouse.launcher.update import apply_update, check_updates
@@ -181,19 +181,31 @@ class PanelApi:
         return result
 
     def create_profile(self, name: str) -> dict[str, object]:
-        return panel_create_profile(self._state.settings, name)
+        try:
+            return create_profile(self._state.settings, name)
+        except ValueError as exc:
+            return action(False, str(exc))
 
     def rename_profile(self, old_name: str, new_name: str) -> dict[str, object]:
-        result = panel_rename_profile(self._state.settings, old_name, new_name)
+        try:
+            result = rename_profile(self._state.settings, old_name, new_name)
+        except ValueError as exc:
+            return action(False, str(exc))
         if result.get("ok"):
             self._state.settings = load_persisted_settings()
         return result
 
     def delete_profile(self, name: str) -> dict[str, object]:
-        return panel_delete_profile(self._state.settings, name)
+        try:
+            return delete_profile(self._state.settings, name)
+        except ValueError as exc:
+            return action(False, str(exc))
 
     def activate_profile(self, name: str) -> dict[str, object]:
-        result = panel_activate_profile(self._state.settings, name)
+        try:
+            result = activate_profile(self._state.settings, name)
+        except ValueError as exc:
+            return action(False, str(exc))
         if result.get("ok"):
             self._state.settings = load_persisted_settings()
         return result
