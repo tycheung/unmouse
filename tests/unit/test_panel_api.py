@@ -248,7 +248,7 @@ def test_panel_api_watchdog_diagnostics_and_crash(tmp_path, monkeypatch) -> None
     status = api.get_status()
     assert status["fps"] == 28.5
     assert status["fixation"] == 0.77
-    api._engine._handle_engine_crash(
+    api._handle_engine_crash(
         WatchdogEvent(exit_code=1, message="Engine exited unexpectedly (code 1).", restarted=True),
     )
     assert tray.notifications == ["Engine exited unexpectedly (code 1)."]
