@@ -3,7 +3,6 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import replace
-from queue import Empty
 
 from unmouse.arbitrator.actions import ActionDriver, create_action_driver
 from unmouse.arbitrator.snap import CompositeSnapOrchestrator, SnapEngine, SnapProvider
@@ -17,6 +16,7 @@ from unmouse.overlay.indicator import (
     indicator_state_from_system,
 )
 from unmouse.state import SystemState
+from unmouse.utils.queues import drain_all
 from unmouse.utils.timing import run_at_interval
 
 CONTROLLER_TARGET_HZ = 30.0
@@ -80,29 +80,16 @@ class ActionController:
         self._last_y = snapped.y
 
         if not self._settings.paused:
-            self._apply_pointer_actions(snapped.x, snapped.y, now)
+            self._apply_pointer_actions(snapped.x, snapped.y)
         return snapped.x, snapped.y
 
-    def _apply_pointer_actions(self, x: float, y: float, timestamp_s: float) -> None:
-        del timestamp_s
+    def _apply_pointer_actions(self, x: float, y: float) -> None:
         if self._should_move_cursor():
             self._driver.move_to(x, y)
-        click_queue = self._state.click_event_queue
-        if click_queue is not None:
-            while True:
-                try:
-                    event = click_queue.get_nowait()
-                except Empty:
-                    break
-                self._driver.click(event.x, event.y, button=event.button)
-        scroll_queue = self._state.scroll_tick_queue
-        if scroll_queue is not None:
-            while True:
-                try:
-                    tick = scroll_queue.get_nowait()
-                except Empty:
-                    break
-                self._driver.scroll(tick.x, tick.y, tick.delta)
+        for event in drain_all(self._state.click_event_queue):
+            self._driver.click(event.x, event.y, button=event.button)
+        for tick in drain_all(self._state.scroll_tick_queue):
+            self._driver.scroll(tick.x, tick.y, tick.delta)
 
     def _should_move_cursor(self) -> bool:
         if self._settings.gaze_mode == GazeMode.GAZE_ONLY:

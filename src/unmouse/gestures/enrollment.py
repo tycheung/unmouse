@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, Protocol
 
 import numpy as np
 import numpy.typing as npt
 
 from unmouse.gestures.angles import compute_feature_vector
-from unmouse.gestures.landmarks import NUM_HAND_LANDMARKS, HandLandmarks
+from unmouse.gestures.landmarks import (
+    NUM_HAND_LANDMARKS,
+    HandLandmarkDetector,
+    HandLandmarks,
+)
 from unmouse.gestures.mle import GestureTemplate, build_template, save_template
 from unmouse.utils.paths import resource_path
+
+
+class FrameReader(Protocol):
+    def read(self) -> tuple[bool, Any]: ...
 
 DEFAULT_GESTURE_NAMES: tuple[str, ...] = ("v_sign", "pinch_close", "thumbs_up")
 DEFAULT_SAMPLE_COUNT = 30
@@ -123,6 +134,46 @@ def generate_default_templates(output_dir: Path) -> list[Path]:
     return written
 
 
+def collect_feature_samples(
+    capture: FrameReader,
+    detector: HandLandmarkDetector,
+    *,
+    duration_s: float = DEFAULT_CAPTURE_DURATION_S,
+    warmup_s: float = DEFAULT_CAPTURE_WARMUP_S,
+    target_fps: float = DEFAULT_CAPTURE_FPS,
+    clock: Callable[[], float] = time.monotonic,
+    sleep: Callable[[float], None] = time.sleep,
+) -> npt.NDArray[np.float64]:
+    """Read frames for a fixed window and stack feature vectors of detected hands."""
+    samples: list[npt.NDArray[np.float64]] = []
+    frame_interval = 1.0 / target_fps
+    started = clock()
+    while True:
+        loop_start = clock()
+        elapsed = loop_start - started
+        if elapsed >= duration_s + warmup_s:
+            break
+
+        ok, frame = capture.read()
+        if not ok or frame is None:
+            sleep(frame_interval)
+            continue
+
+        frame_u8 = np.asarray(frame, dtype=np.uint8)
+        result = detector.detect(frame_u8)
+        if elapsed >= warmup_s and result.hands:
+            samples.append(compute_feature_vector(result.hands[0]))
+
+        sleep_for = frame_interval - (clock() - loop_start)
+        if sleep_for > 0:
+            sleep(sleep_for)
+
+    if not samples:
+        msg = "No hand samples captured during enrollment window."
+        raise RuntimeError(msg)
+    return np.stack(samples, axis=0)
+
+
 def capture_angle_samples(
     *,
     camera_index: int = 0,
@@ -130,8 +181,6 @@ def capture_angle_samples(
     warmup_s: float = DEFAULT_CAPTURE_WARMUP_S,
     target_fps: float = DEFAULT_CAPTURE_FPS,
 ) -> npt.NDArray[np.float64]:
-    import time
-
     from unmouse.broker.camera import open_camera
     from unmouse.gestures.landmarks import MediaPipeHandDetector
 
@@ -142,37 +191,17 @@ def capture_angle_samples(
         detector.close()
         raise RuntimeError(str(exc)) from exc
 
-    samples: list[npt.NDArray[np.float64]] = []
-    frame_interval = 1.0 / target_fps
-    started = time.monotonic()
     try:
-        while True:
-            loop_start = time.monotonic()
-            elapsed = loop_start - started
-            if elapsed >= duration_s + warmup_s:
-                break
-
-            ok, frame = capture.read()
-            if not ok:
-                time.sleep(frame_interval)
-                continue
-
-            frame_u8 = np.asarray(frame, dtype=np.uint8)
-            result = detector.detect(frame_u8)
-            if elapsed >= warmup_s and result.hands:
-                samples.append(compute_feature_vector(result.hands[0]))
-
-            sleep_for = frame_interval - (time.monotonic() - loop_start)
-            if sleep_for > 0:
-                time.sleep(sleep_for)
+        return collect_feature_samples(
+            capture,
+            detector,
+            duration_s=duration_s,
+            warmup_s=warmup_s,
+            target_fps=target_fps,
+        )
     finally:
         capture.release()
         detector.close()
-
-    if not samples:
-        msg = "no hand samples captured during enrollment window"
-        raise RuntimeError(msg)
-    return np.stack(samples, axis=0)
 
 
 def _curl_finger(

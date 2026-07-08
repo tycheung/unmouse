@@ -6,11 +6,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from unmouse.gestures.angles import landmarks_to_array
-from unmouse.gestures.landmarks import HandLandmarks
+from unmouse.gestures.landmarks import MIDDLE_MCP, THUMB_TIP, WRIST, HandLandmarks
 
-WRIST = 0
-THUMB_TIP = 4
-MIDDLE_MCP = 9
 DEFAULT_V_MAX = 120.0
 DEFAULT_LOG_K = 9.0
 

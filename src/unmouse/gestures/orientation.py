@@ -4,11 +4,8 @@ import numpy as np
 import numpy.typing as npt
 
 from unmouse.gestures.angles import landmarks_to_array
-from unmouse.gestures.landmarks import HandLandmarks
+from unmouse.gestures.landmarks import INDEX_MCP, PINKY_MCP, WRIST, HandLandmarks
 
-WRIST = 0
-INDEX_MCP = 5
-PINKY_MCP = 17
 FINGERTIPS = (8, 12, 16, 20)
 KNUCKLE_CHAINS = ((9, 12), (13, 16), (17, 20))
 CAMERA_FORWARD = np.array([0.0, 0.0, -1.0], dtype=np.float64)

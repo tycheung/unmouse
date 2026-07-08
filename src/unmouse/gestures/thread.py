@@ -11,7 +11,13 @@ from unmouse.config import Settings
 from unmouse.gestures.angles import compute_feature_vector, landmarks_to_array
 from unmouse.gestures.enrollment import default_gestures_dir, profile_gestures_dir
 from unmouse.gestures.fsm import ClickFrameInput, ClickFsm
-from unmouse.gestures.landmarks import HandLandmarkDetector, HandLandmarks, create_hand_detector
+from unmouse.gestures.landmarks import (
+    INDEX_TIP,
+    THUMB_TIP,
+    HandLandmarkDetector,
+    HandLandmarks,
+    create_hand_detector,
+)
 from unmouse.gestures.mle import GestureLibrary, classify, load_gesture_library
 from unmouse.gestures.orientation import detect_right_click_orientation
 from unmouse.gestures.scroll_fsm import ScrollFrameInput, ScrollFsm
@@ -21,8 +27,6 @@ from unmouse.state import SystemState
 GESTURE_ACTIVE_HZ = 25.0
 GESTURE_IDLE_HZ = 5.0
 IDLE_FRAMES_BEFORE_SLOWDOWN = 10
-THUMB_TIP = 4
-INDEX_TIP = 8
 
 
 class GestureWorker:

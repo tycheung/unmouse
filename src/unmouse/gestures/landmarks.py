@@ -11,6 +11,13 @@ import numpy.typing as npt
 NUM_HAND_LANDMARKS = 21
 LandmarkPoint = tuple[float, float, float]
 
+WRIST = 0
+THUMB_TIP = 4
+INDEX_MCP = 5
+INDEX_TIP = 8
+MIDDLE_MCP = 9
+PINKY_MCP = 17
+
 
 @dataclass(frozen=True)
 class HandLandmarks:

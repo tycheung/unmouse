@@ -4,7 +4,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from queue import Empty, Queue
+from queue import Queue
 from typing import Protocol
 
 import numpy as np
@@ -13,7 +13,7 @@ import numpy.typing as npt
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.state import SystemState
-from unmouse.utils.queues import offer_latest
+from unmouse.utils.queues import drain_all, offer_latest
 
 
 @dataclass(frozen=True)
@@ -78,17 +78,10 @@ class VideoBroker:
 def drain_latest(
     queue: Queue[tuple[int, object]] | None,
 ) -> tuple[int, npt.NDArray[np.uint8]] | None:
-    if queue is None:
+    items = drain_all(queue)
+    if not items:
         return None
-    latest: tuple[int, object] | None = None
-    while True:
-        try:
-            latest = queue.get_nowait()
-        except Empty:
-            break
-    if latest is None:
-        return None
-    frame_id, frame = latest
+    frame_id, frame = items[-1]
     return frame_id, np.asarray(frame, dtype=np.uint8)
 
 

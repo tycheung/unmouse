@@ -3,12 +3,14 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from unmouse.gestures.landmarks import HandLandmarks
+from unmouse.gestures.landmarks import (
+    INDEX_TIP,
+    MIDDLE_MCP,
+    THUMB_TIP,
+    WRIST,
+    HandLandmarks,
+)
 
-WRIST = 0
-MIDDLE_MCP = 9
-THUMB_TIP = 4
-INDEX_TIP = 8
 _EPSILON = 1e-8
 
 # (base, tip) landmark indices for thumb, index, middle, ring, pinky.

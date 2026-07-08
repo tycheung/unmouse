@@ -11,12 +11,12 @@ import numpy.typing as npt
 
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
-from unmouse.gestures.angles import compute_feature_vector
 from unmouse.gestures.enrollment import (
     DEFAULT_CAPTURE_DURATION_S,
     DEFAULT_CAPTURE_FPS,
     DEFAULT_CAPTURE_WARMUP_S,
     DEFAULT_GESTURE_NAMES,
+    collect_feature_samples,
     enroll_from_samples,
     profile_gestures_dir,
 )
@@ -131,7 +131,7 @@ class GestureEnrollmentSession:
             return ActionResult(False, "Camera is not open.")
         self._capturing = True
         try:
-            samples = _collect_angle_samples(
+            samples = collect_feature_samples(
                 self._capture,
                 self._detector,
                 duration_s=DEFAULT_CAPTURE_DURATION_S,
@@ -191,45 +191,6 @@ class GestureEnrollmentSession:
             instruction=GESTURE_INSTRUCTIONS[gesture],
             message=f"Hold the {GESTURE_LABELS[gesture]} pose steady for 1 second, then capture.",
         )
-
-
-def _collect_angle_samples(
-    capture: cv2.VideoCapture,
-    detector: HandLandmarkDetector,
-    *,
-    duration_s: float,
-    warmup_s: float,
-    target_fps: float,
-    clock: Callable[[], float],
-    sleep: Callable[[float], None],
-) -> npt.NDArray[np.float64]:
-    samples: list[npt.NDArray[np.float64]] = []
-    frame_interval = 1.0 / target_fps
-    started = clock()
-    while True:
-        loop_start = clock()
-        elapsed = loop_start - started
-        if elapsed >= duration_s + warmup_s:
-            break
-
-        ok, frame = capture.read()
-        if not ok or frame is None:
-            sleep(frame_interval)
-            continue
-
-        frame_u8 = np.asarray(frame, dtype=np.uint8)
-        result = detector.detect(frame_u8)
-        if elapsed >= warmup_s and result.hands:
-            samples.append(compute_feature_vector(result.hands[0]))
-
-        sleep_for = frame_interval - (clock() - loop_start)
-        if sleep_for > 0:
-            sleep(sleep_for)
-
-    if not samples:
-        msg = "No hand samples captured during enrollment window."
-        raise RuntimeError(msg)
-    return np.stack(samples, axis=0)
 
 
 def _frame_to_jpeg_b64(frame: npt.NDArray[np.uint8], *, quality: int = 72) -> str | None:

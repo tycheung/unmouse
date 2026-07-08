@@ -77,4 +77,4 @@ def test_cached_snap_provider_clears_targets_on_load_error() -> None:
 
     provider = CachedSnapProvider(loader=failing_loader, cache_interval_s=0.0)
     assert provider.list_targets() == ()
-    assert provider.refresh() == ()
+    assert provider.list_targets() == ()

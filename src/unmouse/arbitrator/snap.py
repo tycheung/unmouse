@@ -54,11 +54,6 @@ class CachedSnapProvider:
             self._refresh(now)
         return self._cached_targets
 
-    def refresh(self) -> tuple[SnapTarget, ...]:
-        now = time.monotonic()
-        self._refresh(now)
-        return self._cached_targets
-
     def _refresh(self, now: float) -> None:
         try:
             self._cached_targets = self.loader()
