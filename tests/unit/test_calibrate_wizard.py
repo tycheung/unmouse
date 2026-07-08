@@ -44,7 +44,7 @@ def test_run_calibration_wizard_saves_model(tmp_path, monkeypatch) -> None:
         overlay=overlay,
         sleep=lambda _s: None,
     )
-    assert outcome.success is True
+    assert outcome.ok is True
     assert load_gaze_model(settings) == b"model-bytes"
     assert source.released is True
     assert overlay.shown == []
@@ -78,6 +78,6 @@ def test_run_calibration_wizard_reports_incomplete(tmp_path, monkeypatch) -> Non
         overlay=NoopWizardOverlayBackend(),
         sleep=lambda _s: None,
     )
-    assert outcome.success is False
+    assert outcome.ok is False
     assert "before all points" in outcome.message
     assert not gaze_model_path(settings).is_file()

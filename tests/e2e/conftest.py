@@ -12,7 +12,6 @@ from tests.fakes.enrollment import FakeEnrollmentSession
 from unmouse.config import Settings
 from unmouse.launcher.api import PanelApi
 from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.calibration_wizards import CalibrationOutcome
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.onboarding import CameraCheckResult, OnboardingController
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
@@ -154,7 +153,7 @@ def onboarding_page(page, onboarding_harness: E2EHarness):
 def patch_calibration_wizards(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "unmouse.launcher.calibration_wizards.run_calibration_wizard",
-        lambda _s: CalibrationOutcome(success=True, message="Gaze calibration saved (mock)."),
+        lambda _s: ActionResult(True, "Gaze calibration saved (mock)."),
     )
 
 

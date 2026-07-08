@@ -158,7 +158,7 @@ class PanelApi:
 
         outcome = run_calibration_wizard(self._state.settings)
         self._set_status_message(outcome.message)
-        return action(outcome.success, outcome.message)
+        return action(outcome.ok, outcome.message)
 
     def configure_launcher_shell(
         self,

@@ -207,5 +207,4 @@ def default_camera_check(settings: Settings) -> CameraCheckResult:
 def default_calibration_step(settings: Settings) -> ActionResult:
     from unmouse.launcher.calibration_wizards import run_calibration_wizard
 
-    outcome = run_calibration_wizard(settings)
-    return ActionResult(outcome.success, outcome.message)
+    return run_calibration_wizard(settings)

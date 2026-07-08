@@ -2,22 +2,16 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
 
 import numpy as np
 
 from unmouse.broker.video_broker import FrameSource, create_frame_source
 from unmouse.config import Settings
 from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker, save_gaze_model
+from unmouse.launcher.api_helpers import ActionResult
 from unmouse.launcher.wizard_common import WizardOverlayBackend, create_calibration_overlay
 
 MAX_FRAMES_PER_POINT = 240
-
-
-@dataclass(frozen=True)
-class CalibrationOutcome:
-    success: bool
-    message: str
 
 
 def run_calibration_wizard(
@@ -28,7 +22,7 @@ def run_calibration_wizard(
     overlay: WizardOverlayBackend | None = None,
     sleep: Callable[[float], None] | None = None,
     prefer_win32_overlay: bool = True,
-) -> CalibrationOutcome:
+) -> ActionResult:
     wait = sleep or time.sleep
     gaze_tracker = tracker or create_gaze_tracker(settings)
     source = frame_source or create_frame_source(settings)
@@ -62,9 +56,9 @@ def run_calibration_wizard(
         source.release()
 
     if completed < target_points:
-        return CalibrationOutcome(False, "Calibration ended before all points were captured.")
+        return ActionResult(False, "Calibration ended before all points were captured.")
     model = gaze_tracker.save_model()
     if model is None:
-        return CalibrationOutcome(False, "Calibration did not produce a model. Please retry.")
+        return ActionResult(False, "Calibration did not produce a model. Please retry.")
     save_gaze_model(settings, model)
-    return CalibrationOutcome(True, f"Calibration saved ({target_points} points).")
+    return ActionResult(True, f"Calibration saved ({target_points} points).")

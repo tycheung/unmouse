@@ -6,7 +6,6 @@ from unmouse.config import Settings
 from unmouse.diagnostics import DiagnosticsSnapshot, save_diagnostics_snapshot
 from unmouse.launcher.api import PanelApi, last_calibration_label
 from unmouse.launcher.api_helpers import ActionResult
-from unmouse.launcher.calibration_wizards import CalibrationOutcome
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
 from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.tray import NoopTrayBackend, TrayHandlers
@@ -56,7 +55,7 @@ def test_panel_api_calibrate_runs_calibration_wizard() -> None:
     api = _api_without_onboarding_prompt()
     with patch(
         "unmouse.launcher.calibration_wizards.run_calibration_wizard",
-        return_value=CalibrationOutcome(success=True, message="Calibration saved (9 points)."),
+        return_value=ActionResult(True, "Calibration saved (9 points)."),
     ) as run_wizard:
         calibrate = api.start_calibrate()
     run_wizard.assert_called_once()
