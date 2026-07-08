@@ -56,29 +56,6 @@ class PauseHotkeyListener:
                 self.start()
 
 
-class NoopHotkeyListener:
-    def __init__(self, hotkey: str, on_toggle: HotkeyCallback) -> None:
-        self._hotkey = hotkey
-        self._on_toggle = on_toggle
-        self.started = False
-
-    @property
-    def hotkey(self) -> str:
-        return self._hotkey
-
-    def start(self) -> None:
-        self.started = True
-
-    def stop(self) -> None:
-        self.started = False
-
-    def update_hotkey(self, hotkey: str) -> None:
-        self._hotkey = hotkey
-
-    def trigger(self) -> None:
-        self._on_toggle()
-
-
 class EngineRuntimeController:
     def __init__(
         self,
@@ -86,7 +63,7 @@ class EngineRuntimeController:
         *,
         poll_interval_s: float = 0.2,
         sleep: Callable[[float], None] = time.sleep,
-        hotkey_listener: PauseHotkeyListener | NoopHotkeyListener | None = None,
+        hotkey_listener: PauseHotkeyListener | None = None,
     ) -> None:
         self._settings = settings
         self._poll_interval_s = poll_interval_s

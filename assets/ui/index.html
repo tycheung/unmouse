@@ -62,6 +62,9 @@
             <option value="gaze_only">Gaze only</option>
           </select>
         </label>
+        <label class="field">Pause hotkey
+          <input type="text" x-model="settingsForm.pause_hotkey" placeholder="ctrl+shift+p" />
+        </label>
         <div class="settings-actions">
           <button type="button" class="primary" @click="saveSettings()" :disabled="busy">Save</button>
           <button type="button" class="back-link" @click="goMain()">← Back</button>

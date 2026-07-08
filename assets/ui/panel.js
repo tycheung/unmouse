@@ -36,6 +36,7 @@ function panelApp() {
       scroll_speed_multiplier: 1,
       camera_index: 0,
       gaze_mode: "cursor_follow",
+      pause_hotkey: "ctrl+shift+p",
     },
   };
 
