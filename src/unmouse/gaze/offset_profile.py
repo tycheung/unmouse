@@ -117,7 +117,6 @@ def sample_from_measurement(
     measured_x: float,
     measured_y: float,
 ) -> OffsetSample:
-    """Build one offset sample from a calibration stare target and measured gaze."""
     return OffsetSample(
         target_x=target_x,
         target_y=target_y,

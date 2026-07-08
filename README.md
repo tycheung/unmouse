@@ -68,7 +68,7 @@ poetry run python scripts/generate_icon.py
 
 ```
 Control panel (pywebview + Alpine.js)
-  └─ PanelApi → engine / enrollment services, settings
+  └─ PanelApi → engine service, gesture enrollment, settings
   └─ Launch spawns unmouse.main:run_engine_cli (--engine)
 
 Engine (main.py)
@@ -95,7 +95,7 @@ src/unmouse/            Application package
   platform.py           Platform detection helpers
   launcher/             Panel shell, calibration wizards, onboarding, tray
     api_helpers.py      Panel API helpers and ActionResult
-    services/           Engine and enrollment lifecycle helpers
+    services/           Engine lifecycle and panel state
   overlay/              Gaze indicator + shared Tk overlay helpers
   broker/               Video fan-out and camera helpers
   gaze/                 Tracking pipeline
