@@ -17,7 +17,6 @@ from unmouse.launcher.calibration_wizards import (
     build_polynomial_targets,
     create_offset_stare_runner,
     offset_outcome_from_measurements,
-    polynomial_prerequisite_message,
     run_offset_wizard,
 )
 from unmouse.launcher.wizard_common import GazeSample, NoopWizardOverlayBackend
@@ -43,12 +42,6 @@ def test_build_offset_targets_returns_sixteen_points() -> None:
     assert targets[0].x == 40.0
     assert targets[0].y == 30.0
     assert targets[4].index == 4
-
-
-def test_polynomial_prerequisite_message_when_missing(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("APPDATA", str(tmp_path))
-    settings = Settings(screen_width=800, screen_height=600, profile_name="lab")
-    assert polynomial_prerequisite_message(settings) is not None
 
 
 def test_run_offset_wizard_requires_polynomial(tmp_path, monkeypatch) -> None:

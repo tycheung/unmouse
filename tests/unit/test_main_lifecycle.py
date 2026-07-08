@@ -5,7 +5,6 @@ from unmouse.arbitrator.actions import NoopActionDriver
 from unmouse.config import Settings
 from unmouse.diagnostics import (
     DiagnosticsService,
-    NoopDiagnosticsOverlay,
     collect_snapshot,
     load_diagnostics_snapshot,
     save_diagnostics_snapshot,
@@ -72,12 +71,10 @@ def test_diagnostics_service_publishes_when_debug_enabled(tmp_path, monkeypatch)
     monkeypatch.setenv("APPDATA", str(tmp_path))
     settings = Settings(screen_width=800, screen_height=600, debug=True)
     state = create_system_state(settings)
-    overlay = NoopDiagnosticsOverlay()
     service = DiagnosticsService(
         state,
         settings,
         sleep=lambda _interval: state.stop(),
-        overlay=overlay,
     )
     service.record_broker_frame()
     service.start()
@@ -85,4 +82,3 @@ def test_diagnostics_service_publishes_when_debug_enabled(tmp_path, monkeypatch)
         service._thread.join(timeout=2.0)
     service.stop()
     assert load_diagnostics_snapshot(settings) is not None
-    assert overlay.lines is not None

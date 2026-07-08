@@ -119,15 +119,6 @@ def chrome_buttons_to_snap_targets(
     )
 
 
-def gaze_in_title_bar_band(
-    gaze_y: float,
-    window: WindowRect,
-    *,
-    title_bar_height: float = DEFAULT_TITLE_BAR_HEIGHT,
-) -> bool:
-    return window.top <= gaze_y <= window.top + title_bar_height
-
-
 def read_foreground_window_rect() -> WindowRect | None:
     if not is_windows():
         return None

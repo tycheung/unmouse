@@ -6,7 +6,6 @@ import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Protocol
 
 from unmouse.config import Settings
 from unmouse.state import SystemState
@@ -70,13 +69,11 @@ class DiagnosticsService:
         settings: Settings,
         *,
         sleep: Callable[[float], None] = time.sleep,
-        overlay: DiagnosticsOverlayBackend | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
         self._state = state
         self._settings = settings
         self._sleep = sleep
-        self._overlay = overlay
         self._logger = logger or LOGGER
         self._broker_frames = 0
         self._thread: threading.Thread | None = None
@@ -89,8 +86,6 @@ class DiagnosticsService:
         if not self._settings.debug or (self._thread and self._thread.is_alive()):
             return
         self._running = True
-        if self._overlay is not None:
-            self._overlay.show()
         self._thread = threading.Thread(target=self._run, name="diagnostics", daemon=True)
         self._thread.start()
 
@@ -99,8 +94,6 @@ class DiagnosticsService:
         if self._thread:
             self._thread.join(timeout=1.0)
             self._thread = None
-        if self._overlay is not None:
-            self._overlay.hide()
 
     def _run(self) -> None:
         window_start = time.perf_counter()
@@ -114,10 +107,7 @@ class DiagnosticsService:
             broker_fps = frames / max(elapsed, 1e-6)
             snapshot = collect_snapshot(self._state, broker_fps=broker_fps)
             save_diagnostics_snapshot(self._settings, snapshot)
-            text = format_snapshot(snapshot)
-            self._logger.debug(text.replace("\n", " | "))
-            if self._overlay is not None:
-                self._overlay.render(text)
+            self._logger.debug(format_snapshot(snapshot).replace("\n", " | "))
 
 
 def format_snapshot(snapshot: DiagnosticsSnapshot) -> str:
@@ -126,31 +116,6 @@ def format_snapshot(snapshot: DiagnosticsSnapshot) -> str:
         f"Conf {snapshot.gaze_confidence:.2f}\n"
         f"Q gaze {snapshot.gaze_queue_depth} gesture {snapshot.gesture_queue_depth}"
     )
-
-
-class DiagnosticsOverlayBackend(Protocol):
-    def show(self) -> None: ...
-
-    def hide(self) -> None: ...
-
-    def render(self, text: str) -> None: ...
-
-
-@dataclass
-class NoopDiagnosticsOverlay:
-    lines: list[str] | None = None
-    visible: bool = False
-
-    def show(self) -> None:
-        self.visible = True
-        self.lines = []
-
-    def hide(self) -> None:
-        self.visible = False
-
-    def render(self, text: str) -> None:
-        if self.lines is not None:
-            self.lines.append(text)
 
 
 def _queue_depth(queue: object | None) -> int:

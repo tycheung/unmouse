@@ -13,7 +13,6 @@ from unmouse.arbitrator.window_chrome import (
     chrome_buttons_to_snap_targets,
     create_snap_orchestrator,
     create_window_chrome_provider,
-    gaze_in_title_bar_band,
 )
 
 
@@ -34,12 +33,6 @@ def test_chrome_targets_use_high_priority() -> None:
     targets = chrome_buttons_to_snap_targets(buttons)
     assert all(target.priority == 10 for target in targets)
     assert targets[0].target_id == "chrome:close"
-
-
-def test_gaze_in_title_bar_band() -> None:
-    window = _window()
-    assert gaze_in_title_bar_band(60.0, window) is True
-    assert gaze_in_title_bar_band(200.0, window) is False
 
 
 def test_window_chrome_provider_caches_buttons() -> None:

@@ -218,12 +218,6 @@ def build_offset_targets(
     return _targets_from_positions(build_calibration_targets(screen_width, screen_height))
 
 
-def polynomial_prerequisite_message(settings: Settings) -> str | None:
-    if load_calibration(calibration_path(settings)) is None:
-        return OFFSET_PREREQUISITE_MESSAGE
-    return None
-
-
 def calibrated_mean_gaze(
     samples: Sequence[GazeSample],
     calibration: CalibrationModel,
