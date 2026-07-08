@@ -3,13 +3,22 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 import numpy as np
 
 from unmouse.broker.video_broker import FrameSource, create_frame_source
 from unmouse.config import Settings
 from unmouse.gaze.tracker import GazeTracker, create_gaze_tracker
+from unmouse.overlay.tk_overlay import TkFullscreenOverlay
+from unmouse.platform import is_windows
+from unmouse.utils.backend_selection import prefer_or_fallback
+
+if TYPE_CHECKING:
+    import tkinter as tk
+
+TARGET_DOT_DIAMETER = 24
+TARGET_DOT_COLOR = "#FFFFFF"
 
 
 @dataclass(frozen=True)
@@ -49,6 +58,41 @@ class NoopWizardOverlayBackend:
     def hide(self) -> None:
         if self.shown is not None:
             self.shown.clear()
+
+
+class TkCalibrationOverlay(TkFullscreenOverlay):
+    def __init__(self, *, dot_diameter: int = TARGET_DOT_DIAMETER) -> None:
+        super().__init__(thread_name="calibration-overlay")
+        self._diameter = dot_diameter
+
+    def show_target(self, x: float, y: float, *, label: str) -> None:
+        self.send_command((x, y, label))
+
+    def _render(self, canvas: tk.Canvas, label_widget: tk.Label, command: object) -> None:
+        if not isinstance(command, tuple) or len(command) != 3:
+            return
+        x, y, text = command
+        canvas.delete("all")
+        label_widget.config(text=str(text))
+        radius = self._diameter / 2
+        canvas.create_oval(
+            float(x) - radius,
+            float(y) - radius,
+            float(x) + radius,
+            float(y) + radius,
+            fill=TARGET_DOT_COLOR,
+            outline=TARGET_DOT_COLOR,
+            width=2,
+        )
+
+
+def create_calibration_overlay(*, prefer_win32: bool = True) -> WizardOverlayBackend:
+    return prefer_or_fallback(
+        prefer=prefer_win32 and is_windows(),
+        make_preferred=lambda: cast(WizardOverlayBackend, TkCalibrationOverlay()),
+        make_fallback=lambda: cast(WizardOverlayBackend, NoopWizardOverlayBackend()),
+        exceptions=None,
+    )
 
 
 class StareCalibrationRunner:
@@ -197,8 +241,6 @@ def run_stare_wizard(
     prefer_win32_overlay: bool = True,
     incomplete_message: str,
 ) -> object:
-    from unmouse.launcher.calibration_overlay import create_calibration_overlay
-
     gaze_tracker = tracker or create_gaze_tracker(prefer_eyegestures=False)
     source = frame_source or create_frame_source(settings)
     ui = overlay or create_calibration_overlay(prefer_win32=prefer_win32_overlay)

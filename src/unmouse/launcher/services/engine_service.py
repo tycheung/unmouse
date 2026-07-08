@@ -1,17 +1,41 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, field
+from typing import Literal
 
 from unmouse.config import GazeMode, Settings
 from unmouse.diagnostics import load_diagnostics_snapshot
 from unmouse.launcher.api_helpers import action, last_calibration_label
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog, WatchdogEvent
-from unmouse.launcher.services.panel_state import PanelState, PanelStatus
+from unmouse.launcher.enroll_ui import GestureEnrollmentSession
 from unmouse.launcher.settings import toggle_gaze_mode
 from unmouse.launcher.tray import TrayBackend, TrayHandlers, create_tray_backend
-from unmouse.persistence import load_persisted_settings
+from unmouse.launcher.update import UpdateStatus
 from unmouse.runtime import RuntimeState, load_runtime, set_paused, toggle_paused
+
+PanelView = Literal["main", "settings", "onboarding", "enrollment"]
+
+
+@dataclass
+class PanelStatus:
+    message: str
+    fps: float | None = None
+    confidence: float | None = None
+    tracking: bool = False
+    paused: bool = False
+    gaze_mode: str = "cursor_follow"
+    last_calibrated: str | None = None
+
+
+@dataclass
+class PanelState:
+    settings: Settings
+    view: PanelView = "main"
+    status: PanelStatus = field(default_factory=lambda: PanelStatus(message="Ready"))
+    enrollment: GestureEnrollmentSession | None = None
+    enrollment_return_view: PanelView = "main"
+    update_status: UpdateStatus | None = None
 
 
 class EngineService:
@@ -52,7 +76,6 @@ class EngineService:
             self._tray = create_tray_backend(self._tray_handlers(), prefer_pystray=True)
 
     def get_status(self) -> dict[str, object]:
-        self._state.settings = load_persisted_settings()
         runtime = load_runtime(self._state.settings)
         diagnostics = (
             load_diagnostics_snapshot(self._state.settings)
@@ -156,7 +179,7 @@ class EngineService:
         settings: Settings | None = None,
         runtime: RuntimeState | None = None,
     ) -> PanelStatus:
-        resolved_settings = settings or load_persisted_settings()
+        resolved_settings = settings or self._state.settings
         self._state.settings = resolved_settings
         tracking = self._engine_runner.is_running()
         paused = False
@@ -189,7 +212,6 @@ class EngineService:
         return "Resume Tracking" if runtime.paused else "Pause Tracking"
 
     def _gaze_only_checked(self) -> bool:
-        self._state.settings = load_persisted_settings()
         return self._state.settings.gaze_mode is GazeMode.GAZE_ONLY
 
     def _refresh_tray_menu(self) -> None:

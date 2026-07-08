@@ -4,7 +4,6 @@ import pytest
 
 from unmouse.config import Settings
 from unmouse.gaze.calibration import calibration_path, load_calibration, save_calibration
-from unmouse.launcher.calibration_overlay import create_calibration_overlay
 from unmouse.launcher.calibration_wizards import (
     NUM_POLY_TARGETS,
     build_polynomial_targets,
@@ -14,6 +13,7 @@ from unmouse.launcher.calibration_wizards import (
 from unmouse.launcher.wizard_common import (
     GazeSample,
     NoopWizardOverlayBackend,
+    create_calibration_overlay,
     filter_samples_for_point,
     geometric_mean_gaze,
 )
@@ -131,7 +131,7 @@ def test_wizard_save_roundtrip(tmp_path, monkeypatch) -> None:
 
 
 def test_create_calibration_overlay_uses_fake_off_windows(monkeypatch) -> None:
-    monkeypatch.setattr("unmouse.launcher.calibration_overlay.is_windows", lambda: False)
+    monkeypatch.setattr("unmouse.launcher.wizard_common.is_windows", lambda: False)
     overlay = create_calibration_overlay(prefer_win32=True)
     assert isinstance(overlay, NoopWizardOverlayBackend)
 

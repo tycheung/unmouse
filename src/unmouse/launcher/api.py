@@ -8,8 +8,12 @@ from unmouse.launcher.api_helpers import action, last_calibration_label, update_
 from unmouse.launcher.engine_runner import EngineRunner, EngineWatchdog
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
-from unmouse.launcher.services.engine_service import EngineService
-from unmouse.launcher.services.panel_state import PanelState, PanelStatus, PanelView
+from unmouse.launcher.services.engine_service import (
+    EngineService,
+    PanelState,
+    PanelStatus,
+    PanelView,
+)
 from unmouse.launcher.settings import (
     activate_profile,
     create_profile,
