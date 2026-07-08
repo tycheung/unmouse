@@ -34,6 +34,40 @@ class UpdateStatus:
         return asdict(self)
 
 
+def _git_status(
+    *,
+    available: bool,
+    message: str,
+    current_version: str | None = None,
+    latest_version: str | None = None,
+) -> UpdateStatus:
+    return UpdateStatus(
+        available=available,
+        message=message,
+        channel="git",
+        current_version=current_version or __version__,
+        latest_version=latest_version,
+    )
+
+
+def _release_status(
+    *,
+    available: bool,
+    message: str,
+    current_version: str | None,
+    latest_version: str | None = None,
+    download_url: str | None = None,
+) -> UpdateStatus:
+    return UpdateStatus(
+        available=available,
+        message=message,
+        channel="release",
+        current_version=current_version,
+        latest_version=latest_version,
+        download_url=download_url,
+    )
+
+
 def check_updates(
     *,
     root: Path | None = None,
@@ -76,10 +110,9 @@ def apply_update(status: UpdateStatus, *, run_command: RunCommand | None = None)
         return _apply_git_update(project_root(), run_command=run_command or _run_git)
     if status.channel == "release" and status.download_url:
         webbrowser.open(status.download_url)
-        return UpdateStatus(
+        return _release_status(
             available=False,
             message="Opened release download page in your browser.",
-            channel="release",
             current_version=status.current_version,
             latest_version=status.latest_version,
             download_url=status.download_url,
@@ -113,26 +146,18 @@ def _check_git_update(root: Path, *, run_command: RunCommand) -> UpdateStatus:
         local = run_command(["git", "-C", str(root), "rev-parse", "HEAD"], root)
         remote = run_command(["git", "-C", str(root), "rev-parse", "@{u}"], root)
     except RuntimeError as exc:
-        return UpdateStatus(
-            available=False,
-            message=str(exc),
-            channel="git",
-            current_version=__version__,
-        )
+        return _git_status(available=False, message=str(exc))
     local_sha = local.stdout.strip()
     remote_sha = remote.stdout.strip()
     if local_sha == remote_sha:
-        return UpdateStatus(
+        return _git_status(
             available=False,
             message="Git install is up to date.",
-            channel="git",
-            current_version=__version__,
             latest_version=remote_sha[:7],
         )
-    return UpdateStatus(
+    return _git_status(
         available=True,
         message="Git updates are available. Click Update Software to pull.",
-        channel="git",
         current_version=local_sha[:7],
         latest_version=remote_sha[:7],
     )
@@ -142,19 +167,9 @@ def _apply_git_update(root: Path, *, run_command: RunCommand) -> UpdateStatus:
     try:
         result = run_command(["git", "-C", str(root), "pull", "--ff-only"], root)
     except RuntimeError as exc:
-        return UpdateStatus(
-            available=True,
-            message=str(exc),
-            channel="git",
-            current_version=__version__,
-        )
+        return _git_status(available=True, message=str(exc))
     message = result.stdout.strip() or "Git pull completed."
-    return UpdateStatus(
-        available=False,
-        message=message,
-        channel="git",
-        current_version=__version__,
-    )
+    return _git_status(available=False, message=message)
 
 
 def _check_release_update(
@@ -166,34 +181,30 @@ def _check_release_update(
     try:
         payload = fetch_release(release_repo)
     except (URLError, ValueError, json.JSONDecodeError) as exc:
-        return UpdateStatus(
+        return _release_status(
             available=False,
             message=f"Release check failed: {exc}",
-            channel="release",
             current_version=current_version,
         )
     tag = str(payload.get("tag_name", ""))
     if not tag:
-        return UpdateStatus(
+        return _release_status(
             available=False,
             message="Release response did not include a version tag.",
-            channel="release",
             current_version=current_version,
         )
     download_url = _pick_release_download(payload)
     if version_is_newer(tag, current_version):
-        return UpdateStatus(
+        return _release_status(
             available=True,
             message=f"Version {tag.lstrip('v')} is available (current {current_version}).",
-            channel="release",
             current_version=current_version,
             latest_version=tag.lstrip("v"),
             download_url=download_url,
         )
-    return UpdateStatus(
+    return _release_status(
         available=False,
         message="You are on the latest release.",
-        channel="release",
         current_version=current_version,
         latest_version=tag.lstrip("v"),
         download_url=download_url,

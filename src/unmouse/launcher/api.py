@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 
 from unmouse.config import Settings
 from unmouse.launcher.api_helpers import action, last_calibration_label, update_payload
@@ -119,14 +120,9 @@ class PanelApi:
 
     def check_for_updates(self) -> dict[str, object]:
         self._state.update_status = check_updates()
-        self._state.status = PanelStatus(
+        self._state.status = replace(
+            self._state.status,
             message=self._state.update_status.message,
-            fps=self._state.status.fps,
-            confidence=self._state.status.confidence,
-            tracking=self._state.status.tracking,
-            paused=self._state.status.paused,
-            gaze_mode=self._state.status.gaze_mode,
-            last_calibrated=self._state.status.last_calibrated,
         )
         return update_payload(self._state.update_status)
 
