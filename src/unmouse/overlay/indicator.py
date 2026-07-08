@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import threading
-import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, cast
@@ -10,6 +9,7 @@ from unmouse.overlay.tk_overlay import MIN_OVERLAY_FPS, TkWin32IndicatorBackend
 from unmouse.platform import is_windows
 from unmouse.state import SystemState
 from unmouse.utils.backend_selection import prefer_or_fallback
+from unmouse.utils.timing import run_at_interval
 
 MIN_INDICATOR_FPS = MIN_OVERLAY_FPS
 DEFAULT_INDICATOR_DIAMETER = 20
@@ -141,13 +141,7 @@ class GazeIndicatorOverlay:
         self._backend.update(self._state_provider())
 
     def _run(self) -> None:
-        while self._running:
-            started = time.perf_counter()
-            self.tick()
-            elapsed = time.perf_counter() - started
-            sleep_for = self._interval_s - elapsed
-            if sleep_for > 0:
-                time.sleep(sleep_for)
+        run_at_interval(lambda: self._running, self.tick, self._interval_s)
 
 
 def relative_luminance(r: int, g: int, b: int) -> float:

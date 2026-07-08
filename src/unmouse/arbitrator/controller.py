@@ -16,6 +16,7 @@ from unmouse.overlay.indicator import (
     indicator_state_from_system,
 )
 from unmouse.state import SystemState
+from unmouse.utils.timing import run_at_interval
 
 CONTROLLER_TARGET_HZ = 30.0
 
@@ -124,13 +125,7 @@ class ActionController:
         )
 
     def _run(self) -> None:
-        while self._state.is_running():
-            started = time.perf_counter()
-            self.tick()
-            elapsed = time.perf_counter() - started
-            sleep_for = self._interval_s - elapsed
-            if sleep_for > 0:
-                time.sleep(sleep_for)
+        run_at_interval(self._state.is_running, self.tick, self._interval_s)
 
 
 def _default_snap_orchestrator(prefer_win32: bool) -> CompositeSnapOrchestrator:

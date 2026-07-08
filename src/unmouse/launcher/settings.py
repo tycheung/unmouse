@@ -12,6 +12,7 @@ from unmouse.persistence import (
     save_persisted_settings,
     settings_file_path,
 )
+from unmouse.utils.coerce import as_float, as_int
 
 PROFILE_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 RESERVED_PROFILE_NAMES = frozenset({".", ".."})
@@ -178,30 +179,12 @@ def _current_settings(settings: Settings) -> Settings:
     return settings
 
 
-def _as_float(value: object) -> float:
-    if isinstance(value, bool):
-        return float(int(value))
-    if isinstance(value, int | float):
-        return float(value)
-    return float(str(value))
-
-
-def _as_int(value: object) -> int:
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return int(value)
-    return int(str(value))
-
-
 _PANEL_FIELD_COERCERS: dict[str, Callable[[object], object]] = {
-    "kalman_measurement_noise": _as_float,
-    "saccade_threshold_px": _as_float,
-    "snap_radius_px": _as_float,
-    "scroll_speed_multiplier": _as_float,
-    "camera_index": _as_int,
+    "kalman_measurement_noise": as_float,
+    "saccade_threshold_px": as_float,
+    "snap_radius_px": as_float,
+    "scroll_speed_multiplier": as_float,
+    "camera_index": as_int,
     "gaze_mode": lambda value: GazeMode(str(value)),
     "pause_hotkey": lambda value: str(value).strip().lower(),
 }

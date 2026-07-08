@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from queue import Empty, Full, Queue
-from typing import TypeVar
+from queue import Queue
 
 from unmouse.config import Settings
 from unmouse.gestures.fsm import ClickEvent
 from unmouse.gestures.scroll_fsm import ScrollTick
-
-_T = TypeVar("_T")
+from unmouse.utils.queues import offer_latest
 
 
 @dataclass(frozen=True)
@@ -60,11 +58,11 @@ class SystemState:
 
     def enqueue_click_event(self, event: ClickEvent) -> None:
         with self._lock:
-            _offer(self.click_event_queue, event)
+            offer_latest(self.click_event_queue, event)
 
     def enqueue_scroll_tick(self, tick: ScrollTick) -> None:
         with self._lock:
-            _offer(self.scroll_tick_queue, tick)
+            offer_latest(self.scroll_tick_queue, tick)
             self.scroll_up = tick.delta > 0
 
     def set_head_pose_ok(self, ok: bool) -> None:
@@ -90,19 +88,3 @@ def create_system_state(settings: Settings) -> SystemState:
         click_event_queue=Queue(maxsize=queue_size),
         scroll_tick_queue=Queue(maxsize=queue_size),
     )
-
-
-def _offer(queue: Queue[_T] | None, item: _T) -> None:
-    if queue is None:
-        return
-    try:
-        queue.put_nowait(item)
-    except Full:
-        try:
-            queue.get_nowait()
-        except Empty:
-            pass
-        try:
-            queue.put_nowait(item)
-        except Full:
-            pass

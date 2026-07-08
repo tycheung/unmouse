@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
@@ -11,7 +10,8 @@ from typing import Protocol
 
 from unmouse.config import Settings
 from unmouse.state import SystemState
-from unmouse.utils.json_io import write_json_object
+from unmouse.utils.coerce import as_float, as_int
+from unmouse.utils.json_io import read_json_object_or_none, write_json_object
 
 DIAGNOSTICS_FILENAME = "diagnostics.json"
 LOGGER = logging.getLogger("unmouse.diagnostics")
@@ -33,17 +33,17 @@ def diagnostics_file_path(settings: Settings) -> Path:
 
 
 def load_diagnostics_snapshot(settings: Settings) -> DiagnosticsSnapshot | None:
-    path = diagnostics_file_path(settings)
-    if not path.is_file():
-        return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
+    data = read_json_object_or_none(
+        diagnostics_file_path(settings),
+        error_message="diagnostics JSON must be an object",
+    )
+    if data is None:
         return None
     return DiagnosticsSnapshot(
-        broker_fps=float(data.get("broker_fps", 0.0)),
-        gaze_confidence=float(data.get("gaze_confidence", 0.0)),
-        gaze_queue_depth=int(data.get("gaze_queue_depth", 0)),
-        gesture_queue_depth=int(data.get("gesture_queue_depth", 0)),
+        broker_fps=as_float(data.get("broker_fps", 0.0)),
+        gaze_confidence=as_float(data.get("gaze_confidence", 0.0)),
+        gaze_queue_depth=as_int(data.get("gaze_queue_depth", 0)),
+        gesture_queue_depth=as_int(data.get("gesture_queue_depth", 0)),
     )
 
 

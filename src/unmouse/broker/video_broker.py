@@ -4,7 +4,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from queue import Empty, Full, Queue
+from queue import Empty, Queue
 from typing import Protocol
 
 import numpy as np
@@ -13,6 +13,7 @@ import numpy.typing as npt
 from unmouse.broker.camera import open_camera
 from unmouse.config import Settings
 from unmouse.state import SystemState
+from unmouse.utils.queues import offer_latest
 
 
 @dataclass(frozen=True)
@@ -71,23 +72,7 @@ class VideoBroker:
 
     def _publish(self, packet: FramePacket) -> None:
         for queue in (self._state.gaze_frame_queue, self._state.gesture_frame_queue):
-            if queue is None:
-                continue
-            _offer_latest(queue, (packet.frame_id, packet.frame))
-
-
-def _offer_latest(queue: Queue[tuple[int, object]], item: tuple[int, object]) -> None:
-    try:
-        queue.put_nowait(item)
-    except Full:
-        try:
-            queue.get_nowait()
-        except Empty:
-            pass
-        try:
-            queue.put_nowait(item)
-        except Full:
-            pass
+            offer_latest(queue, (packet.frame_id, packet.frame))
 
 
 def drain_latest(
