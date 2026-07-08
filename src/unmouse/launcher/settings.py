@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from unmouse.config import GazeMode, Settings
+from unmouse.launcher.api_helpers import action
 from unmouse.persistence import (
     _read_file,
     _write_file,
@@ -193,6 +194,39 @@ def toggle_gaze_mode(settings: Settings) -> GazeMode:
     current.gaze_mode = next_mode
     save_persisted_settings(current)
     return next_mode
+
+
+def panel_save_settings(settings: Settings, updates: dict[str, object]) -> dict[str, object]:
+    snapshot = update_panel_settings(settings, updates)
+    return {"ok": True, "message": "Settings saved.", "settings": snapshot}
+
+
+def panel_create_profile(settings: Settings, name: str) -> dict[str, object]:
+    try:
+        return create_profile(settings, name)
+    except ValueError as exc:
+        return action(False, str(exc))
+
+
+def panel_rename_profile(settings: Settings, old_name: str, new_name: str) -> dict[str, object]:
+    try:
+        return rename_profile(settings, old_name, new_name)
+    except ValueError as exc:
+        return action(False, str(exc))
+
+
+def panel_delete_profile(settings: Settings, name: str) -> dict[str, object]:
+    try:
+        return delete_profile(settings, name)
+    except ValueError as exc:
+        return action(False, str(exc))
+
+
+def panel_activate_profile(settings: Settings, name: str) -> dict[str, object]:
+    try:
+        return activate_profile(settings, name)
+    except ValueError as exc:
+        return action(False, str(exc))
 
 
 def _validate_profile_name(name: str) -> str:

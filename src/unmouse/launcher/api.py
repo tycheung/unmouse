@@ -11,7 +11,14 @@ from unmouse.launcher.onboarding import OnboardingController
 from unmouse.launcher.services.engine_service import EngineService
 from unmouse.launcher.services.enrollment_service import EnrollmentService
 from unmouse.launcher.services.panel_state import PanelState, PanelStatus, PanelView
-from unmouse.launcher.services.settings_service import SettingsService
+from unmouse.launcher.settings import (
+    get_panel_settings,
+    panel_activate_profile,
+    panel_create_profile,
+    panel_delete_profile,
+    panel_rename_profile,
+    panel_save_settings,
+)
 from unmouse.launcher.tray import TrayBackend
 from unmouse.launcher.update import apply_update, check_updates
 from unmouse.persistence import load_persisted_settings
@@ -38,7 +45,6 @@ class PanelApi:
             tray=tray,
             watchdog=watchdog,
         )
-        self._settings_service = SettingsService(self._state)
         self._enrollment_service = EnrollmentService(self._state, self._onboarding)
         if self._onboarding.should_show_on_startup():
             self._state.view = "onboarding"
@@ -169,22 +175,31 @@ class PanelApi:
         return {"view": self._state.view}
 
     def get_settings_panel(self) -> dict[str, object]:
-        return self._settings_service.get_panel()
+        return get_panel_settings(self._state.settings)
 
     def save_settings_panel(self, updates: dict[str, object]) -> dict[str, object]:
-        return self._settings_service.save_panel(updates)
+        result = panel_save_settings(self._state.settings, updates)
+        self._state.settings = load_persisted_settings()
+        self._state.status = PanelStatus(message="Settings saved")
+        return result
 
     def create_profile(self, name: str) -> dict[str, object]:
-        return self._settings_service.create_profile(name)
+        return panel_create_profile(self._state.settings, name)
 
     def rename_profile(self, old_name: str, new_name: str) -> dict[str, object]:
-        return self._settings_service.rename_profile(old_name, new_name)
+        result = panel_rename_profile(self._state.settings, old_name, new_name)
+        if result.get("ok"):
+            self._state.settings = load_persisted_settings()
+        return result
 
     def delete_profile(self, name: str) -> dict[str, object]:
-        return self._settings_service.delete_profile(name)
+        return panel_delete_profile(self._state.settings, name)
 
     def activate_profile(self, name: str) -> dict[str, object]:
-        return self._settings_service.activate_profile(name)
+        result = panel_activate_profile(self._state.settings, name)
+        if result.get("ok"):
+            self._state.settings = load_persisted_settings()
+        return result
 
     def show_onboarding(self) -> dict[str, str]:
         self._enrollment_service.close()
