@@ -93,6 +93,20 @@ def normalize_palm(
     return np.asarray((rotation @ scaled.T).T, dtype=np.float64)
 
 
+def _vector_angle(
+    vec_a: npt.NDArray[np.float64],
+    vec_b: npt.NDArray[np.float64],
+    *,
+    epsilon: float,
+) -> float:
+    norm_a = float(np.linalg.norm(vec_a))
+    norm_b = float(np.linalg.norm(vec_b))
+    if norm_a * norm_b < epsilon:
+        return 0.0
+    cosine = float(np.dot(vec_a, vec_b) / (norm_a * norm_b))
+    return math.acos(min(1.0, max(-1.0, cosine)))
+
+
 def joint_angle(
     i: int,
     pivot: int,
@@ -102,15 +116,7 @@ def joint_angle(
     epsilon: float = 1e-8,
 ) -> float:
     """Return angle at pivot j between vectors to landmarks i and k."""
-    vec_i = points[i] - points[pivot]
-    vec_k = points[k] - points[pivot]
-    norm_i = float(np.linalg.norm(vec_i))
-    norm_k = float(np.linalg.norm(vec_k))
-    if norm_i * norm_k < epsilon:
-        return 0.0
-    cosine = float(np.dot(vec_i, vec_k) / (norm_i * norm_k))
-    cosine = min(1.0, max(-1.0, cosine))
-    return math.acos(cosine)
+    return _vector_angle(points[i] - points[pivot], points[k] - points[pivot], epsilon=epsilon)
 
 
 def compute_joint_angles(
@@ -130,18 +136,10 @@ def compute_inter_finger_angles(
     epsilon: float = 1e-8,
 ) -> npt.NDArray[np.float64]:
     directions = [_finger_direction(points, chain, epsilon=epsilon) for chain in FINGER_CHAINS]
-    angles: list[float] = []
-    for left, right in INTER_FINGER_PAIRS:
-        left_dir = directions[left]
-        right_dir = directions[right]
-        left_norm = float(np.linalg.norm(left_dir))
-        right_norm = float(np.linalg.norm(right_dir))
-        if left_norm * right_norm < epsilon:
-            angles.append(0.0)
-            continue
-        cosine = float(np.dot(left_dir, right_dir) / (left_norm * right_norm))
-        cosine = min(1.0, max(-1.0, cosine))
-        angles.append(math.acos(cosine))
+    angles = [
+        _vector_angle(directions[left], directions[right], epsilon=epsilon)
+        for left, right in INTER_FINGER_PAIRS
+    ]
     return np.array(angles, dtype=np.float64)
 
 

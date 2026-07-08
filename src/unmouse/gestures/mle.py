@@ -197,14 +197,6 @@ def classify(
     margin_min: float,
 ) -> ClassificationResult:
     """Return the best gesture if absolute and margin thresholds pass."""
-    if not templates:
-        return ClassificationResult(
-            gesture=None,
-            log_likelihood=-math.inf,
-            margin=0.0,
-            runner_up=None,
-        )
-
     feature = np.asarray(theta, dtype=np.float64)
     scored = [
         (name, log_likelihood(feature, template))
@@ -225,15 +217,9 @@ def classify(
     runner_log = scored[1][1] if len(scored) > 1 else -math.inf
     margin = best_log - runner_log
 
-    if best_log <= absolute_min or margin <= margin_min:
-        return ClassificationResult(
-            gesture=None,
-            log_likelihood=best_log,
-            margin=margin,
-            runner_up=runner_name,
-        )
+    passed = best_log > absolute_min and margin > margin_min
     return ClassificationResult(
-        gesture=best_name,
+        gesture=best_name if passed else None,
         log_likelihood=best_log,
         margin=margin,
         runner_up=runner_name,
