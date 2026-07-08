@@ -7,6 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from unmouse.config import Settings
+from unmouse.utils.coerce import as_float
 from unmouse.utils.json_io import read_json_object_or_none, write_json_object
 
 GRID_COLS = 4
@@ -74,9 +75,9 @@ class OffsetProfile:
             msg = f"expected {NUM_CORNERS} corner samples"
             raise ValueError(msg)
         return cls(
-            screen_width=float(data["screen_width"]),  # type: ignore[arg-type]
-            screen_height=float(data["screen_height"]),  # type: ignore[arg-type]
-            corner_inset=float(data.get("corner_inset", DEFAULT_CORNER_INSET)),  # type: ignore[arg-type]
+            screen_width=as_float(data["screen_width"]),
+            screen_height=as_float(data["screen_height"]),
+            corner_inset=as_float(data.get("corner_inset", DEFAULT_CORNER_INSET)),
             corners=(corners[0], corners[1], corners[2], corners[3]),
             cells=cells,
         )
