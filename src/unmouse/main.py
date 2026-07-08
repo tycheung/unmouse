@@ -7,6 +7,7 @@ import sys
 import time
 
 from unmouse.config import Settings, get_settings
+from unmouse.engine_controls import EngineRuntimeController
 from unmouse.state import SystemState, create_system_state
 
 
@@ -23,10 +24,12 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     gaze_worker = GazeWorker(runtime_state, settings)
     gesture_worker = GestureWorker(runtime_state, settings)
     controller = ActionController(runtime_state, settings, enable_overlay=False)
+    runtime_controller = EngineRuntimeController(settings)
     broker.start()
     gaze_worker.start()
     gesture_worker.start()
     controller.start()
+    runtime_controller.start()
 
     print(f"unmouse engine — screen {settings.screen_width}x{settings.screen_height}")
     try:
@@ -35,6 +38,7 @@ def run_engine(settings: Settings, state: SystemState | None = None) -> None:
     except KeyboardInterrupt:
         runtime_state.stop()
     finally:
+        runtime_controller.stop()
         controller.stop()
         controller.join(timeout=1.0)
         gesture_worker.join(timeout=1.0)

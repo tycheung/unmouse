@@ -34,6 +34,7 @@ class PanelSettingsSnapshot:
     scroll_speed_multiplier: float
     camera_index: int
     gaze_mode: str
+    pause_hotkey: str
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -112,6 +113,8 @@ def update_panel_settings(settings: Settings, updates: dict[str, object]) -> dic
         current.camera_index = _as_int(updates["camera_index"])
     if "gaze_mode" in updates:
         current.gaze_mode = GazeMode(str(updates["gaze_mode"]))
+    if "pause_hotkey" in updates:
+        current.pause_hotkey = str(updates["pause_hotkey"]).strip().lower()
     save_persisted_settings(current)
     return get_panel_settings(current)
 
@@ -209,6 +212,7 @@ def panel_settings_snapshot(settings: Settings) -> PanelSettingsSnapshot:
         scroll_speed_multiplier=settings.scroll_speed_multiplier,
         camera_index=settings.camera_index,
         gaze_mode=settings.gaze_mode.value,
+        pause_hotkey=settings.pause_hotkey,
     )
 
 
@@ -221,6 +225,7 @@ def _settings_to_dict(settings: Settings) -> dict[str, object]:
         "scroll_speed_multiplier": settings.scroll_speed_multiplier,
         "camera_index": settings.camera_index,
         "gaze_mode": settings.gaze_mode.value,
+        "pause_hotkey": settings.pause_hotkey,
     }
 
 
@@ -238,7 +243,21 @@ def _settings_from_dict(base: Settings, data: dict[str, object]) -> Settings:
             payload[key] = data[key]
     if "gaze_mode" in data:
         payload["gaze_mode"] = GazeMode(str(data["gaze_mode"]))
+    if "pause_hotkey" in data:
+        payload["pause_hotkey"] = str(data["pause_hotkey"])
     return Settings.model_validate(payload)
+
+
+def toggle_gaze_mode(settings: Settings) -> GazeMode:
+    current = _current_settings(settings).model_copy(deep=True)
+    next_mode = (
+        GazeMode.CURSOR_FOLLOW
+        if current.gaze_mode is GazeMode.GAZE_ONLY
+        else GazeMode.GAZE_ONLY
+    )
+    current.gaze_mode = next_mode
+    save_persisted_settings(current)
+    return next_mode
 
 
 def _validate_profile_name(name: str) -> str:

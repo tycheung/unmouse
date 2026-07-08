@@ -6,10 +6,23 @@ import importlib
 import importlib.util
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 TrayAction = Callable[[], None]
+TrayLabel = Callable[[], str]
+TrayChecked = Callable[[], bool]
+
+
+@dataclass(frozen=True)
+class TrayHandlers:
+    on_show: TrayAction
+    on_stop: TrayAction
+    on_quit: TrayAction
+    on_pause_toggle: TrayAction | None = None
+    on_gaze_toggle: TrayAction | None = None
+    pause_label: TrayLabel | None = None
+    gaze_checked: TrayChecked | None = None
 
 
 class TrayBackend(Protocol):
@@ -17,16 +30,13 @@ class TrayBackend(Protocol):
 
     def stop(self) -> None: ...
 
+    def refresh_menu(self) -> None: ...
+
 
 @dataclass
 class FakeTrayBackend:
-    """Records tray lifecycle for unit tests."""
-
+    handlers: TrayHandlers
     running: bool = False
-    actions: list[str] = field(default_factory=list)
-    on_show: TrayAction | None = None
-    on_stop: TrayAction | None = None
-    on_quit: TrayAction | None = None
 
     def ensure_running(self) -> None:
         self.running = True
@@ -34,38 +44,15 @@ class FakeTrayBackend:
     def stop(self) -> None:
         self.running = False
 
-    def trigger_show(self) -> None:
-        self.actions.append("show")
-        if self.on_show:
-            self.on_show()
-
-    def trigger_stop(self) -> None:
-        self.actions.append("stop")
-        if self.on_stop:
-            self.on_stop()
-
-    def trigger_quit(self) -> None:
-        self.actions.append("quit")
-        if self.on_quit:
-            self.on_quit()
+    def refresh_menu(self) -> None:
+        return None
 
 
 class TrayController:
-    """Windows notification-area icon with Show, Stop, and Quit actions."""
-
-    def __init__(
-        self,
-        *,
-        on_show: TrayAction,
-        on_stop: TrayAction,
-        on_quit: TrayAction,
-        title: str = "unmouse",
-    ) -> None:
-        self._on_show = on_show
-        self._on_stop = on_stop
-        self._on_quit = on_quit
+    def __init__(self, handlers: TrayHandlers, *, title: str = "unmouse") -> None:
+        self._handlers = handlers
         self._title = title
-        self._icon: object | None = None
+        self._icon: Any | None = None
         self._thread: threading.Thread | None = None
         self._running = False
 
@@ -73,13 +60,12 @@ class TrayController:
         if self._running:
             return
         pystray: Any = importlib.import_module("pystray")
-
-        menu = pystray.Menu(
-            pystray.MenuItem("Show Panel", lambda _icon, _item: self._on_show()),
-            pystray.MenuItem("Stop Tracking", lambda _icon, _item: self._on_stop()),
-            pystray.MenuItem("Quit", lambda _icon, _item: self._on_quit()),
+        icon = pystray.Icon(
+            self._title,
+            create_tray_icon_image(),
+            self._title,
+            self._build_menu(pystray),
         )
-        icon = pystray.Icon(self._title, create_tray_icon_image(), self._title, menu)
         self._icon = icon
         self._thread = threading.Thread(target=icon.run, name="unmouse-tray", daemon=True)
         self._thread.start()
@@ -94,18 +80,41 @@ class TrayController:
         self._thread = None
         self._running = False
 
+    def refresh_menu(self) -> None:
+        if self._icon is not None:
+            update = getattr(self._icon, "update_menu", None)
+            if callable(update):
+                update()
 
-def create_tray_backend(
-    *,
-    on_show: TrayAction,
-    on_stop: TrayAction,
-    on_quit: TrayAction,
-    prefer_pystray: bool = True,
-) -> TrayBackend:
+    def _build_menu(self, pystray: Any) -> Any:
+        items: list[Any] = [
+            pystray.MenuItem("Show Panel", lambda _i, _m: self._handlers.on_show()),
+        ]
+        if self._handlers.on_pause_toggle is not None:
+            label = self._handlers.pause_label or (lambda: "Pause Tracking")
+            items.append(pystray.MenuItem(label, lambda _i, _m: self._handlers.on_pause_toggle()))
+        if self._handlers.on_gaze_toggle is not None:
+            checked = self._handlers.gaze_checked or (lambda: False)
+            items.append(
+                pystray.MenuItem(
+                    "Gaze-only mode",
+                    lambda _i, _m: self._handlers.on_gaze_toggle(),
+                    checked=checked,
+                ),
+            )
+        items.extend(
+            [
+                pystray.MenuItem("Stop Tracking", lambda _i, _m: self._handlers.on_stop()),
+                pystray.MenuItem("Quit", lambda _i, _m: self._handlers.on_quit()),
+            ],
+        )
+        return pystray.Menu(*items)
+
+
+def create_tray_backend(handlers: TrayHandlers, *, prefer_pystray: bool = True) -> TrayBackend:
     if prefer_pystray and importlib.util.find_spec("pystray") is not None:
-        return TrayController(on_show=on_show, on_stop=on_stop, on_quit=on_quit)
-    backend = FakeTrayBackend(on_show=on_show, on_stop=on_stop, on_quit=on_quit)
-    return backend
+        return TrayController(handlers)
+    return FakeTrayBackend(handlers)
 
 
 def create_tray_icon_image(size: int = 64) -> object:

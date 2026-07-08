@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-from unmouse.config import Settings
+from unmouse.config import GazeMode, Settings
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.enroll_ui import GestureEnrollmentSession, profile_has_gesture_templates
 from unmouse.launcher.onboarding import OnboardingController
@@ -17,10 +17,12 @@ from unmouse.launcher.settings import (
     get_panel_settings,
     load_persisted_settings,
     rename_profile,
+    toggle_gaze_mode,
     update_panel_settings,
 )
-from unmouse.launcher.tray import TrayBackend, create_tray_backend
+from unmouse.launcher.tray import TrayBackend, TrayHandlers, create_tray_backend
 from unmouse.launcher.update import UpdateStatus, apply_update, check_updates
+from unmouse.runtime import load_runtime, set_paused, toggle_paused
 
 PanelView = Literal["main", "settings", "onboarding", "enrollment"]
 
@@ -31,6 +33,8 @@ class PanelStatus:
     fps: float | None = None
     confidence: float | None = None
     tracking: bool = False
+    paused: bool = False
+    gaze_mode: str = "cursor_follow"
 
 
 @dataclass(frozen=True)
@@ -93,7 +97,44 @@ class PanelApi:
         return self._view
 
     def get_status(self) -> dict[str, object]:
-        return asdict(self._status)
+        self._settings = load_persisted_settings()
+        runtime = load_runtime(self._settings)
+        return asdict(
+            PanelStatus(
+                message=self._status.message,
+                fps=self._status.fps,
+                confidence=self._status.confidence,
+                tracking=self._engine_runner.is_running(),
+                paused=runtime.paused if self._engine_runner.is_running() else False,
+                gaze_mode=self._settings.gaze_mode.value,
+            ),
+        )
+
+    def toggle_pause(self) -> dict[str, object]:
+        if not self._engine_runner.is_running():
+            result = PanelActionResult(False, "Start tracking before pausing.")
+            return asdict(result)
+        runtime = toggle_paused(self._settings)
+        self._refresh_tray_menu()
+        message = "Tracking paused." if runtime.paused else "Tracking resumed."
+        self._status = self._runtime_panel_status(message)
+        payload = asdict(PanelActionResult(True, message))
+        payload["paused"] = runtime.paused
+        return payload
+
+    def toggle_gaze_mode(self) -> dict[str, object]:
+        mode = toggle_gaze_mode(self._settings)
+        self._settings = load_persisted_settings()
+        self._refresh_tray_menu()
+        label = (
+            "Gaze-only mode enabled."
+            if mode is GazeMode.GAZE_ONLY
+            else "Cursor follow enabled."
+        )
+        self._status = self._runtime_panel_status(label)
+        payload = asdict(PanelActionResult(True, label))
+        payload["gaze_mode"] = mode.value
+        return payload
 
     def get_view(self) -> dict[str, str]:
         return {"view": self._view}
@@ -192,12 +233,7 @@ class PanelApi:
         self._on_minimize_panel = on_minimize_panel
         self._on_quit_app = on_quit_app
         if self._tray is None:
-            self._tray = create_tray_backend(
-                on_show=self._handle_tray_show,
-                on_stop=self._handle_tray_stop,
-                on_quit=self._handle_tray_quit,
-                prefer_pystray=True,
-            )
+            self._tray = create_tray_backend(self._tray_handlers(), prefer_pystray=True)
 
     def start_launch(self) -> dict[str, object]:
         if self._engine_runner.is_running():
@@ -210,10 +246,11 @@ class PanelApi:
         if not status.ok or not status.running:
             result = PanelActionResult(False, status.message)
             return asdict(result)
+        set_paused(self._settings, False)
         self._ensure_tray()
         if self._on_minimize_panel is not None:
             self._on_minimize_panel()
-        self._status = PanelStatus(message=status.message, tracking=True)
+        self._status = self._runtime_panel_status(status.message)
         payload = asdict(PanelActionResult(True, status.message))
         payload["tracking"] = True
         payload["minimize"] = True
@@ -222,12 +259,7 @@ class PanelApi:
 
     def stop_engine(self) -> dict[str, object]:
         status = self._engine_runner.stop()
-        self._status = PanelStatus(
-            message=status.message,
-            fps=self._status.fps,
-            confidence=self._status.confidence,
-            tracking=self._engine_runner.is_running(),
-        )
+        self._status = self._runtime_panel_status(status.message)
         return asdict(PanelActionResult(status.ok, status.message))
 
     def shutdown(self) -> None:
@@ -345,13 +377,43 @@ class PanelApi:
         return {"view": self._view}
 
     def set_status_message(self, message: str) -> dict[str, object]:
-        self._status = PanelStatus(
+        self._status = self._runtime_panel_status(message)
+        return asdict(self._status)
+
+    def _runtime_panel_status(self, message: str) -> PanelStatus:
+        self._settings = load_persisted_settings()
+        runtime = load_runtime(self._settings)
+        return PanelStatus(
             message=message,
             fps=self._status.fps,
             confidence=self._status.confidence,
-            tracking=self._status.tracking,
+            tracking=self._engine_runner.is_running(),
+            paused=runtime.paused if self._engine_runner.is_running() else False,
+            gaze_mode=self._settings.gaze_mode.value,
         )
-        return asdict(self._status)
+
+    def _tray_handlers(self) -> TrayHandlers:
+        return TrayHandlers(
+            on_show=self._handle_tray_show,
+            on_stop=self._handle_tray_stop,
+            on_quit=self._handle_tray_quit,
+            on_pause_toggle=self._handle_tray_pause_toggle,
+            on_gaze_toggle=self._handle_tray_gaze_toggle,
+            pause_label=self._pause_menu_label,
+            gaze_checked=self._gaze_only_checked,
+        )
+
+    def _pause_menu_label(self) -> str:
+        runtime = load_runtime(self._settings)
+        return "Resume Tracking" if runtime.paused else "Pause Tracking"
+
+    def _gaze_only_checked(self) -> bool:
+        self._settings = load_persisted_settings()
+        return self._settings.gaze_mode is GazeMode.GAZE_ONLY
+
+    def _refresh_tray_menu(self) -> None:
+        if self._tray is not None:
+            self._tray.refresh_menu()
 
     def _close_enrollment(self) -> None:
         if self._enrollment is not None:
@@ -360,26 +422,22 @@ class PanelApi:
 
     def _ensure_tray(self) -> None:
         if self._tray is None:
-            self._tray = create_tray_backend(
-                on_show=self._handle_tray_show,
-                on_stop=self._handle_tray_stop,
-                on_quit=self._handle_tray_quit,
-                prefer_pystray=False,
-            )
+            self._tray = create_tray_backend(self._tray_handlers(), prefer_pystray=False)
         self._tray.ensure_running()
 
     def _handle_tray_show(self) -> None:
         if self._on_show_panel is not None:
             self._on_show_panel()
-        self._status = PanelStatus(
-            message="Panel restored.",
-            fps=self._status.fps,
-            confidence=self._status.confidence,
-            tracking=self._engine_runner.is_running(),
-        )
+        self._status = self._runtime_panel_status("Panel restored.")
 
     def _handle_tray_stop(self) -> None:
         self.stop_engine()
+
+    def _handle_tray_pause_toggle(self) -> None:
+        self.toggle_pause()
+
+    def _handle_tray_gaze_toggle(self) -> None:
+        self.toggle_gaze_mode()
 
     def _handle_tray_quit(self) -> None:
         self.shutdown()

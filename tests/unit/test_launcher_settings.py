@@ -70,8 +70,14 @@ def test_update_panel_settings(tmp_path, monkeypatch) -> None:
     settings = _settings(tmp_path, monkeypatch)
     result = update_panel_settings(
         settings,
-        {"snap_radius_px": 75.0, "camera_index": 1, "gaze_mode": "gaze_only"},
+        {
+            "snap_radius_px": 75.0,
+            "camera_index": 1,
+            "gaze_mode": "gaze_only",
+            "pause_hotkey": "ctrl+shift+o",
+        },
     )
     assert result["snap_radius_px"] == 75.0
     assert result["camera_index"] == 1
     assert result["gaze_mode"] == "gaze_only"
+    assert result["pause_hotkey"] == "ctrl+shift+o"

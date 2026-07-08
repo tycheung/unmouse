@@ -10,7 +10,7 @@ from unmouse.launcher.calibrate_wizard import OffsetWizardOutcome
 from unmouse.launcher.engine_runner import EngineRunner
 from unmouse.launcher.enroll_ui import EnrollmentCaptureResult
 from unmouse.launcher.onboarding import OnboardingController
-from unmouse.launcher.tray import FakeTrayBackend
+from unmouse.launcher.tray import FakeTrayBackend, TrayHandlers
 from unmouse.launcher.update import UpdateStatus
 
 
@@ -69,9 +69,10 @@ def test_panel_api_calibrate_runs_offset_when_polynomial_exists() -> None:
 
 
 def test_panel_api_launch_starts_engine_and_minimizes() -> None:
-    api = _api_without_onboarding_prompt()
     runner = EngineRunner()
-    tray = FakeTrayBackend()
+    tray = FakeTrayBackend(
+        TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
+    )
     minimized = {"called": False}
     api = PanelApi(
         settings=Settings(screen_width=800, screen_height=600),
@@ -106,13 +107,14 @@ def test_panel_api_launch_starts_engine_and_minimizes() -> None:
 
 
 def test_panel_api_stop_engine_updates_status() -> None:
-    api = _api_without_onboarding_prompt()
     runner = EngineRunner()
     api = PanelApi(
         settings=Settings(screen_width=800, screen_height=600),
         onboarding=MagicMock(spec=OnboardingController),
         engine_runner=runner,
-        tray=FakeTrayBackend(),
+        tray=FakeTrayBackend(
+            TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None),
+        ),
     )
     api._onboarding.should_show_on_startup.return_value = False
 
@@ -134,6 +136,35 @@ def test_panel_api_stop_engine_updates_status() -> None:
     assert result["ok"] is True
     assert api.get_status()["tracking"] is False
 
+
+def test_panel_api_toggle_pause_updates_runtime(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    runner = EngineRunner()
+    handlers = TrayHandlers(on_show=lambda: None, on_stop=lambda: None, on_quit=lambda: None)
+
+    class FakeProcess:
+        pid = 1
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    api = PanelApi(
+        settings=Settings(screen_width=800, screen_height=600),
+        onboarding=MagicMock(spec=OnboardingController),
+        engine_runner=runner,
+        tray=FakeTrayBackend(handlers),
+    )
+    api._onboarding.should_show_on_startup.return_value = False
+    with patch.object(runner, "_popen", return_value=FakeProcess()):
+        api.start_launch()
+    assert api.toggle_pause()["paused"] is True
+    assert api.toggle_pause()["paused"] is False
 
 
 def test_panel_api_view_navigation() -> None:
