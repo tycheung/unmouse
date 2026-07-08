@@ -1,7 +1,11 @@
 function panelApp() {
-  function applyIfPresent(s, fn) {
-    if (!s) return;
-    fn(s);
+  function applyPayload(source, schema) {
+    const out = {};
+    for (const [key, fallback] of Object.entries(schema)) {
+      const value = source[key] ?? fallback;
+      out[key] = typeof fallback === "boolean" ? !!value : value;
+    }
+    return out;
   }
 
   return {
@@ -53,16 +57,15 @@ function panelApp() {
       notice: "",
     },
     applyStatus(s) {
-      applyIfPresent(s, (s) => {
-        this.statusMessage = s.message ?? "Ready";
-        this.status = {
-          tracking: !!s.tracking,
-          paused: !!s.paused,
-          fps: s.fps ?? null,
-          confidence: s.confidence ?? null,
-          last_calibrated: s.last_calibrated ?? null,
-          gaze_mode: s.gaze_mode ?? "cursor_follow",
-        };
+      if (!s) return;
+      this.statusMessage = s.message ?? "Ready";
+      this.status = applyPayload(s, {
+        tracking: false,
+        paused: false,
+        fps: null,
+        confidence: null,
+        last_calibrated: null,
+        gaze_mode: "cursor_follow",
       });
     },
     async init() {
@@ -75,44 +78,41 @@ function panelApp() {
       }
     },
     applyEnrollment(s) {
-      applyIfPresent(s, (s) => {
-        this.enrollment = {
-          active: !!s.active,
-          done: !!s.done,
-          gesture_index: s.gesture_index ?? 0,
-          gesture_count: s.gesture_count ?? 3,
-          gesture_label: s.gesture_label ?? "",
-          instruction: s.instruction ?? "",
-          message: s.message ?? "",
-        };
+      if (!s) return;
+      this.enrollment = applyPayload(s, {
+        active: false,
+        done: false,
+        gesture_index: 0,
+        gesture_count: 3,
+        gesture_label: "",
+        instruction: "",
+        message: "",
       });
     },
     applyOnboarding(s) {
-      applyIfPresent(s, (s) => {
-        this.onboarding = {
-          step_index: s.step_index ?? 0,
-          step_count: s.step_count ?? 6,
-          title: s.title ?? "",
-          description: s.description ?? "",
-          actions: s.actions ?? [],
-          skippable: !!s.skippable,
-          skip_warning: s.skip_warning ?? "",
-          notice: s.notice ?? "",
-        };
+      if (!s) return;
+      this.onboarding = applyPayload(s, {
+        step_index: 0,
+        step_count: 6,
+        title: "",
+        description: "",
+        actions: [],
+        skippable: false,
+        skip_warning: "",
+        notice: "",
       });
     },
     applySettings(s) {
-      applyIfPresent(s, (s) => {
-        this.settingsForm = {
-          profile_name: s.profile_name ?? "default",
-          profiles: s.profiles ?? ["default"],
-          kalman_measurement_noise: s.kalman_measurement_noise ?? 10,
-          saccade_threshold_px: s.saccade_threshold_px ?? 80,
-          snap_radius_px: s.snap_radius_px ?? 50,
-          scroll_speed_multiplier: s.scroll_speed_multiplier ?? 1,
-          camera_index: s.camera_index ?? 0,
-          gaze_mode: s.gaze_mode ?? "cursor_follow",
-        };
+      if (!s) return;
+      this.settingsForm = applyPayload(s, {
+        profile_name: "default",
+        profiles: ["default"],
+        kalman_measurement_noise: 10,
+        saccade_threshold_px: 80,
+        snap_radius_px: 50,
+        scroll_speed_multiplier: 1,
+        camera_index: 0,
+        gaze_mode: "cursor_follow",
       });
     },
     async refreshStatus() {
